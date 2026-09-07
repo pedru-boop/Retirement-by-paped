@@ -14,24 +14,26 @@
   --blue-100: #EAF4FB;
   --blue-200: #D6EAF8;
   --green-500: #2E9E63;
+  --green-700: #1F7A4E;
   --green-100: #E1F3E8;
   --amber-500: #C98A1F;
-  --red-500: #C1544A;
+  --red-500: #A8382E;
   --red-100: #FBEAE8;
   --ink: #14202E;
   --ink-soft: #3B4A5A;
   --white: #FFFFFF;
   --line: #CBDAEA;
   --radius: 10px;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--ink); font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; font-size: 16px; line-height: 1.6; }
+html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--ink); font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; font-size: 16px; line-height: 1.6; color-scheme: light; }
 #root { min-height: 100vh; }
 .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
 
 .sidebar { background: var(--navy-900); color: var(--white); padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand-mark { width: 38px; height: 38px; border-radius: 8px; background: var(--green-500); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.brand-mark { width: 38px; height: 38px; border-radius: 8px; background: var(--green-500); color: var(--navy-900); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
 .brand-title { font-weight: 700; font-size: 16px; }
 .brand-sub { font-size: 11px; color: #B9D2EA; }
 .case-list { display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
@@ -82,7 +84,7 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .section.open .section-num { background: var(--blue-bright); color: var(--white); }
 .section-title-wrap { flex: 1; display: flex; flex-direction: column; }
 .section-title { font-weight: 700; color: var(--blue-bright); font-size: 16px; }
-.section-subtitle { font-size: 13px; color: var(--green-500); font-weight: 700; margin-top: 2px; }
+.section-subtitle { font-size: 13px; color: var(--green-700); font-weight: 700; margin-top: 2px; }
 .section-chevron { font-size: 20px; color: var(--ink-soft); width: 20px; text-align: center; }
 .section-body { padding: 4px 18px 20px; border-top: 1px solid var(--line); }
 
@@ -110,7 +112,7 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 
 .list-card { background: var(--blue-100); border-radius: 8px; padding: 12px 14px; margin-top: 12px; border: 1px solid var(--blue-200); }
 .list-card-head { display: flex; align-items: center; gap: 10px; }
-.badge { background: var(--green-100); color: var(--green-500); font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.badge { background: var(--green-100); color: var(--green-700); font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
 .note { font-size: 13px; color: var(--ink-soft); margin-top: 10px; font-weight: 500; }
 
 .detail-table { margin-top: 12px; }
@@ -479,10 +481,10 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       sso: { enabled: true, avgWageCapped: 15000, monthsPaidSoFar: 60 },
       lifeAnnuities: [],
       severance: { enabled: true },
-      goals: [],
+      goals: [{ id: uid(), name: 'เป้าหมายตัวอย่าง (แก้ไข/ลบได้)', kind: 'lumpsum', phase: 'pre', targetAge: 40, amountToday: 200000, returnRate: 0.05, annualPremiumToday: 20000, startAge: 35, paymentYears: 10 }],
       currentSavings: { amount: 300000 },
       regularSavings: { amount: 5000, frequency: 'monthly', timing: 'end' },
-      windfalls: [],
+      windfalls: [{ id: uid(), description: 'เงินก้อนตัวอย่าง (แก้ไข/ลบได้)', flowType: 'lumpsum', amount: 100000, ageReceived: 60, phase: 'pre', frequency: 'annual', amountPerPeriod: 10000, startAge: 60, durationYears: 5 }],
       extraSavingMode: 'flat', extraSavingReturn: 0.05,
       buckets: defaultBuckets(25),
       stressTestDelta: -0.01
@@ -501,7 +503,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     STORE.cases[c0.id] = c0;
   }
   var OPEN = { 1: true };
-  var TAB = 'data'; /* 'data' | 'dashboard' */
+  var TAB = 'client'; /* 'client' | 'calc' | 'dashboard' */
 
   function activeCase() { return STORE.cases[STORE.activeId]; }
 
@@ -716,6 +718,19 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var fwdPlanned = C.simulateBucketsForward(sizedBuckets, needAnnualAtYear, pensionAnnualAtYear, totalBucketYears);
     var depletionAge = fwdPlanned.shortfallStartYear ? p.retireAge + fwdPlanned.shortfallStartYear : null;
 
+    var drawdownTable = [];
+    var prevBal = availableAtRetirement;
+    for (var ty = 1; ty <= totalBucketYears; ty++) {
+      var needY = needAnnualAtYear(ty);
+      var pensionY = pensionAnnualAtYear(ty);
+      var endBal = fwdPlanned.path[ty] ? fwdPlanned.path[ty].balance : null;
+      drawdownTable.push({
+        year: ty, beYear: p.currentYearAD + 543 + yearsToRetire + ty, age: p.retireAge + ty,
+        startBalance: prevBal, need: needY, pension: pensionY, endBalance: endBal
+      });
+      prevBal = endBal;
+    }
+
     /* option A: solve sustainable flat (inflation-adjusted) withdrawal */
     function sustainableSolve(bucketsForSolve) {
       var lo = 0, hi = Math.max(netRequiredCorpus * 3, 1e6) + 1;
@@ -776,7 +791,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       fwdPlanned: fwdPlanned, depletionAge: depletionAge, sustainableMonthly: sustainableMonthly,
       depletionAgeStressed: depletionAgeStressed, sustainableMonthlyStressed: sustainableMonthlyStressed,
       accumPath: accumPath, drawdownPath: drawdownPath, events: events,
-      pensionAnnualAtYear: pensionAnnualAtYear
+      pensionAnnualAtYear: pensionAnnualAtYear, drawdownTable: drawdownTable
     };
   }
 
@@ -845,7 +860,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '</div>';
   }
 
-  function renderPension(a) {
+  function renderPension(a, r) {
     var pvd = a.pvd, sso = a.sso;
     var tiersHtml = pvd.employerTiers.map(function (t, i) {
       return '<div class="tier-row">' +
@@ -881,13 +896,18 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         '</div>' +
         (pvd.employerMode === 'flat'
           ? field('% เงินสมทบนายจ้าง', ['pvd', 'employerFlatRate'], pvd.employerFlatRate, { type: 'percent', suffix: '%' })
-          : '<div class="tier-table">' + tiersHtml + '<button class="btn btn-ghost btn-sm" type="button" data-action="addTier">+ เพิ่มขั้น</button></div>')
+          : '<div class="tier-table">' + tiersHtml + '<button class="btn btn-ghost btn-sm" type="button" data-action="addTier">+ เพิ่มขั้น</button></div>') +
+        metricCard('ยอดสะสมกองทุนโดยประมาณ ณ วันเกษียณ', fmt(r.pvdResult.finalBalance) + ' บาท', 'green')
       ) : '') + '</div>' +
       '<div class="subblock">' +
       checkbox('บำนาญชราภาพจากประกันสังคม', ['sso', 'enabled'], sso.enabled) +
       (sso.enabled ? '<div class="grid-2">' +
         field('ค่าจ้างเฉลี่ย 60 เดือนสุดท้าย (ไม่เกิน 15,000)', ['sso', 'avgWageCapped'], sso.avgWageCapped, { type: 'money', suffix: 'บาท' }) +
-        field('จำนวนเดือนที่ส่งเงินสมทบมาแล้ว', ['sso', 'monthsPaidSoFar'], sso.monthsPaidSoFar, { suffix: 'เดือน', hint: 'ต้องส่งสมทบครบ 180 เดือนจึงมีสิทธิรับบำนาญ' }) + '</div>' : '') +
+        field('จำนวนเดือนที่ส่งเงินสมทบมาแล้ว', ['sso', 'monthsPaidSoFar'], sso.monthsPaidSoFar, { suffix: 'เดือน', hint: 'ต้องส่งสมทบครบ 180 เดือนจึงมีสิทธิรับบำนาญ' }) + '</div>'
+        + (r.ssoMonthly > 0
+            ? metricCard('บำนาญชราภาพที่จะได้รับ', fmt(r.ssoMonthly) + ' บาท/เดือน', 'green', 'รับตั้งแต่อายุ ' + a.personal.retireAge + ' ปีไปตลอดชีพ')
+            : '<div class="note" style="color:#A8382E">ยังไม่เข้าเงื่อนไข (ต้องส่งสมทบครบ 180 เดือน ณ วันเกษียณ) — ตอนนี้คำนวณได้ 0 บาท ลองเพิ่ม "จำนวนเดือนที่ส่งเงินสมทบมาแล้ว"</div>')
+        : '') +
       '</div>' +
       '<div class="subblock"><div class="subblock-title">บำนาญ/เงินรายงวดจากกรมธรรม์ประกันชีวิต</div>' +
       annuitiesHtml +
@@ -984,18 +1004,30 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function renderGap(a, r) {
-    var rows = r.sizedBuckets.map(function (b) { return { label: b.label || 'บัคเก็ต', need: b.needAtStart, pension: b.pensionFlatForBucket, req: b.requiredToday }; });
-    var cols = [
+    var sumRows = r.sizedBuckets.map(function (b) { return { label: b.label || 'บัคเก็ต', need: b.needAtStart, pension: b.pensionFlatForBucket, req: b.requiredToday }; });
+    var sumCols = [
       { label: 'บัคเก็ต', render: function (row) { return esc(row.label); } },
       { label: 'ความต้องการใช้/ปี (ต้นช่วง)', render: function (row) { return fmt(row.need); } },
       { label: 'บำนาญหักออก/ปี', render: function (row) { return fmt(row.pension); } },
       { label: 'เงินต้องมี ณ วันนี้', render: function (row) { return fmt(row.req); } }
     ];
+    var detailCols = [
+      { label: 'ปีที่', render: function (row) { return row.year; } },
+      { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
+      { label: 'อายุ', render: function (row) { return row.age; } },
+      { label: 'ยอดต้นปี', render: function (row) { return fmt(row.startBalance); } },
+      { label: 'ค่าใช้จ่ายที่ต้องการ/ปี', render: function (row) { return fmt(row.need); } },
+      { label: 'บำนาญที่ได้รับ/ปี', render: function (row) { return fmt(row.pension); } },
+      { label: 'ยอดปลายปี', render: function (row) { return fmt(row.endBalance); } }
+    ];
     var html = '<div class="grid-2">' +
       metricCard('กองทุนที่ควรมี ณ วันเกษียณ (รวมทุกบัคเก็ต, หักบำนาญแล้ว)', fmt(r.netRequiredCorpus) + ' บาท', 'navy') +
       metricCard('เงินที่คาดว่าจะมี ณ วันเกษียณ', fmt(r.availableAtRetirement) + ' บาท', 'navy') + '</div>' +
       metricCard(r.gap > 0 ? 'ส่วนที่ขาด (Gap)' : 'ส่วนที่เกิน (Surplus)', fmt(Math.abs(r.gap)) + ' บาท', r.gap > 0 ? 'red' : 'green') +
-      detailTable(rows, cols, 'gap');
+      '<div class="note" style="margin-top:14px"><strong>สรุปยอดที่ต้องมีแยกตามบัคเก็ต:</strong></div>' +
+      detailTable(sumRows, sumCols, 'gapsummary') +
+      '<div class="note" style="margin-top:6px"><strong>ตารางจำลองปีต่อปี (ใช้เงินตามแผนเดิม จนถึงอายุขัย):</strong></div>' +
+      detailTable(r.drawdownTable, detailCols, 'gapdetail');
     if (r.gap > 0) {
       html += '<div class="subblock">' +
         '<div class="radio-row">' + radio('ออมเพิ่มคงที่ทุกปี', ['extraSavingMode'], 'flat', a.extraSavingMode) + radio('ออมเพิ่มขึ้นตามอัตราขึ้นเงินเดือน', ['extraSavingMode'], 'growing', a.extraSavingMode) + '</div>' +
@@ -1054,7 +1086,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function renderTimeline(r, p) {
-    var typeColor = { milestone: '#1E6FD9', goal: '#0B2545', income: '#2E9E63', bucket: '#C98A1F', warning: '#C1544A' };
+    var typeColor = { milestone: '#1E6FD9', goal: '#0B2545', income: '#2E9E63', bucket: '#C98A1F', warning: '#A8382E' };
     return '<div class="timeline">' + r.events.map(function (e) {
       return '<div class="timeline-item"><div class="timeline-dot" style="background:' + typeColor[e.type] + '"></div>' +
         '<div class="timeline-content"><div class="timeline-age">อายุ ' + e.age + ' ปี · พ.ศ. ' + e.be + '</div><div class="timeline-label">' + esc(e.label) + '</div></div></div>';
@@ -1106,41 +1138,44 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<button class="btn btn-ghost" type="button" data-action="duplicateCase">ทำสำเนาเคสนี้</button>' +
       '<button class="btn btn-ghost" type="button" data-action="exportData">ส่งออกข้อมูลสำรอง</button>' +
       '<label class="btn btn-ghost btn-file">นำเข้าข้อมูลสำรอง<input type="file" id="importFile" accept="application/json" style="display:none"></label>' +
+      '<button class="btn btn-ghost" type="button" data-action="clearAll" style="background:rgba(193,84,74,0.35)">ล้างข้อมูลทั้งหมด</button>' +
       '</div></aside>';
   }
 
   function renderTabs() {
-    return '<div class="tabs no-print">' +
-      '<button class="tab-btn' + (TAB === 'data' ? ' active' : '') + '" type="button" data-action="setTab" data-tab="data">กรอกข้อมูล</button>' +
-      '<button class="tab-btn' + (TAB === 'dashboard' ? ' active' : '') + '" type="button" data-action="setTab" data-tab="dashboard">แดชบอร์ดภาพรวม</button>' +
-      '</div>';
+    var tabs = [['client', 'ข้อมูลลูกค้า'], ['calc', 'การคำนวณ'], ['dashboard', 'แดชบอร์ด']];
+    return '<div class="tabs no-print">' + tabs.map(function (tb) {
+      return '<button class="tab-btn' + (TAB === tb[0] ? ' active' : '') + '" type="button" data-action="setTab" data-tab="' + tb[0] + '">' + tb[1] + '</button>';
+    }).join('') + '</div>';
   }
 
   function renderMain(a, r) {
-    var sections = [
+    var clientSections = [
       [1, 'ข้อมูลผู้รับการวางแผน + พอร์ตก่อนเกษียณ', '', 'navy', renderPersonal(a)],
-      [2, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(r)],
-      [3, 'กองทุนสำรอง/กบข. ประกันสังคม และบำนาญประกันชีวิต', '', 'navy', renderPension(a)],
+      [3, 'กองทุนสำรอง/กบข. ประกันสังคม และบำนาญประกันชีวิต', '', 'navy', renderPension(a, r)],
       [4, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'navy', renderSeverance(r)],
       [5, 'เป้าหมายระยะสั้น/กลาง/ยาว และเบี้ยประกัน', '', 'navy', renderGoals(a)],
       [6, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a)],
-      [7, 'เงินก้อน/เงินได้ระหว่างทาง', '', 'navy', renderWindfalls(a)],
+      [7, 'เงินก้อน/เงินได้ระหว่างทาง', '', 'navy', renderWindfalls(a)]
+    ];
+    var calcSections = [
+      [2, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(r)],
       [8, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด', '', 'green', renderGap(a, r)],
       [9, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r)],
       [10, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r)]
     ];
-    var dataHtml = '<div class="sections">' + sections.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4]); }).join('') + '</div>';
+    function sectionsHtml(list) { return '<div class="sections">' + list.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4]); }).join('') + '</div>'; }
     var dashHtml = '<div class="dashboard">' +
       renderSummaryBar(r) + renderCharts(r) +
       '<div class="dash-block"><div class="dash-title">ไทม์ไลน์เหตุการณ์สำคัญ</div>' + renderTimeline(r, a.personal) + '</div>' +
       '</div>';
+    var body = TAB === 'client' ? sectionsHtml(clientSections) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml);
     return '<main class="main">' +
       '<div class="header no-print">' +
       '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
       '<button class="btn btn-primary" type="button" data-action="printPdf">ส่งออก PDF</button>' +
       '</div>' +
-      renderTabs() +
-      (TAB === 'data' ? dataHtml : dashHtml) +
+      renderTabs() + body +
       '<div class="print-only">' + renderPrintReport(a, r) + '</div>' +
       '</main>';
   }
@@ -1272,6 +1307,34 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       saveStore(); render();
     }
     else if (action === 'delBucket') { if (a.buckets.list.length > 1) { a.buckets.list.splice(+t.dataset.index, 1); saveStore(); render(); } }
+    else if (action === 'clearAll') {
+      if (window.confirm('ล้างข้อมูลทั้งหมดทุกเคส และเริ่มใหม่หมด? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+        var nc = newCase('ลูกค้ารายที่ 1');
+        STORE = { activeId: nc.id, cases: {} };
+        STORE.cases[nc.id] = nc;
+        OPEN = { 1: true }; TAB = 'client';
+        saveStore(); render();
+      }
+    }
+  });
+
+  /* tap-to-select-all + Enter-to-next-field, for faster mobile data entry */
+  root.addEventListener('focusin', function (e) {
+    var t = e.target;
+    if (t.tagName === 'INPUT' && t.dataset && t.dataset.path && (t.type === 'text' || t.type === 'number')) {
+      try { t.select(); } catch (e2) {}
+    }
+  });
+  root.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var t = e.target;
+    if (t.tagName !== 'INPUT' || !t.dataset || !t.dataset.path) return;
+    e.preventDefault();
+    var focusables = Array.prototype.slice.call(root.querySelectorAll('input[data-path], select[data-path]'))
+      .filter(function (el) { return el.offsetParent !== null && !el.disabled; });
+    var idx = focusables.indexOf(t);
+    if (idx >= 0 && idx < focusables.length - 1) focusables[idx + 1].focus();
+    else t.blur();
   });
 
   render();
