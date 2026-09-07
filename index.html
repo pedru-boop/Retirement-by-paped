@@ -482,7 +482,10 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       lifeAnnuities: [],
       severance: { enabled: true },
       goals: [{ id: uid(), name: 'เป้าหมายตัวอย่าง (แก้ไข/ลบได้)', kind: 'lumpsum', phase: 'pre', targetAge: 40, amountToday: 200000, returnRate: 0.05, annualPremiumToday: 20000, startAge: 35, paymentYears: 10 }],
-      currentSavings: { amount: 300000 },
+      currentSavings: { items: [
+        { id: uid(), name: 'กองทุนรวมหุ้น (ตัวอย่าง)', amount: 200000, returnRate: 0.07 },
+        { id: uid(), name: 'เงินฝากประจำ (ตัวอย่าง)', amount: 100000, returnRate: 0.02 }
+      ] },
       regularSavings: { amount: 5000, frequency: 'monthly', timing: 'end' },
       windfalls: [{ id: uid(), description: 'เงินก้อนตัวอย่าง (แก้ไข/ลบได้)', flowType: 'lumpsum', amount: 100000, ageReceived: 60, phase: 'pre', frequency: 'annual', amountPerPeriod: 10000, startAge: 60, durationYears: 5 }],
       extraSavingMode: 'flat', extraSavingReturn: 0.05,
@@ -523,11 +526,12 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     } else if (type === 'text') {
       inputHtml = '<input class="inp' + (opts.titleStyle ? ' inp-title' : '') + '" type="text" data-path=\'' + pa + '\' data-type="text" value="' + esc(value) + '">';
     } else if (type === 'percent') {
-      inputHtml = '<input class="inp" type="number" step="0.1" data-path=\'' + pa + '\' data-type="percent" value="' + (value * 100) + '">';
+      var pctDisplay = Math.round(value * 100 * 1e6) / 1e6;
+      inputHtml = '<input class="inp" type="text" inputmode="decimal" data-path=\'' + pa + '\' data-type="percent" value="' + pctDisplay + '">';
     } else if (type === 'money') {
       inputHtml = '<input class="inp" type="text" inputmode="numeric" data-path=\'' + pa + '\' data-type="money" value="' + fmt(value) + '">';
     } else {
-      inputHtml = '<input class="inp" type="number" step="' + (opts.step || '1') + '" data-path=\'' + pa + '\' data-type="number" value="' + value + '">';
+      inputHtml = '<input class="inp" type="text" inputmode="decimal" data-path=\'' + pa + '\' data-type="number" value="' + value + '">';
     }
     return '<label class="field">' +
       (label ? '<span class="field-label">' + esc(label) + '</span>' : '') +
@@ -624,8 +628,12 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       });
     }
 
-    var ssoMonthly = a.sso.enabled ? C.ssoPensionMonthly(a.sso.avgWageCapped, a.sso.monthsPaidSoFar + yearsToRetire * 12) : 0;
+    var ssoMonthsAtRetirement = a.sso.monthsPaidSoFar + yearsToRetire * 12;
+    var ssoMonthly = a.sso.enabled ? C.ssoPensionMonthly(a.sso.avgWageCapped, ssoMonthsAtRetirement) : 0;
     var ssoAnnual = ssoMonthly * 12;
+    var ssoYearsPaid = ssoMonthsAtRetirement / 12;
+    var ssoExtraYears = Math.max(0, ssoYearsPaid - 15);
+    var ssoPct = ssoMonthsAtRetirement >= 180 ? (20 + ssoExtraYears * 1.5) : 0;
 
     var severance = null;
     if (a.severance.enabled) {
@@ -667,15 +675,23 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     function pensionAnnualAtYear(yearIdx) { return pensionAnnualAtAge(p.retireAge + yearIdx); }
     function needAnnualAtYear(yearIdx) { return firstYearAnnualNeed * Math.pow(1 + p.inflation, yearIdx - 1); }
 
-    /* current savings + regular savings via glide path */
+    /* current savings: each item grows at its own rate ("as-is") */
+    var currentItems = (a.currentSavings.items || []).map(function (it) {
+      return { id: it.id, name: it.name, amount: it.amount, returnRate: it.returnRate, fv: C.fv(it.amount, it.returnRate, yearsToRetire) };
+    });
+    var currentTotalAmount = currentItems.reduce(function (s, it) { return s + it.amount; }, 0);
+    var currentSavingsFV_asis = currentItems.reduce(function (s, it) { return s + it.fv; }, 0);
+    var currentSavingsFV_ifPlanned = C.fvAlongGlide(currentTotalAmount, p.currentAge, p.retireAge, segs, portfolio.flatReturn);
+
+    /* regular (recurring) savings via the planned pre-retirement portfolio glide path */
     var regAnnual = a.regularSavings.frequency === 'monthly' ? a.regularSavings.amount * 12 : a.regularSavings.amount;
     var accumSim = C.simulateGlideAccumulation({
-      pv0: a.currentSavings.amount, regularAnnual: regAnnual, due: a.regularSavings.timing === 'begin',
+      pv0: 0, regularAnnual: regAnnual, due: a.regularSavings.timing === 'begin',
       startAge: p.currentAge, years: yearsToRetire, segments: segs, flatRate: portfolio.flatReturn
     });
     var savingsRegularFV = accumSim.finalBalance;
 
-    var availableAtRetirement = pvdResult.finalBalance + (severance ? severance.amount : 0) + savingsRegularFV + windfallsFV;
+    var availableAtRetirement = pvdResult.finalBalance + (severance ? severance.amount : 0) + savingsRegularFV + currentSavingsFV_asis + windfallsFV;
 
     /* ---- buckets: size each bucket, then sum for required corpus ---- */
     var bucketDefs = a.buckets.list;
@@ -693,10 +709,12 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var gap = netRequiredCorpus - availableAtRetirement;
 
     var extraMonthlySaving = 0;
+    var extraSavingFlatMonthly = 0, extraSavingGrowingFirstMonthly = 0, extraSavingGrowingLastMonthly = 0;
     if (gap > 0) {
-      extraMonthlySaving = a.extraSavingMode === 'growing'
-        ? C.pmtFromFVGrowing(gap, a.extraSavingReturn, p.salaryGrowth, yearsToRetire, false) / 12
-        : C.pmtFromFV(gap, a.extraSavingReturn, yearsToRetire, false) / 12;
+      extraSavingFlatMonthly = C.pmtFromFV(gap, a.extraSavingReturn, yearsToRetire, false) / 12;
+      extraSavingGrowingFirstMonthly = C.pmtFromFVGrowing(gap, a.extraSavingReturn, p.salaryGrowth, yearsToRetire, false) / 12;
+      extraSavingGrowingLastMonthly = yearsToRetire > 0 ? extraSavingGrowingFirstMonthly * Math.pow(1 + p.salaryGrowth, yearsToRetire - 1) : extraSavingGrowingFirstMonthly;
+      extraMonthlySaving = a.extraSavingMode === 'growing' ? extraSavingGrowingFirstMonthly : extraSavingFlatMonthly;
     }
 
     /* one-offs during drawdown: post lumpsum goals (-), post lumpsum windfalls (+) */
@@ -752,7 +770,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     /* accumulation chart path (พ.ศ.) */
     var accumPath = accumSim.path.map(function (pt) {
       var pvdBal = pt.year === 0 ? (a.pvd.startingBalance || 0) : (pvdResult.path[pt.year - 1] ? pvdResult.path[pt.year - 1].balance : 0);
-      return { x: pt.year, label: String(p.currentYearAD + 543 + pt.year), y: pt.balance + pvdBal, age: pt.age };
+      var currentItemsBal = currentItems.reduce(function (s, it) { return s + C.fv(it.amount, it.returnRate, pt.year); }, 0);
+      return { x: pt.year, label: String(p.currentYearAD + 543 + pt.year), y: pt.balance + pvdBal + currentItemsBal, age: pt.age };
     });
     var drawdownPath = fwdPlanned.path.map(function (pt) {
       return { x: pt.year, label: String(p.currentYearAD + 543 + yearsToRetire + pt.year), y: Math.max(0, pt.balance), age: p.retireAge + pt.year };
@@ -784,10 +803,13 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     return {
       yearsToRetire: yearsToRetire, yearsRetired: yearsRetired, salaryAtRetire: salaryAtRetire,
       firstYearMonthlyNeed: firstYearMonthlyNeed, firstYearAnnualNeed: firstYearAnnualNeed,
-      pvdResult: pvdResult, ssoMonthly: ssoMonthly, severance: severance,
+      pvdResult: pvdResult, ssoMonthly: ssoMonthly, ssoMonthsAtRetirement: ssoMonthsAtRetirement, ssoYearsPaid: ssoYearsPaid, ssoPct: ssoPct, severance: severance,
       savingsRegularFV: savingsRegularFV, windfallsFV: windfallsFV, accumSim: accumSim,
+      currentItems: currentItems, currentSavingsFV_asis: currentSavingsFV_asis, currentSavingsFV_ifPlanned: currentSavingsFV_ifPlanned,
       availableAtRetirement: availableAtRetirement, netRequiredCorpus: netRequiredCorpus, gap: gap,
-      extraMonthlySaving: extraMonthlySaving, sizedBuckets: sizedBuckets,
+      extraMonthlySaving: extraMonthlySaving, extraSavingFlatMonthly: extraSavingFlatMonthly,
+      extraSavingGrowingFirstMonthly: extraSavingGrowingFirstMonthly, extraSavingGrowingLastMonthly: extraSavingGrowingLastMonthly,
+      sizedBuckets: sizedBuckets,
       fwdPlanned: fwdPlanned, depletionAge: depletionAge, sustainableMonthly: sustainableMonthly,
       depletionAgeStressed: depletionAgeStressed, sustainableMonthlyStressed: sustainableMonthlyStressed,
       accumPath: accumPath, drawdownPath: drawdownPath, events: events,
@@ -897,7 +919,16 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         (pvd.employerMode === 'flat'
           ? field('% เงินสมทบนายจ้าง', ['pvd', 'employerFlatRate'], pvd.employerFlatRate, { type: 'percent', suffix: '%' })
           : '<div class="tier-table">' + tiersHtml + '<button class="btn btn-ghost btn-sm" type="button" data-action="addTier">+ เพิ่มขั้น</button></div>') +
-        metricCard('ยอดสะสมกองทุนโดยประมาณ ณ วันเกษียณ', fmt(r.pvdResult.finalBalance) + ' บาท', 'green')
+        metricCard('ยอดสะสมกองทุนโดยประมาณ ณ วันเกษียณ', fmt(r.pvdResult.finalBalance) + ' บาท', 'green') +
+        detailTable(r.pvdResult.path, [
+          { label: 'ปีที่', render: function (row) { return row.year; } },
+          { label: 'อายุ', render: function (row) { return row.age; } },
+          { label: 'เงินเดือน/ปี', render: function (row) { return fmt(row.salaryAnnual); } },
+          { label: '% นายจ้าง', render: function (row) { return (row.employerRate * 100).toFixed(2) + '%'; } },
+          { label: 'สมทบลูกจ้าง', render: function (row) { return fmt(row.employeeContrib); } },
+          { label: 'สมทบนายจ้าง', render: function (row) { return fmt(row.employerContrib); } },
+          { label: 'ยอดสะสมปลายปี', render: function (row) { return fmt(row.balance); } }
+        ], 'pvd')
       ) : '') + '</div>' +
       '<div class="subblock">' +
       checkbox('บำนาญชราภาพจากประกันสังคม', ['sso', 'enabled'], sso.enabled) +
@@ -907,6 +938,16 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         + (r.ssoMonthly > 0
             ? metricCard('บำนาญชราภาพที่จะได้รับ', fmt(r.ssoMonthly) + ' บาท/เดือน', 'green', 'รับตั้งแต่อายุ ' + a.personal.retireAge + ' ปีไปตลอดชีพ')
             : '<div class="note" style="color:#A8382E">ยังไม่เข้าเงื่อนไข (ต้องส่งสมทบครบ 180 เดือน ณ วันเกษียณ) — ตอนนี้คำนวณได้ 0 บาท ลองเพิ่ม "จำนวนเดือนที่ส่งเงินสมทบมาแล้ว"</div>')
+        + detailTable([{
+            avgWage: sso.avgWageCapped, monthsAtRetirement: r.ssoMonthsAtRetirement, yearsPaid: r.ssoYearsPaid,
+            pct: r.ssoPct, monthly: r.ssoMonthly
+          }], [
+            { label: 'ค่าจ้างเฉลี่ย (ไม่เกิน 15,000)', render: function (row) { return fmt(row.avgWage) + ' บาท'; } },
+            { label: 'เดือนที่ส่งสมทบรวม ณ เกษียณ', render: function (row) { return row.monthsAtRetirement + ' เดือน (' + row.yearsPaid.toFixed(1) + ' ปี)'; } },
+            { label: 'สูตร', render: function (row) { return row.yearsPaid >= 15 ? '20% + 1.5%×(' + (row.yearsPaid - 15).toFixed(1) + ' ปีเกิน 15 ปี)' : 'ยังไม่ครบ 15 ปี'; } },
+            { label: '% ที่ใช้คำนวณ', render: function (row) { return row.pct.toFixed(2) + '%'; } },
+            { label: 'บำนาญ/เดือน', render: function (row) { return fmt(row.monthly) + ' บาท'; } }
+          ], 'sso')
         : '') +
       '</div>' +
       '<div class="subblock"><div class="subblock-title">บำนาญ/เงินรายงวดจากกรมธรรม์ประกันชีวิต</div>' +
@@ -919,7 +960,13 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     return '<div class="grid-3">' +
       metricCard('อายุงานรวม ณ วันเกษียณ', r.severance.serviceYears.toFixed(1) + ' ปี') +
       metricCard('สิทธิเงินชดเชย', r.severance.months.toFixed(2) + ' เท่าของเงินเดือน') +
-      metricCard('จำนวนเงินชดเชยโดยประมาณ', fmt(r.severance.amount) + ' บาท', 'green') + '</div>';
+      metricCard('จำนวนเงินชดเชยโดยประมาณ', fmt(r.severance.amount) + ' บาท', 'green') + '</div>' +
+      detailTable([{ svcYears: r.severance.serviceYears, months: r.severance.months, salary: r.salaryAtRetire, amount: r.severance.amount }], [
+        { label: 'อายุงานรวม', render: function (row) { return row.svcYears.toFixed(1) + ' ปี'; } },
+        { label: 'สิทธิตามกฎหมาย (ตารางวัน)', render: function (row) { return row.months.toFixed(2) + ' เท่าของเงินเดือน'; } },
+        { label: 'เงินเดือนสุดท้าย (nominal)', render: function (row) { return fmt(row.salary) + ' บาท'; } },
+        { label: '= เงินชดเชย', render: function (row) { return fmt(row.amount) + ' บาท'; } }
+      ], 'severance');
   }
 
   function goalTerm(g, currentAge) {
@@ -966,17 +1013,42 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     return body + '<button class="btn btn-ghost" type="button" data-action="addGoal">+ เพิ่มเป้าหมาย</button>';
   }
 
-  function renderSavings(a) {
-    var cs = a.currentSavings, rs = a.regularSavings;
-    return '<div class="subblock"><div class="subblock-title">เงินออม/เงินลงทุนปัจจุบัน</div>' +
-      field('ยอดเงินออม/เงินลงทุนปัจจุบัน', ['currentSavings', 'amount'], cs.amount, { type: 'money', suffix: 'บาท' }) +
-      '<div class="note">เติบโตตามพอร์ตก่อนเกษียณที่ตั้งค่าไว้ในข้อ 1</div></div>' +
+  function renderSavings(a, r) {
+    var items = a.currentSavings.items;
+    var rs = a.regularSavings;
+    var itemsHtml = items.map(function (it, i) {
+      return '<div class="list-card">' +
+        '<div class="list-card-head">' + field('', ['currentSavings', 'items', i, 'name'], it.name, { type: 'text', titleStyle: true }) +
+        (items.length > 1 ? '<button class="btn-icon" type="button" data-action="delSavingsItem" data-index="' + i + '">×</button>' : '') + '</div>' +
+        '<div class="grid-2">' +
+        field('จำนวนเงินลงทุนปัจจุบัน', ['currentSavings', 'items', i, 'amount'], it.amount, { type: 'money', suffix: 'บาท' }) +
+        field('อัตราผลตอบแทนของสินทรัพย์นี้', ['currentSavings', 'items', i, 'returnRate'], it.returnRate, { type: 'percent', suffix: '%/ปี' }) +
+        '</div>' +
+        '<div class="note">มูลค่า ณ วันเกษียณโดยประมาณ: ' + fmt(r.currentItems[i] ? r.currentItems[i].fv : 0) + ' บาท</div></div>';
+    }).join('');
+    var cols = [
+      { label: 'รายการลงทุน', render: function (row) { return esc(row.name); } },
+      { label: 'จำนวนเงินวันนี้', render: function (row) { return fmt(row.amount); } },
+      { label: 'ผลตอบแทน/ปี', render: function (row) { return (row.returnRate * 100).toFixed(2) + '%'; } },
+      { label: 'มูลค่า ณ วันเกษียณ', render: function (row) { return fmt(row.fv); } }
+    ];
+    return '<div class="subblock"><div class="subblock-title">เงินออม/เงินลงทุนปัจจุบัน (ระบุได้หลายรายการ)</div>' +
+      itemsHtml +
+      '<button class="btn btn-ghost" type="button" data-action="addSavingsItem">+ เพิ่มรายการลงทุน</button>' +
+      '<div class="grid-2" style="margin-top:14px">' +
+      metricCard('รวมมูลค่า ณ วันเกษียณ (คงพอร์ตเดิมแต่ละตัว)', fmt(r.currentSavingsFV_asis) + ' บาท', 'navy') +
+      metricCard('ถ้าย้ายทั้งหมดไปพอร์ตตามแผน (ข้อ 1)', fmt(r.currentSavingsFV_ifPlanned) + ' บาท', 'green', 'ใช้อัตราผลตอบแทนพอร์ตก่อนเกษียณที่ตั้งค่าไว้') +
+      '</div>' +
+      detailTable(r.currentItems, cols, 'currentitems') +
+      '</div>' +
       '<div class="subblock"><div class="subblock-title">เงินออมประจำ</div>' +
       '<div class="grid-2">' +
       field('ความถี่ในการออม', ['regularSavings', 'frequency'], rs.frequency, { type: 'select', options: [{ value: 'monthly', label: 'รายเดือน' }, { value: 'annual', label: 'รายปี' }] }) +
       field(rs.frequency === 'monthly' ? 'จำนวนเงินต่อเดือน' : 'จำนวนเงินต่อปี', ['regularSavings', 'amount'], rs.amount, { type: 'money', suffix: 'บาท' }) +
       field('ออมต้นงวดหรือปลายงวด', ['regularSavings', 'timing'], rs.timing, { type: 'select', options: [{ value: 'end', label: 'ปลายงวด' }, { value: 'begin', label: 'ต้นงวด' }] }) +
-      '</div></div>';
+      '</div>' +
+      metricCard('มูลค่า ณ วันเกษียณ (เงินออมประจำ)', fmt(r.savingsRegularFV) + ' บาท', 'green', 'เติบโตตามพอร์ตก่อนเกษียณที่ตั้งค่าไว้ในข้อ 1') +
+      '</div>';
   }
 
   function renderWindfalls(a) {
@@ -1028,11 +1100,25 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       detailTable(sumRows, sumCols, 'gapsummary') +
       '<div class="note" style="margin-top:6px"><strong>ตารางจำลองปีต่อปี (ใช้เงินตามแผนเดิม จนถึงอายุขัย):</strong></div>' +
       detailTable(r.drawdownTable, detailCols, 'gapdetail');
+    function selectModeRadio(val, label) {
+      var pa = pathAttr(['extraSavingMode']);
+      return '<label class="radio" style="margin-top:8px"><input type="radio" data-path=\'' + pa + '\' data-type="radio" data-radio-value="' + val + '"' + (val === a.extraSavingMode ? ' checked' : '') + '> ' + esc(label) + '</label>';
+    }
     if (r.gap > 0) {
       html += '<div class="subblock">' +
-        '<div class="radio-row">' + radio('ออมเพิ่มคงที่ทุกปี', ['extraSavingMode'], 'flat', a.extraSavingMode) + radio('ออมเพิ่มขึ้นตามอัตราขึ้นเงินเดือน', ['extraSavingMode'], 'growing', a.extraSavingMode) + '</div>' +
         field('อัตราผลตอบแทนของเงินออมเพิ่ม', ['extraSavingReturn'], a.extraSavingReturn, { type: 'percent', suffix: '%/ปี' }) +
-        metricCard('ควรออมเพิ่มเดือนละ', fmt(r.extraMonthlySaving) + ' บาท/เดือน', 'green') + '</div>';
+        '<div class="note" style="margin-top:10px"><strong>เปรียบเทียบ 2 แบบ:</strong></div>' +
+        '<div class="grid-2" style="margin-top:8px">' +
+        '<div class="list-card">' +
+        '<div class="list-card-head"><strong>ออมคงที่ทุกเดือน</strong></div>' +
+        metricCard('ต้องออมเดือนละ', fmt(r.extraSavingFlatMonthly) + ' บาท/เดือน', 'green', 'จำนวนเท่ากันทุกเดือนจนเกษียณ') +
+        selectModeRadio('flat', 'เลือกใช้แบบนี้') + '</div>' +
+        '<div class="list-card">' +
+        '<div class="list-card-head"><strong>ออมเพิ่มขึ้นตามอัตราขึ้นเงินเดือน</strong></div>' +
+        metricCard('เดือนแรกออม', fmt(r.extraSavingGrowingFirstMonthly) + ' บาท/เดือน', 'navy') +
+        metricCard('เดือนสุดท้ายก่อนเกษียณ ออม', fmt(r.extraSavingGrowingLastMonthly) + ' บาท/เดือน', 'green') +
+        selectModeRadio('growing', 'เลือกใช้แบบนี้') + '</div>' +
+        '</div></div>';
     } else html += '<div class="note">เงินที่มีเพียงพอตามเป้าหมายที่ตั้งไว้แล้ว</div>';
     return html;
   }
@@ -1155,7 +1241,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       [3, 'กองทุนสำรอง/กบข. ประกันสังคม และบำนาญประกันชีวิต', '', 'navy', renderPension(a, r)],
       [4, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'navy', renderSeverance(r)],
       [5, 'เป้าหมายระยะสั้น/กลาง/ยาว และเบี้ยประกัน', '', 'navy', renderGoals(a)],
-      [6, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a)],
+      [6, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r)],
       [7, 'เงินก้อน/เงินได้ระหว่างทาง', '', 'navy', renderWindfalls(a)]
     ];
     var calcSections = [
@@ -1194,19 +1280,28 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     if (!el || !el.dataset || !el.dataset.path) return null;
     var info = { path: el.dataset.path, type: el.dataset.type };
     if (el.dataset.type === 'money') info.digits = digitsBefore(el.value, el.selectionStart);
-    else if (typeof el.selectionStart === 'number') { info.start = el.selectionStart; info.end = el.selectionEnd; }
+    else if (el.dataset.type === 'number' || el.dataset.type === 'percent') {
+      info.rawValue = el.value;
+      if (typeof el.selectionStart === 'number') { info.start = el.selectionStart; info.end = el.selectionEnd; }
+    } else if (typeof el.selectionStart === 'number') { info.start = el.selectionStart; info.end = el.selectionEnd; }
     return info;
   }
+  var programmaticFocus = false;
   function restoreFocus(info) {
     if (!info) return;
     var els = document.querySelectorAll('[data-path]');
     for (var i = 0; i < els.length; i++) {
       if (els[i].dataset.path === info.path) {
+        programmaticFocus = true;
         els[i].focus();
+        programmaticFocus = false;
         if (info.type === 'money') {
           var pos = 0, count = 0, v = els[i].value;
           while (pos < v.length && count < info.digits) { if (/\d/.test(v[pos])) count++; pos++; }
           try { els[i].setSelectionRange(pos, pos); } catch (e) {}
+        } else if (info.type === 'number' || info.type === 'percent') {
+          if (info.rawValue !== undefined) els[i].value = info.rawValue;
+          if (info.start !== undefined) { try { els[i].setSelectionRange(info.start, info.end); } catch (e) {} }
         } else if (info.start !== undefined && els[i].setSelectionRange) {
           try { els[i].setSelectionRange(info.start, info.end); } catch (e) {}
         }
@@ -1301,6 +1396,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     else if (action === 'delGoal') { a.goals.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addWindfall') { a.windfalls.push({ id: uid(), description: 'เงินก้อนใหม่', flowType: 'lumpsum', amount: 100000, ageReceived: a.personal.retireAge, phase: 'pre', frequency: 'annual', amountPerPeriod: 10000, startAge: a.personal.retireAge, durationYears: 5 }); saveStore(); render(); }
     else if (action === 'delWindfall') { a.windfalls.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'addSavingsItem') { a.currentSavings.items.push({ id: uid(), name: 'รายการลงทุนใหม่', amount: 50000, returnRate: 0.05 }); saveStore(); render(); }
+    else if (action === 'delSavingsItem') { if (a.currentSavings.items.length > 1) { a.currentSavings.items.splice(+t.dataset.index, 1); saveStore(); render(); } }
     else if (action === 'addBucket') {
       var last = a.buckets.list[a.buckets.list.length - 1];
       a.buckets.list.push({ id: uid(), label: 'บัคเก็ตที่ ' + (a.buckets.list.length + 1), years: last ? last.years : 10, waitingReturn: 0.05, drawdownReturn: 0.03 });
@@ -1320,6 +1417,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
 
   /* tap-to-select-all + Enter-to-next-field, for faster mobile data entry */
   root.addEventListener('focusin', function (e) {
+    if (programmaticFocus) return;
     var t = e.target;
     if (t.tagName === 'INPUT' && t.dataset && t.dataset.path && (t.type === 'text' || t.type === 'number')) {
       try { t.select(); } catch (e2) {}
