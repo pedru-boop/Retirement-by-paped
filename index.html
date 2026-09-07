@@ -499,11 +499,64 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   function loadStore() { try { var raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
   function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); } catch (e) {} }
 
+  /* Merge a loaded (possibly older-format) case onto a fresh default case, so old
+     saved data from earlier versions of this tool never crashes the app. */
+  function mergeObj(target, source) {
+    if (!source || typeof source !== 'object') return target;
+    Object.keys(target).forEach(function (k) { if (source[k] !== undefined) target[k] = source[k]; });
+    return target;
+  }
+  function normalizeCase(loaded) {
+    try {
+      var base = newCase(loaded.name || 'เคส');
+      base.id = loaded.id || base.id;
+      base.name = loaded.name || base.name;
+      base.personal = mergeObj(base.personal, loaded.personal);
+      if (loaded.preRetirementPortfolio && Array.isArray(loaded.preRetirementPortfolio.segments)) base.preRetirementPortfolio = loaded.preRetirementPortfolio;
+      base.pvd = mergeObj(base.pvd, loaded.pvd);
+      if (loaded.pvd && Array.isArray(loaded.pvd.employerTiers) && loaded.pvd.employerTiers.length) base.pvd.employerTiers = loaded.pvd.employerTiers;
+      base.sso = mergeObj(base.sso, loaded.sso);
+      if (Array.isArray(loaded.lifeAnnuities)) base.lifeAnnuities = loaded.lifeAnnuities;
+      base.severance = mergeObj(base.severance, loaded.severance);
+      if (Array.isArray(loaded.goals)) {
+        base.goals = loaded.goals.map(function (g) {
+          return Object.assign({ kind: 'lumpsum', phase: 'pre', returnRate: 0.05, annualPremiumToday: 20000, startAge: base.personal.currentAge, paymentYears: 10 }, g);
+        });
+      }
+      /* migrate old currentSavings.amount (single value) -> items[] (list) */
+      if (loaded.currentSavings) {
+        if (Array.isArray(loaded.currentSavings.items) && loaded.currentSavings.items.length) {
+          base.currentSavings = { items: loaded.currentSavings.items };
+        } else if (typeof loaded.currentSavings.amount === 'number') {
+          base.currentSavings = { items: [{ id: uid(), name: 'เงินออม/เงินลงทุนเดิม', amount: loaded.currentSavings.amount, returnRate: 0.05 }] };
+        }
+      }
+      base.regularSavings = mergeObj(base.regularSavings, loaded.regularSavings);
+      if (Array.isArray(loaded.windfalls)) {
+        base.windfalls = loaded.windfalls.map(function (w) {
+          return Object.assign({ flowType: 'lumpsum', frequency: 'annual', amountPerPeriod: 10000, startAge: base.personal.retireAge, durationYears: 5 }, w);
+        });
+      }
+      base.extraSavingMode = loaded.extraSavingMode || base.extraSavingMode;
+      if (typeof loaded.extraSavingReturn === 'number') base.extraSavingReturn = loaded.extraSavingReturn;
+      if (loaded.buckets && Array.isArray(loaded.buckets.list) && loaded.buckets.list.length) base.buckets = loaded.buckets;
+      if (typeof loaded.stressTestDelta === 'number') base.stressTestDelta = loaded.stressTestDelta;
+      return base;
+    } catch (e) {
+      return newCase(loaded && loaded.name ? loaded.name : 'เคส (กู้คืนไม่สำเร็จ)');
+    }
+  }
+
   var STORE = loadStore();
   if (!STORE || !STORE.cases || !Object.keys(STORE.cases).length) {
     var c0 = newCase('ลูกค้ารายที่ 1');
     STORE = { activeId: c0.id, cases: {} };
     STORE.cases[c0.id] = c0;
+  } else {
+    var normalizedCases = {};
+    Object.keys(STORE.cases).forEach(function (id) { normalizedCases[id] = normalizeCase(STORE.cases[id]); });
+    STORE.cases = normalizedCases;
+    if (!STORE.cases[STORE.activeId]) STORE.activeId = Object.keys(STORE.cases)[0];
   }
   var OPEN = { 1: true };
   var TAB = 'client'; /* 'client' | 'calc' | 'dashboard' */
@@ -1267,11 +1320,21 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function render() {
-    var focusInfo = captureFocus();
-    var a = activeCase();
-    var r = computeAll(a);
-    document.getElementById('root').innerHTML = renderSidebar() + renderMain(a, r);
-    restoreFocus(focusInfo);
+    try {
+      var focusInfo = captureFocus();
+      var a = activeCase();
+      var r = computeAll(a);
+      document.getElementById('root').innerHTML = renderSidebar() + renderMain(a, r);
+      restoreFocus(focusInfo);
+    } catch (err) {
+      document.getElementById('root').innerHTML =
+        '<div style="max-width:520px;margin:60px auto;padding:24px;font-family:Sarabun,sans-serif;background:#FFFFFF;border:1px solid #CBDAEA;border-radius:10px;">' +
+        '<h2 style="color:#0B2545;margin-top:0;">เกิดข้อผิดพลาดในการแสดงผล</h2>' +
+        '<p style="color:#3B4A5A;font-size:14px;">ข้อมูลที่บันทึกไว้อาจมีปัญหา ลองกดปุ่มด้านล่างเพื่อล้างข้อมูลและเริ่มใหม่ (ข้อมูลเดิมจะหายไป) หรือส่งข้อความรายละเอียดด้านล่างนี้กลับมาแจ้งได้</p>' +
+        '<p style="color:#A8382E;font-size:12px;background:#FBEAE8;padding:8px;border-radius:6px;word-break:break-all;">' + esc(err.message) + '</p>' +
+        '<button type="button" style="background:#A8382E;color:white;border:none;border-radius:8px;padding:10px 16px;font-family:inherit;font-weight:700;cursor:pointer;" onclick="localStorage.removeItem(\'retirementPlannerCases_v2\'); location.reload();">ล้างข้อมูลและเริ่มใหม่</button>' +
+        '</div>';
+    }
   }
 
   function digitsBefore(str, pos) { return str.slice(0, pos).replace(/[^\d]/g, '').length; }
