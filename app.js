@@ -1,38 +1,36 @@
-/* global React, ReactDOM, Chart */
+/* ============================================================
+   Retirement Planner — Vanilla JS app (no external dependencies)
+   ============================================================ */
 (function () {
   'use strict';
-  var E = React.createElement;
-  var useState = React.useState;
-  var useEffect = React.useEffect;
-  var useMemo = React.useMemo;
-  var useRef = React.useRef;
+  var C = window.RPCalc;
 
-  /* ---------------- utils ---------------- */
+  /* ---------- utils ---------- */
   function uid() { return Math.random().toString(36).slice(2, 10); }
-  function fmt(n) {
-    if (n === null || n === undefined || isNaN(n)) return '-';
-    return Math.round(n).toLocaleString('th-TH');
-  }
-  function fmtSigned(n) {
-    var s = fmt(Math.abs(n));
-    return (n < 0 ? '-' : '') + s;
-  }
-  function pct(n) { return (n * 100).toFixed(2).replace(/\.00$/, ''); }
+  function fmt(n) { if (n === null || n === undefined || isNaN(n)) return '-'; return Math.round(n).toLocaleString('th-TH'); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  function setIn(obj, path, value) {
-    var next = clone(obj);
-    var cur = next;
-    for (var i = 0; i < path.length - 1; i++) cur = cur[path[i]];
-    cur[path[path.length - 1]] = value;
-    return next;
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
+  function getPath(obj, path) {
+    var cur = obj;
+    for (var i = 0; i < path.length; i++) { if (cur == null) return undefined; cur = cur[path[i]]; }
+    return cur;
+  }
+  function setPath(obj, path, val) {
+    var cur = obj;
+    for (var i = 0; i < path.length - 1; i++) cur = cur[path[i]];
+    cur[path[path.length - 1]] = val;
+  }
+  function pathAttr(path) { return esc(JSON.stringify(path)); }
 
-  /* ---------------- default case ---------------- */
+  /* ---------- default case ---------- */
   function newCase(name) {
     var thisYear = new Date().getFullYear();
     return {
-      id: uid(),
-      name: name || 'ลูกค้าใหม่',
+      id: uid(), name: name || 'ลูกค้าใหม่',
       personal: {
         clientName: '', currentAge: 35, retireAge: 60, lifeExpectancy: 85,
         currentYearAD: thisYear, currentSalary: 30000, salaryGrowth: 0.03,
@@ -40,12 +38,9 @@
         inflation: 0.03, postReturn: 0.04
       },
       pvd: {
-        enabled: true, label: 'กองทุนสำรองเลี้ยงชีพ', employeeRate: 0.03,
-        employerMode: 'flat', employerFlatRate: 0.03,
+        enabled: true, employeeRate: 0.03, employerMode: 'flat', employerFlatRate: 0.03,
         employerTiers: [
-          { minYears: 0, employerRate: 0.03 },
-          { minYears: 5, employerRate: 0.05 },
-          { minYears: 10, employerRate: 0.07 }
+          { minYears: 0, employerRate: 0.03 }, { minYears: 5, employerRate: 0.05 }, { minYears: 10, employerRate: 0.07 }
         ],
         fundReturn: 0.04, startingBalance: 0, serviceYearsSoFar: 3
       },
@@ -55,596 +50,575 @@
       currentSavings: { amount: 300000, returnRate: 0.05 },
       regularSavings: { amount: 5000, frequency: 'monthly', returnRate: 0.05, timing: 'end' },
       windfalls: [],
-      extraSavingMode: 'flat',
-      extraSavingReturn: 0.05,
-      buckets: {
-        mode: 'single',
-        splits: [{ years: null, amountPct: 100, returnRate: 0.04 }]
-      }
+      extraSavingMode: 'flat', extraSavingReturn: 0.05,
+      buckets: { mode: 'single', splits: [{ years: null, amountPct: 100, returnRate: 0.04 }] }
     };
   }
 
-  /* ---------------- storage ---------------- */
+  /* ---------- storage ---------- */
   var STORE_KEY = 'retirementPlannerCases_v1';
   function loadStore() {
-    try {
-      var raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch (e) { return null; }
+    try { var raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
   }
-  function saveStore(store) {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {}
-  }
+  function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); } catch (e) {} }
 
-  /* ---------------- small UI atoms ---------------- */
-  function Field(props) {
-    var label = props.label, value = props.value, onChange = props.onChange,
-        type = props.type || 'number', suffix = props.suffix, step = props.step,
-        hint = props.hint, options = props.options;
-    var input;
+  var STORE = loadStore();
+  if (!STORE || !STORE.cases || !Object.keys(STORE.cases).length) {
+    var c0 = newCase('ลูกค้ารายที่ 1');
+    STORE = { activeId: c0.id, cases: {} };
+    STORE.cases[c0.id] = c0;
+  }
+  var OPEN = { 1: true };
+
+  function activeCase() { return STORE.cases[STORE.activeId]; }
+
+  /* ================= FIELD TEMPLATES ================= */
+  function field(label, path, value, opts) {
+    opts = opts || {};
+    var type = opts.type || 'number';
+    var suffix = opts.suffix || '';
+    var hint = opts.hint || '';
+    var inputHtml;
+    var pa = pathAttr(path);
     if (type === 'select') {
-      input = E('select', {
-        className: 'inp', value: value,
-        onChange: function (e) { onChange(e.target.value); }
-      }, options.map(function (o) {
-        return E('option', { key: o.value, value: o.value }, o.label);
-      }));
+      var optsHtml = opts.options.map(function (o) {
+        return '<option value="' + esc(o.value) + '"' + (o.value === value ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+      }).join('');
+      inputHtml = '<select class="inp" data-path=\'' + pa + '\' data-type="select">' + optsHtml + '</select>';
     } else if (type === 'text') {
-      input = E('input', {
-        className: 'inp', type: 'text', value: value,
-        onChange: function (e) { onChange(e.target.value); }
-      });
+      inputHtml = '<input class="inp' + (opts.titleStyle ? ' inp-title' : '') + '" type="text" data-path=\'' + pa + '\' data-type="text" value="' + esc(value) + '">';
     } else if (type === 'percent') {
-      input = E('input', {
-        className: 'inp', type: 'number', step: step || '0.1',
-        value: value * 100,
-        onChange: function (e) { onChange((parseFloat(e.target.value) || 0) / 100); }
-      });
+      inputHtml = '<input class="inp" type="number" step="0.1" data-path=\'' + pa + '\' data-type="percent" value="' + (value * 100) + '">';
     } else {
-      input = E('input', {
-        className: 'inp', type: 'number', step: step || '1',
-        value: value,
-        onChange: function (e) { onChange(parseFloat(e.target.value) || 0); }
-      });
+      inputHtml = '<input class="inp" type="number" step="' + (opts.step || '1') + '" data-path=\'' + pa + '\' data-type="number" value="' + value + '">';
     }
-    return E('label', { className: 'field' },
-      E('span', { className: 'field-label' }, label),
-      E('div', { className: 'field-input-row' },
-        input,
-        suffix ? E('span', { className: 'field-suffix' }, suffix) : null
-      ),
-      hint ? E('span', { className: 'field-hint' }, hint) : null
-    );
+    return '<label class="field">' +
+      '<span class="field-label">' + esc(label) + '</span>' +
+      '<div class="field-input-row">' + inputHtml + (suffix ? '<span class="field-suffix">' + esc(suffix) + '</span>' : '') + '</div>' +
+      (hint ? '<span class="field-hint">' + esc(hint) + '</span>' : '') +
+      '</label>';
+  }
+  function radio(label, path, val, current) {
+    var pa = pathAttr(path);
+    return '<label class="radio"><input type="radio" data-path=\'' + pa + '\' data-type="radio" data-radio-value="' + esc(val) + '"' + (val === current ? ' checked' : '') + '> ' + esc(label) + '</label>';
+  }
+  function checkbox(label, path, checked) {
+    var pa = pathAttr(path);
+    return '<label class="checkbox-row"><input type="checkbox" data-path=\'' + pa + '\' data-type="checkbox"' + (checked ? ' checked' : '') + '> ' + esc(label) + '</label>';
+  }
+  function metricCard(label, value, tone, sub, id) {
+    return '<div class="metric-card tone-' + (tone || 'navy') + '"' + (id ? ' id="' + id + '"' : '') + '>' +
+      '<div class="metric-label">' + esc(label) + '</div>' +
+      '<div class="metric-value">' + value + '</div>' +
+      (sub ? '<div class="metric-sub">' + sub + '</div>' : '') + '</div>';
   }
 
-  function Section(props) {
-    var num = props.num, title = props.title, subtitle = props.subtitle,
-        open = props.open, onToggle = props.onToggle, children = props.children, tone = props.tone || 'navy';
-    return E('div', { className: 'section tone-' + tone + (open ? ' open' : '') },
-      E('button', { className: 'section-head', onClick: onToggle, type: 'button' },
-        E('span', { className: 'section-num' }, num),
-        E('span', { className: 'section-title-wrap' },
-          E('span', { className: 'section-title' }, title),
-          subtitle ? E('span', { className: 'section-subtitle' }, subtitle) : null
-        ),
-        E('span', { className: 'section-chevron' }, open ? '−' : '+')
-      ),
-      open ? E('div', { className: 'section-body' }, children) : null
-    );
-  }
-
-  function MetricCard(props) {
-    return E('div', { className: 'metric-card tone-' + (props.tone || 'navy') },
-      E('div', { className: 'metric-label' }, props.label),
-      E('div', { className: 'metric-value' }, props.value),
-      props.sub ? E('div', { className: 'metric-sub' }, props.sub) : null
-    );
-  }
-
-  /* ---------------- App ---------------- */
-  function App() {
-    var storeState = useState(function () {
-      var store = loadStore();
-      if (!store || !store.cases || !Object.keys(store.cases).length) {
-        var c = newCase('ลูกค้ารายที่ 1');
-        store = { activeId: c.id, cases: {} };
-        store.cases[c.id] = c;
+  /* ================= SVG CHART ================= */
+  function lineChart(points, opts) {
+    opts = opts || {};
+    var w = 560, h = 190, padL = 54, padB = 26, padT = 12, padR = 10;
+    if (!points.length) return '<svg viewBox="0 0 ' + w + ' ' + h + '"></svg>';
+    var vals = points.map(function (p) { return p.y; });
+    var minY = Math.min(0, Math.min.apply(null, vals));
+    var maxY = Math.max.apply(null, vals) * 1.08 || 1;
+    var innerW = w - padL - padR, innerH = h - padT - padB;
+    function xAt(i) { return padL + (points.length <= 1 ? 0 : (i / (points.length - 1)) * innerW); }
+    function yAt(v) { return padT + innerH - ((v - minY) / (maxY - minY || 1)) * innerH; }
+    var d = points.map(function (p, i) { return (i === 0 ? 'M' : 'L') + xAt(i).toFixed(1) + ',' + yAt(p.y).toFixed(1); }).join(' ');
+    var area = d + ' L' + xAt(points.length - 1).toFixed(1) + ',' + yAt(minY).toFixed(1) + ' L' + xAt(0).toFixed(1) + ',' + yAt(minY).toFixed(1) + ' Z';
+    var color = opts.color || '#0B2545';
+    var gridLines = '';
+    var steps = 4;
+    for (var g = 0; g <= steps; g++) {
+      var val = minY + ((maxY - minY) * g / steps);
+      var y = yAt(val);
+      gridLines += '<line x1="' + padL + '" x2="' + (w - padR) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#E3EBF3" stroke-width="1"/>';
+      gridLines += '<text x="' + (padL - 8) + '" y="' + (y + 3).toFixed(1) + '" font-size="9" fill="#5B6B7F" text-anchor="end">' + fmt(val) + '</text>';
+    }
+    var xLabels = '';
+    var lblEvery = Math.max(1, Math.ceil(points.length / 6));
+    points.forEach(function (p, i) {
+      if (i % lblEvery === 0 || i === points.length - 1) {
+        xLabels += '<text x="' + xAt(i).toFixed(1) + '" y="' + (h - 6) + '" font-size="9" fill="#5B6B7F" text-anchor="middle">' + p.label + '</text>';
       }
-      return store;
     });
-    var store = storeState[0], setStore = storeState[1];
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" class="line-chart">' +
+      gridLines +
+      '<path d="' + area + '" fill="' + color + '" opacity="0.10"></path>' +
+      '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2.2"></path>' +
+      xLabels +
+      '</svg>';
+  }
 
-    useEffect(function () { saveStore(store); }, [store]);
+  /* ================= COMPUTE ================= */
+  function computeAll(a) {
+    var p = a.personal;
+    var yearsToRetire = p.retireAge - p.currentAge;
+    var yearsRetired = p.lifeExpectancy - p.retireAge;
+    var salaryAtRetire = p.currentSalary * Math.pow(1 + p.salaryGrowth, yearsToRetire);
+    var firstYearMonthlyNeed = p.spendingMethod === 'replacement'
+      ? salaryAtRetire * p.replacementRate
+      : p.customMonthlyExpense * Math.pow(1 + p.inflation, yearsToRetire);
+    var firstYearAnnualNeed = firstYearMonthlyNeed * 12;
 
-    var active = store.cases[store.activeId];
-
-    function updateActive(path, value) {
-      setStore(function (s) {
-        var nextCase = setIn(s.cases[s.activeId], path, value);
-        var nextCases = Object.assign({}, s.cases);
-        nextCases[s.activeId] = nextCase;
-        return Object.assign({}, s, { cases: nextCases });
+    var pvdResult = { finalBalance: 0, path: [] };
+    if (a.pvd.enabled) {
+      pvdResult = C.simulatePVD({
+        startSalaryMonthly: p.currentSalary, salaryGrowth: p.salaryGrowth, employeeRate: a.pvd.employeeRate,
+        employerMode: a.pvd.employerMode, employerFlatRate: a.pvd.employerFlatRate, employerTiers: a.pvd.employerTiers,
+        fundReturn: a.pvd.fundReturn, yearsToRetire: yearsToRetire, startingBalance: a.pvd.startingBalance,
+        serviceYearsSoFar: a.pvd.serviceYearsSoFar, currentAge: p.currentAge
       });
     }
-    function replaceActive(nextCaseData) {
-      setStore(function (s) {
-        var nextCases = Object.assign({}, s.cases);
-        nextCases[s.activeId] = nextCaseData;
-        return Object.assign({}, s, { cases: nextCases });
-      });
-    }
-    function addCase() {
-      var c = newCase('ลูกค้ารายที่ ' + (Object.keys(store.cases).length + 1));
-      setStore(function (s) {
-        var nextCases = Object.assign({}, s.cases);
-        nextCases[c.id] = c;
-        return { activeId: c.id, cases: nextCases };
-      });
-    }
-    function duplicateCase() {
-      var c = clone(active);
-      c.id = uid();
-      c.name = active.name + ' (สำเนา)';
-      setStore(function (s) {
-        var nextCases = Object.assign({}, s.cases);
-        nextCases[c.id] = c;
-        return { activeId: c.id, cases: nextCases };
-      });
-    }
-    function deleteCase(id) {
-      if (Object.keys(store.cases).length <= 1) return;
-      setStore(function (s) {
-        var nextCases = Object.assign({}, s.cases);
-        delete nextCases[id];
-        var nextActive = s.activeId === id ? Object.keys(nextCases)[0] : s.activeId;
-        return { activeId: nextActive, cases: nextCases };
-      });
-    }
-    function selectCase(id) {
-      setStore(function (s) { return Object.assign({}, s, { activeId: id }); });
+    var ssoMonthly = a.sso.enabled ? C.ssoPensionMonthly(a.sso.avgWageCapped, a.sso.monthsPaidSoFar + yearsToRetire * 12) : 0;
+    var ssoAnnual = ssoMonthly * 12;
+
+    var severance = null;
+    if (a.severance.enabled) {
+      var serviceYears = (a.pvd.serviceYearsSoFar || 0) + yearsToRetire;
+      var months = C.severanceMonths(serviceYears);
+      severance = { serviceYears: serviceYears, months: months, amount: months * salaryAtRetire };
     }
 
-    var openState = useState({ 1: true });
-    var openSections = openState[0], setOpenSections = openState[1];
-    function toggleSection(n) {
-      setOpenSections(function (o) {
-        var next = Object.assign({}, o);
-        next[n] = !next[n];
-        return next;
-      });
+    var savingsFV = C.fv(a.currentSavings.amount, a.currentSavings.returnRate, yearsToRetire);
+    var regAnnual = a.regularSavings.frequency === 'monthly' ? a.regularSavings.amount * 12 : a.regularSavings.amount;
+    var regularFV = C.annuityFV(regAnnual, a.regularSavings.returnRate, yearsToRetire, a.regularSavings.timing === 'begin');
+
+    var windfallsFV = 0, postWindfalls = [];
+    (a.windfalls || []).forEach(function (w) {
+      if (w.phase === 'pre') windfallsFV += C.fv(w.amount, w.reinvestReturn || 0, Math.max(0, p.retireAge - w.ageReceived));
+      else postWindfalls.push(w);
+    });
+
+    var availableAtRetirement = pvdResult.finalBalance + (severance ? severance.amount : 0) + savingsFV + regularFV + windfallsFV;
+
+    var requiredCorpus = C.growingAnnuityPV(firstYearAnnualNeed, p.postReturn, p.inflation, yearsRetired, true);
+    var ssoPV = ssoAnnual > 0 ? C.growingAnnuityPV(ssoAnnual, p.postReturn, 0, yearsRetired, true) : 0;
+    var netRequiredCorpus = Math.max(0, requiredCorpus - ssoPV);
+    var gap = netRequiredCorpus - availableAtRetirement;
+
+    var extraMonthlySaving = 0;
+    if (gap > 0) {
+      extraMonthlySaving = a.extraSavingMode === 'growing'
+        ? C.pmtFromFVGrowing(gap, a.extraSavingReturn, p.salaryGrowth, yearsToRetire, false) / 12
+        : C.pmtFromFV(gap, a.extraSavingReturn, yearsToRetire, false) / 12;
     }
 
-    var results = useMemo(function () { return computeAll(active); }, [active]);
+    var oneOffs = {};
+    (a.goals || []).forEach(function (g) {
+      if (g.phase === 'post') {
+        var yi = g.targetAge - p.retireAge;
+        if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) - g.amountToday * Math.pow(1 + p.inflation, Math.max(0, g.targetAge - p.currentAge));
+      }
+    });
+    postWindfalls.forEach(function (w) {
+      var yi = w.ageReceived - p.retireAge;
+      if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) + w.amount;
+    });
 
-    return E('div', { className: 'app' },
-      E(Sidebar, {
-        cases: store.cases, activeId: store.activeId,
-        onSelect: selectCase, onAdd: addCase, onDuplicate: duplicateCase, onDelete: deleteCase
-      }),
-      E('main', { className: 'main' },
-        E(Header, { active: active, updateActive: updateActive }),
-        E(SummaryBar, { results: results }),
-        E(ChartsPanel, { active: active, results: results }),
-        E('div', { className: 'sections' },
-          E(Section, {
-            num: 1, title: 'ข้อมูลผู้รับการวางแผน', tone: 'navy',
-            open: !!openSections[1], onToggle: function () { toggleSection(1); }
-          }, E(PersonalSection, { data: active.personal, update: updateActive })),
+    var sustainableMonthly = C.solveSustainableW1(availableAtRetirement, p.inflation, ssoAnnual, p.postReturn, yearsRetired, oneOffs) / 12;
+    var depletionYear = C.findDepletionYear(availableAtRetirement, firstYearAnnualNeed, p.inflation, ssoAnnual, p.postReturn, 80, oneOffs);
+    var depletionAge = depletionYear ? p.retireAge + depletionYear : null;
 
-          E(Section, {
-            num: 2, title: 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', tone: 'green',
-            subtitle: fmt(results.firstYearMonthlyNeed) + ' บาท/เดือน (มูลค่า ณ ปีเกษียณ)',
-            open: !!openSections[2], onToggle: function () { toggleSection(2); }
-          }, E(NeedSummary, { active: active, results: results })),
+    var bucketResults = (a.buckets.splits || []).map(function (s) {
+      var yrs = s.years == null ? yearsRetired : s.years;
+      var amount = availableAtRetirement * (s.amountPct / 100);
+      return { years: yrs, amount: amount, returnRate: s.returnRate, monthlyC1: C.pmtFromPVGrowing(amount, s.returnRate, p.inflation, yrs, true) / 12 };
+    });
 
-          E(Section, {
-            num: 3, title: 'กองทุนสำรองเลี้ยงชีพ / กบข. และประกันสังคม', tone: 'navy',
-            open: !!openSections[3], onToggle: function () { toggleSection(3); }
-          }, E(PensionSection, { data: active, update: updateActive })),
+    var accumPath = [];
+    for (var y = 0; y <= yearsToRetire; y++) {
+      var savingsBal = C.fv(a.currentSavings.amount, a.currentSavings.returnRate, y);
+      var regBal = C.annuityFV(regAnnual, a.regularSavings.returnRate, y, a.regularSavings.timing === 'begin');
+      var pvdBal = y === 0 ? (a.pvd.startingBalance || 0) : (pvdResult.path[y - 1] ? pvdResult.path[y - 1].balance : 0);
+      accumPath.push({ x: y, label: String(p.currentYearAD + 543 + y), y: savingsBal + regBal + pvdBal });
+    }
+    var drawdown = C.simulateDrawdown(availableAtRetirement, firstYearAnnualNeed, p.inflation, ssoAnnual, p.postReturn, yearsRetired, oneOffs);
+    var drawdownPath = drawdown.path.map(function (pt) {
+      return { x: pt.year, label: String(p.currentYearAD + 543 + yearsToRetire + pt.year), y: Math.max(0, pt.balance) };
+    });
 
-          E(Section, {
-            num: 4, title: 'เงินชดเชยตามกฎหมายแรงงานเมื่อออกจากงาน', tone: 'navy',
-            subtitle: results.severance ? fmt(results.severance.amount) + ' บาท' : '',
-            open: !!openSections[4], onToggle: function () { toggleSection(4); }
-          }, E(SeveranceSection, { active: active, results: results })),
-
-          E(Section, {
-            num: 5, title: 'เป้าหมายระยะสั้น / กลาง / ยาว', tone: 'navy',
-            open: !!openSections[5], onToggle: function () { toggleSection(5); }
-          }, E(GoalsSection, { active: active, update: updateActive, replaceActive: replaceActive })),
-
-          E(Section, {
-            num: 6, title: 'เงินออม/เงินลงทุนปัจจุบัน', tone: 'navy',
-            open: !!openSections[6], onToggle: function () { toggleSection(6); }
-          }, E(CurrentSavingsSection, { data: active.currentSavings, update: updateActive })),
-
-          E(Section, {
-            num: 7, title: 'เงินออมประจำ (รายเดือน/รายปี)', tone: 'navy',
-            open: !!openSections[7], onToggle: function () { toggleSection(7); }
-          }, E(RegularSavingsSection, { data: active.regularSavings, update: updateActive })),
-
-          E(Section, {
-            num: 8, title: 'เงินก้อนระหว่างทาง (ประกันชีวิต / ขายสินทรัพย์ ฯลฯ)', tone: 'navy',
-            open: !!openSections[8], onToggle: function () { toggleSection(8); }
-          }, E(WindfallsSection, { active: active, update: updateActive, replaceActive: replaceActive })),
-
-          E(Section, {
-            num: 9, title: 'สรุปกองทุนที่ต้องมี ณ วันเกษียณ และส่วนที่ขาด', tone: 'green',
-            open: !!openSections[9], onToggle: function () { toggleSection(9); }
-          }, E(GapSection, { active: active, update: updateActive, results: results })),
-
-          E(Section, {
-            num: 10, title: 'ถ้าไม่ออมเพิ่ม — จะใช้เงินได้เท่าไหร่/ถึงอายุเท่าไหร่', tone: 'green',
-            open: !!openSections[10], onToggle: function () { toggleSection(10); }
-          }, E(NoExtraSection, { results: results })),
-
-          E(Section, {
-            num: 11, title: 'การบริหารเงินหลังเกษียณ (พอร์ตเดียว / 3 บัคเก็ต)', tone: 'green',
-            open: !!openSections[11], onToggle: function () { toggleSection(11); }
-          }, E(BucketsSection, { active: active, update: updateActive, results: results }))
-        ),
-        E('div', { className: 'print-only' }, E(PrintReport, { active: active, results: results }))
-      )
-    );
+    return {
+      yearsToRetire: yearsToRetire, yearsRetired: yearsRetired, salaryAtRetire: salaryAtRetire,
+      firstYearMonthlyNeed: firstYearMonthlyNeed, firstYearAnnualNeed: firstYearAnnualNeed,
+      pvdResult: pvdResult, ssoMonthly: ssoMonthly, severance: severance,
+      savingsFV: savingsFV, regularFV: regularFV, windfallsFV: windfallsFV,
+      availableAtRetirement: availableAtRetirement, requiredCorpus: requiredCorpus, ssoPV: ssoPV,
+      netRequiredCorpus: netRequiredCorpus, gap: gap, extraMonthlySaving: extraMonthlySaving,
+      sustainableMonthly: sustainableMonthly, depletionAge: depletionAge,
+      bucketResults: bucketResults, accumPath: accumPath, drawdownPath: drawdownPath
+    };
   }
 
-  /* ---------------- Sidebar ---------------- */
-  function Sidebar(props) {
-    var cases = props.cases, activeId = props.activeId;
-    var ids = Object.keys(cases);
-    return E('aside', { className: 'sidebar no-print' },
-      E('div', { className: 'brand' },
-        E('div', { className: 'brand-mark' }, 'RP'),
-        E('div', null,
-          E('div', { className: 'brand-title' }, 'แผนเกษียณ'),
-          E('div', { className: 'brand-sub' }, 'Retirement Planning Tool')
-        )
-      ),
-      E('div', { className: 'case-list' },
-        ids.map(function (id) {
-          var c = cases[id];
-          return E('div', {
-            key: id,
-            className: 'case-item' + (id === activeId ? ' active' : ''),
-            onClick: function () { props.onSelect(id); }
-          },
-            E('span', { className: 'case-name' }, c.name),
-            id === activeId ? E('button', {
-              className: 'case-del', title: 'ลบเคสนี้', type: 'button',
-              onClick: function (e) { e.stopPropagation(); props.onDelete(id); }
-            }, '×') : null
-          );
-        })
-      ),
-      E('div', { className: 'sidebar-actions' },
-        E('button', { className: 'btn btn-ghost', type: 'button', onClick: props.onAdd }, '+ เคสใหม่'),
-        E('button', { className: 'btn btn-ghost', type: 'button', onClick: props.onDuplicate }, 'ทำสำเนาเคสนี้')
-      )
-    );
+  /* ================= SECTION RENDERERS ================= */
+  function sectionWrap(num, title, subtitle, tone, open, bodyHtml) {
+    return '<div class="section tone-' + tone + (open ? ' open' : '') + '">' +
+      '<button class="section-head" type="button" data-action="toggleSection" data-num="' + num + '">' +
+      '<span class="section-num">' + num + '</span>' +
+      '<span class="section-title-wrap"><span class="section-title">' + esc(title) + '</span>' +
+      (subtitle ? '<span class="section-subtitle">' + subtitle + '</span>' : '') + '</span>' +
+      '<span class="section-chevron">' + (open ? '−' : '+') + '</span>' +
+      '</button>' +
+      (open ? '<div class="section-body">' + bodyHtml + '</div>' : '') +
+      '</div>';
   }
 
-  /* ---------------- Header ---------------- */
-  function Header(props) {
-    var active = props.active;
-    return E('div', { className: 'header no-print' },
-      E('input', {
-        className: 'case-name-input', type: 'text', value: active.name,
-        onChange: function (e) { props.updateActive(['name'], e.target.value); }
-      }),
-      E('button', { className: 'btn btn-primary', type: 'button', onClick: function () { window.print(); } }, 'ส่งออก PDF')
-    );
+  function renderPersonal(p) {
+    var beRetire = p.currentYearAD + 543 + (p.retireAge - p.currentAge);
+    var beLife = p.currentYearAD + 543 + (p.lifeExpectancy - p.currentAge);
+    return '<div class="grid-2">' +
+      field('ชื่อลูกค้า', ['personal', 'clientName'], p.clientName, { type: 'text' }) +
+      field('ปี พ.ศ. ปัจจุบัน', ['personal', 'currentYearADasBE'], p.currentYearAD + 543, {}) +
+      field('อายุปัจจุบัน', ['personal', 'currentAge'], p.currentAge, { suffix: 'ปี' }) +
+      field('อายุที่คาดว่าจะเกษียณ', ['personal', 'retireAge'], p.retireAge, { suffix: 'ปี', hint: 'จะครบเกษียณปี พ.ศ. ' + beRetire }) +
+      field('อายุขัย (คาดการณ์)', ['personal', 'lifeExpectancy'], p.lifeExpectancy, { suffix: 'ปี', hint: 'สิ้นสุดแผนปี พ.ศ. ' + beLife }) +
+      field('เงินเดือนปัจจุบัน', ['personal', 'currentSalary'], p.currentSalary, { suffix: 'บาท/เดือน' }) +
+      field('อัตราการขึ้นเงินเดือนเฉลี่ย', ['personal', 'salaryGrowth'], p.salaryGrowth, { type: 'percent', suffix: '%/ปี' }) +
+      field('อัตราเงินเฟ้อที่ใช้วางแผน', ['personal', 'inflation'], p.inflation, { type: 'percent', suffix: '%/ปี' }) +
+      field('ผลตอบแทนเฉลี่ยหลังเกษียณ', ['personal', 'postReturn'], p.postReturn, { type: 'percent', suffix: '%/ปี', hint: 'ใช้คำนวณกองทุนที่ต้องมี ณ วันเกษียณ' }) +
+      '</div>' +
+      '<div class="subblock"><div class="subblock-title">ต้องการใช้เงินหลังเกษียณแบบไหน</div>' +
+      '<div class="radio-row">' +
+      radio('Replacement Ratio จากเงินเดือนเดือนสุดท้าย', ['personal', 'spendingMethod'], 'replacement', p.spendingMethod) +
+      radio('กำหนดเอง (มูลค่าเงินวันนี้)', ['personal', 'spendingMethod'], 'custom', p.spendingMethod) +
+      '</div>' +
+      (p.spendingMethod === 'replacement'
+        ? field('อัตราทดแทนรายได้ (Replacement Ratio)', ['personal', 'replacementRate'], p.replacementRate, { type: 'percent', suffix: '% ของเงินเดือนเดือนสุดท้าย' })
+        : field('ค่าใช้จ่ายที่ต้องการต่อเดือน (ราคาวันนี้)', ['personal', 'customMonthlyExpense'], p.customMonthlyExpense, { suffix: 'บาท/เดือน' })) +
+      '</div>';
   }
 
-  /* ---------------- Section 1: Personal ---------------- */
-  function PersonalSection(props) {
-    var d = props.data, u = props.update;
-    function set(key, val) { u(['personal', key], val); }
-    var beRetire = d.currentYearAD + 543 + (d.retireAge - d.currentAge);
-    var beLife = d.currentYearAD + 543 + (d.lifeExpectancy - d.currentAge);
-    return E('div', null,
-      E('div', { className: 'grid-2' },
-        E(Field, { label: 'ชื่อลูกค้า', type: 'text', value: d.clientName, onChange: function (v) { set('clientName', v); } }),
-        E(Field, { label: 'ปี พ.ศ. ปัจจุบัน', value: d.currentYearAD + 543, onChange: function (v) { set('currentYearAD', v - 543); } }),
-        E(Field, { label: 'อายุปัจจุบัน', value: d.currentAge, suffix: 'ปี', onChange: function (v) { set('currentAge', v); } }),
-        E(Field, { label: 'อายุที่คาดว่าจะเกษียณ', value: d.retireAge, suffix: 'ปี', onChange: function (v) { set('retireAge', v); },
-          hint: 'จะครบเกษียณปี พ.ศ. ' + beRetire }),
-        E(Field, { label: 'อายุขัย (คาดการณ์)', value: d.lifeExpectancy, suffix: 'ปี', onChange: function (v) { set('lifeExpectancy', v); },
-          hint: 'สิ้นสุดแผนปี พ.ศ. ' + beLife }),
-        E(Field, { label: 'เงินเดือนปัจจุบัน', value: d.currentSalary, suffix: 'บาท/เดือน', onChange: function (v) { set('currentSalary', v); } }),
-        E(Field, { label: 'อัตราการขึ้นเงินเดือนเฉลี่ย', type: 'percent', value: d.salaryGrowth, suffix: '%/ปี', onChange: function (v) { set('salaryGrowth', v); } }),
-        E(Field, { label: 'อัตราเงินเฟ้อที่ใช้วางแผน', type: 'percent', value: d.inflation, suffix: '%/ปี', onChange: function (v) { set('inflation', v); } }),
-        E(Field, { label: 'ผลตอบแทนเฉลี่ยหลังเกษียณ', type: 'percent', value: d.postReturn, suffix: '%/ปี', onChange: function (v) { set('postReturn', v); },
-          hint: 'ใช้คำนวณกองทุนที่ต้องมี ณ วันเกษียณ' })
-      ),
-      E('div', { className: 'subblock' },
-        E('div', { className: 'subblock-title' }, 'ต้องการใช้เงินหลังเกษียณแบบไหน'),
-        E('div', { className: 'radio-row' },
-          E('label', { className: 'radio' },
-            E('input', { type: 'radio', checked: d.spendingMethod === 'replacement', onChange: function () { set('spendingMethod', 'replacement'); } }),
-            ' Replacement Ratio จากเงินเดือนเดือนสุดท้าย'),
-          E('label', { className: 'radio' },
-            E('input', { type: 'radio', checked: d.spendingMethod === 'custom', onChange: function () { set('spendingMethod', 'custom'); } }),
-            ' กำหนดเอง (มูลค่าเงินวันนี้)')
-        ),
-        d.spendingMethod === 'replacement'
-          ? E(Field, { label: 'อัตราทดแทนรายได้ (Replacement Ratio)', type: 'percent', value: d.replacementRate, suffix: '% ของเงินเดือนเดือนสุดท้าย', onChange: function (v) { set('replacementRate', v); } })
-          : E(Field, { label: 'ค่าใช้จ่ายที่ต้องการต่อเดือน (ราคาวันนี้)', value: d.customMonthlyExpense, suffix: 'บาท/เดือน', onChange: function (v) { set('customMonthlyExpense', v); } })
-      )
-    );
+  function renderNeedSummary(r) {
+    return '<div class="grid-3">' +
+      metricCard('เงินเดือนสุดท้ายก่อนเกษียณ (nominal)', fmt(r.salaryAtRetire) + ' บาท', 'navy') +
+      metricCard('ค่าใช้จ่ายเดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green') +
+      metricCard('ค่าใช้จ่ายทั้งปีแรกหลังเกษียณ', fmt(r.firstYearAnnualNeed) + ' บาท/ปี', 'green') +
+      '</div>';
   }
 
-  function NeedSummary(props) {
-    var r = props.results;
-    return E('div', { className: 'grid-3' },
-      E(MetricCard, { label: 'เงินเดือนสุดท้ายก่อนเกษียณ (nominal)', value: fmt(r.salaryAtRetire) + ' บาท', tone: 'navy' }),
-      E(MetricCard, { label: 'ค่าใช้จ่ายเดือนแรกหลังเกษียณ', value: fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', tone: 'green' }),
-      E(MetricCard, { label: 'ค่าใช้จ่ายทั้งปีแรกหลังเกษียณ', value: fmt(r.firstYearAnnualNeed) + ' บาท/ปี', tone: 'green' })
-    );
+  function renderPension(a) {
+    var pvd = a.pvd, sso = a.sso;
+    var tiersHtml = pvd.employerTiers.map(function (t, i) {
+      return '<div class="tier-row">' +
+        field('อายุงานตั้งแต่ (ปี)', ['pvd', 'employerTiers', i, 'minYears'], t.minYears, {}) +
+        field('% นายจ้างสมทบ', ['pvd', 'employerTiers', i, 'employerRate'], t.employerRate, { type: 'percent' }) +
+        '<button class="btn-icon" type="button" data-action="delTier" data-index="' + i + '">×</button>' +
+        '</div>';
+    }).join('');
+    return '<div class="subblock">' +
+      checkbox('มีกองทุนสำรองเลี้ยงชีพ / กบข.', ['pvd', 'enabled'], pvd.enabled) +
+      (pvd.enabled ? (
+        '<div class="grid-2">' +
+        field('อายุงานปัจจุบัน (ปี)', ['pvd', 'serviceYearsSoFar'], pvd.serviceYearsSoFar, { suffix: 'ปี' }) +
+        field('ยอดสะสมปัจจุบันในกองทุน', ['pvd', 'startingBalance'], pvd.startingBalance, { suffix: 'บาท' }) +
+        field('% เงินสะสม (ลูกจ้าง)', ['pvd', 'employeeRate'], pvd.employeeRate, { type: 'percent', suffix: '%' }) +
+        field('ผลตอบแทนเฉลี่ยของกองทุน', ['pvd', 'fundReturn'], pvd.fundReturn, { type: 'percent', suffix: '%/ปี' }) +
+        '</div>' +
+        '<div class="radio-row">' +
+        radio('เงินสมทบนายจ้างคงที่ตลอด', ['pvd', 'employerMode'], 'flat', pvd.employerMode) +
+        radio('เพิ่มตามอายุงาน/การสะสม (ขั้นบันได)', ['pvd', 'employerMode'], 'tiered', pvd.employerMode) +
+        '</div>' +
+        (pvd.employerMode === 'flat'
+          ? field('% เงินสมทบนายจ้าง', ['pvd', 'employerFlatRate'], pvd.employerFlatRate, { type: 'percent', suffix: '%' })
+          : '<div class="tier-table">' + tiersHtml + '<button class="btn btn-ghost btn-sm" type="button" data-action="addTier">+ เพิ่มขั้น</button></div>')
+      ) : '') +
+      '</div>' +
+      '<div class="subblock">' +
+      checkbox('บำนาญชราภาพจากประกันสังคม', ['sso', 'enabled'], sso.enabled) +
+      (sso.enabled ? (
+        '<div class="grid-2">' +
+        field('ค่าจ้างเฉลี่ย 60 เดือนสุดท้าย (ไม่เกิน 15,000)', ['sso', 'avgWageCapped'], sso.avgWageCapped, { suffix: 'บาท' }) +
+        field('จำนวนเดือนที่ส่งเงินสมทบมาแล้ว', ['sso', 'monthsPaidSoFar'], sso.monthsPaidSoFar, { suffix: 'เดือน', hint: 'ต้องส่งสมทบครบ 180 เดือนจึงมีสิทธิรับบำนาญ' }) +
+        '</div>'
+      ) : '') +
+      '</div>';
   }
 
-  /* ---------------- Section 3: Pension ---------------- */
-  function PensionSection(props) {
-    var active = props.data, u = props.update;
-    var pvd = active.pvd, sso = active.sso;
-    function setPvd(key, val) { u(['pvd', key], val); }
-    function setSso(key, val) { u(['sso', key], val); }
-    function setTier(i, key, val) {
-      var tiers = clone(pvd.employerTiers);
-      tiers[i][key] = val;
-      setPvd('employerTiers', tiers);
-    }
-    function addTier() {
-      var tiers = clone(pvd.employerTiers);
-      tiers.push({ minYears: 0, employerRate: 0.03 });
-      setPvd('employerTiers', tiers);
-    }
-    function delTier(i) {
-      var tiers = clone(pvd.employerTiers);
-      tiers.splice(i, 1);
-      setPvd('employerTiers', tiers);
-    }
-    return E('div', null,
-      E('div', { className: 'subblock' },
-        E('label', { className: 'checkbox-row' },
-          E('input', { type: 'checkbox', checked: pvd.enabled, onChange: function (e) { setPvd('enabled', e.target.checked); } }),
-          ' มีกองทุนสำรองเลี้ยงชีพ / กบข.'
-        ),
-        pvd.enabled && E('div', null,
-          E('div', { className: 'grid-2' },
-            E(Field, { label: 'อายุงานปัจจุบัน (ปี)', value: pvd.serviceYearsSoFar, suffix: 'ปี', onChange: function (v) { setPvd('serviceYearsSoFar', v); } }),
-            E(Field, { label: 'ยอดสะสมปัจจุบันในกองทุน', value: pvd.startingBalance, suffix: 'บาท', onChange: function (v) { setPvd('startingBalance', v); } }),
-            E(Field, { label: '% เงินสะสม (ลูกจ้าง)', type: 'percent', value: pvd.employeeRate, suffix: '%', onChange: function (v) { setPvd('employeeRate', v); } }),
-            E(Field, { label: 'ผลตอบแทนเฉลี่ยของกองทุน', type: 'percent', value: pvd.fundReturn, suffix: '%/ปี', onChange: function (v) { setPvd('fundReturn', v); } })
-          ),
-          E('div', { className: 'radio-row' },
-            E('label', { className: 'radio' },
-              E('input', { type: 'radio', checked: pvd.employerMode === 'flat', onChange: function () { setPvd('employerMode', 'flat'); } }),
-              ' เงินสมทบนายจ้างคงที่ตลอด'),
-            E('label', { className: 'radio' },
-              E('input', { type: 'radio', checked: pvd.employerMode === 'tiered', onChange: function () { setPvd('employerMode', 'tiered'); } }),
-              ' เพิ่มตามอายุงาน/การสะสม (ขั้นบันได)')
-          ),
-          pvd.employerMode === 'flat'
-            ? E(Field, { label: '% เงินสมทบนายจ้าง', type: 'percent', value: pvd.employerFlatRate, suffix: '%', onChange: function (v) { setPvd('employerFlatRate', v); } })
-            : E('div', { className: 'tier-table' },
-                pvd.employerTiers.map(function (t, i) {
-                  return E('div', { className: 'tier-row', key: i },
-                    E(Field, { label: 'อายุงานตั้งแต่ (ปี)', value: t.minYears, onChange: function (v) { setTier(i, 'minYears', v); } }),
-                    E(Field, { label: '% นายจ้างสมทบ', type: 'percent', value: t.employerRate, onChange: function (v) { setTier(i, 'employerRate', v); } }),
-                    E('button', { className: 'btn-icon', type: 'button', onClick: function () { delTier(i); } }, '×')
-                  );
-                }),
-                E('button', { className: 'btn btn-ghost btn-sm', type: 'button', onClick: addTier }, '+ เพิ่มขั้น')
-              )
-        )
-      ),
-      E('div', { className: 'subblock' },
-        E('label', { className: 'checkbox-row' },
-          E('input', { type: 'checkbox', checked: sso.enabled, onChange: function (e) { setSso('enabled', e.target.checked); } }),
-          ' บำนาญชราภาพจากประกันสังคม'
-        ),
-        sso.enabled && E('div', { className: 'grid-2' },
-          E(Field, { label: 'ค่าจ้างเฉลี่ย 60 เดือนสุดท้าย (ไม่เกิน 15,000)', value: sso.avgWageCapped, suffix: 'บาท', onChange: function (v) { setSso('avgWageCapped', v); } }),
-          E(Field, { label: 'จำนวนเดือนที่ส่งเงินสมทบมาแล้ว', value: sso.monthsPaidSoFar, suffix: 'เดือน', onChange: function (v) { setSso('monthsPaidSoFar', v); },
-            hint: 'ต้องส่งสมทบครบ 180 เดือนจึงมีสิทธิรับบำนาญ' })
-        )
-      )
-    );
+  function renderSeverance(r) {
+    if (!r.severance) return '<div class="note">ยังไม่ได้เปิดใช้งาน</div>';
+    return '<div class="grid-3">' +
+      metricCard('อายุงานรวม ณ วันเกษียณ', r.severance.serviceYears.toFixed(1) + ' ปี') +
+      metricCard('สิทธิเงินชดเชย', r.severance.months.toFixed(2) + ' เท่าของเงินเดือน') +
+      metricCard('จำนวนเงินชดเชยโดยประมาณ', fmt(r.severance.amount) + ' บาท', 'green') +
+      '</div>';
   }
 
-  /* ---------------- Section 4: Severance ---------------- */
-  function SeveranceSection(props) {
-    var r = props.results;
-    if (!r.severance) return E('div', { className: 'note' }, 'ยังไม่ได้เปิดใช้งาน');
-    return E('div', { className: 'grid-3' },
-      E(MetricCard, { label: 'อายุงานรวม ณ วันเกษียณ', value: r.severance.serviceYears.toFixed(1) + ' ปี' }),
-      E(MetricCard, { label: 'สิทธิเงินชดเชย', value: r.severance.months.toFixed(2) + ' เท่าของเงินเดือน' }),
-      E(MetricCard, { label: 'จำนวนเงินชดเชยโดยประมาณ', value: fmt(r.severance.amount) + ' บาท', tone: 'green' })
-    );
+  function goalTerm(g, currentAge) {
+    var yearsAway = g.targetAge - currentAge;
+    if (yearsAway <= 3) return 'ระยะสั้น';
+    if (yearsAway <= 10) return 'ระยะกลาง';
+    return 'ระยะยาว';
   }
-
-  /* ---------------- Section 5: Goals ---------------- */
-  function GoalsSection(props) {
-    var active = props.active, goals = active.goals;
-    function set(next) { props.update(['goals'], next); }
-    function addGoal() {
-      set(goals.concat([{ id: uid(), name: 'เป้าหมายใหม่', phase: 'pre', targetAge: active.personal.currentAge + 5, amountToday: 100000, returnRate: 0.05 }]));
-    }
-    function updateGoal(i, key, val) {
-      var next = clone(goals);
-      next[i][key] = val;
-      set(next);
-    }
-    function delGoal(i) {
-      var next = clone(goals);
-      next.splice(i, 1);
-      set(next);
-    }
-    function term(g) {
-      var yearsAway = g.targetAge - active.personal.currentAge;
-      if (yearsAway <= 3) return 'ระยะสั้น';
-      if (yearsAway <= 10) return 'ระยะกลาง';
-      return 'ระยะยาว';
-    }
-    return E('div', null,
-      goals.length === 0 ? E('div', { className: 'note' }, 'ยังไม่มีเป้าหมาย — กด "เพิ่มเป้าหมาย" ด้านล่าง') : null,
-      goals.map(function (g, i) {
-        var yearsAway = g.targetAge - active.personal.currentAge;
-        var infl = active.personal.inflation;
-        var amountFuture = g.amountToday * Math.pow(1 + infl, Math.max(0, yearsAway));
-        return E('div', { className: 'list-card', key: g.id },
-          E('div', { className: 'list-card-head' },
-            E('input', { className: 'inp inp-title', type: 'text', value: g.name, onChange: function (e) { updateGoal(i, 'name', e.target.value); } }),
-            E('span', { className: 'badge' }, term(g)),
-            E('button', { className: 'btn-icon', type: 'button', onClick: function () { delGoal(i); } }, '×')
-          ),
-          E('div', { className: 'radio-row' },
-            E('label', { className: 'radio' },
-              E('input', { type: 'radio', checked: g.phase === 'pre', onChange: function () { updateGoal(i, 'phase', 'pre'); } }), ' ก่อนเกษียณ'),
-            E('label', { className: 'radio' },
-              E('input', { type: 'radio', checked: g.phase === 'post', onChange: function () { updateGoal(i, 'phase', 'post'); } }), ' หลังเกษียณ')
-          ),
-          E('div', { className: 'grid-3' },
-            E(Field, { label: 'อายุเมื่อถึงเป้าหมาย', value: g.targetAge, suffix: 'ปี', onChange: function (v) { updateGoal(i, 'targetAge', v); } }),
-            E(Field, { label: 'จำนวนเงิน (มูลค่าวันนี้)', value: g.amountToday, suffix: 'บาท', onChange: function (v) { updateGoal(i, 'amountToday', v); } }),
-            g.phase === 'pre' ? E(Field, { label: 'ผลตอบแทนเงินออมเพื่อเป้าหมายนี้', type: 'percent', value: g.returnRate, suffix: '%/ปี', onChange: function (v) { updateGoal(i, 'returnRate', v); } }) : null
-          ),
-          E('div', { className: 'note' },
-            'มูลค่าเมื่อถึงเป้าหมาย (ปรับเงินเฟ้อ): ' + fmt(amountFuture) + ' บาท' +
-            (g.phase === 'pre' && yearsAway > 0
-              ? ' — ควรออมเพิ่มเดือนละ ~' + fmt(pmtFromFVforUI(amountFuture, g.returnRate, yearsAway)) + ' บาท (แยกต่างหากจากแผนเกษียณ)'
-              : '')
-          )
-        );
-      }),
-      E('button', { className: 'btn btn-ghost', type: 'button', onClick: addGoal }, '+ เพิ่มเป้าหมาย')
-    );
-  }
-  function pmtFromFVforUI(target, annualRate, years) {
+  function pmtMonthlyForGoal(target, annualRate, years) {
     var r = annualRate / 12, n = years * 12;
     if (n <= 0) return 0;
     if (r === 0) return target / n;
     return target * r / (Math.pow(1 + r, n) - 1);
   }
+  function renderGoals(a) {
+    var p = a.personal;
+    if (!a.goals.length) return '<div class="note">ยังไม่มีเป้าหมาย — กด "เพิ่มเป้าหมาย" ด้านล่าง</div>' + addGoalBtn();
+    return a.goals.map(function (g, i) {
+      var yearsAway = g.targetAge - p.currentAge;
+      var amountFuture = g.amountToday * Math.pow(1 + p.inflation, Math.max(0, yearsAway));
+      var noteExtra = (g.phase === 'pre' && yearsAway > 0)
+        ? ' — ควรออมเพิ่มเดือนละ ~' + fmt(pmtMonthlyForGoal(amountFuture, g.returnRate, yearsAway)) + ' บาท (แยกต่างหากจากแผนเกษียณ)' : '';
+      return '<div class="list-card">' +
+        '<div class="list-card-head">' +
+        field('', ['goals', i, 'name'], g.name, { type: 'text', titleStyle: true }).replace('<span class="field-label"></span>', '') +
+        '<span class="badge">' + goalTerm(g, p.currentAge) + '</span>' +
+        '<button class="btn-icon" type="button" data-action="delGoal" data-index="' + i + '">×</button>' +
+        '</div>' +
+        '<div class="radio-row">' + radio('ก่อนเกษียณ', ['goals', i, 'phase'], 'pre', g.phase) + radio('หลังเกษียณ', ['goals', i, 'phase'], 'post', g.phase) + '</div>' +
+        '<div class="grid-3">' +
+        field('อายุเมื่อถึงเป้าหมาย', ['goals', i, 'targetAge'], g.targetAge, { suffix: 'ปี' }) +
+        field('จำนวนเงิน (มูลค่าวันนี้)', ['goals', i, 'amountToday'], g.amountToday, { suffix: 'บาท' }) +
+        (g.phase === 'pre' ? field('ผลตอบแทนเงินออมเพื่อเป้าหมายนี้', ['goals', i, 'returnRate'], g.returnRate, { type: 'percent', suffix: '%/ปี' }) : '') +
+        '</div>' +
+        '<div class="note">มูลค่าเมื่อถึงเป้าหมาย (ปรับเงินเฟ้อ): ' + fmt(amountFuture) + ' บาท' + noteExtra + '</div>' +
+        '</div>';
+    }).join('') + addGoalBtn();
+  }
+  function addGoalBtn() { return '<button class="btn btn-ghost" type="button" data-action="addGoal">+ เพิ่มเป้าหมาย</button>'; }
 
-  /* ---------------- Section 6 ---------------- */
-  function CurrentSavingsSection(props) {
-    var d = props.data;
-    function set(key, val) { props.update(['currentSavings', key], val); }
-    return E('div', { className: 'grid-2' },
-      E(Field, { label: 'ยอดเงินออม/เงินลงทุนปัจจุบัน', value: d.amount, suffix: 'บาท', onChange: function (v) { set('amount', v); } }),
-      E(Field, { label: 'อัตราผลตอบแทนคาดหวัง', type: 'percent', value: d.returnRate, suffix: '%/ปี', onChange: function (v) { set('returnRate', v); } })
-    );
+  function renderCurrentSavings(d) {
+    return '<div class="grid-2">' +
+      field('ยอดเงินออม/เงินลงทุนปัจจุบัน', ['currentSavings', 'amount'], d.amount, { suffix: 'บาท' }) +
+      field('อัตราผลตอบแทนคาดหวัง', ['currentSavings', 'returnRate'], d.returnRate, { type: 'percent', suffix: '%/ปี' }) +
+      '</div>';
   }
 
-  /* ---------------- Section 7 ---------------- */
-  function RegularSavingsSection(props) {
-    var d = props.data;
-    function set(key, val) { props.update(['regularSavings', key], val); }
-    return E('div', null,
-      E('div', { className: 'grid-2' },
-        E(Field, {
-          label: 'ความถี่ในการออม', type: 'select', value: d.frequency,
-          options: [{ value: 'monthly', label: 'รายเดือน' }, { value: 'annual', label: 'รายปี' }],
-          onChange: function (v) { set('frequency', v); }
-        }),
-        E(Field, { label: d.frequency === 'monthly' ? 'จำนวนเงินต่อเดือน' : 'จำนวนเงินต่อปี', value: d.amount, suffix: 'บาท', onChange: function (v) { set('amount', v); } }),
-        E(Field, { label: 'อัตราผลตอบแทนคาดหวัง', type: 'percent', value: d.returnRate, suffix: '%/ปี', onChange: function (v) { set('returnRate', v); } }),
-        E(Field, {
-          label: 'ออมต้นงวดหรือปลายงวด', type: 'select', value: d.timing,
-          options: [{ value: 'end', label: 'ปลายงวด' }, { value: 'begin', label: 'ต้นงวด' }],
-          onChange: function (v) { set('timing', v); }
-        })
-      )
-    );
+  function renderRegularSavings(d) {
+    return '<div class="grid-2">' +
+      field('ความถี่ในการออม', ['regularSavings', 'frequency'], d.frequency, { type: 'select', options: [{ value: 'monthly', label: 'รายเดือน' }, { value: 'annual', label: 'รายปี' }] }) +
+      field(d.frequency === 'monthly' ? 'จำนวนเงินต่อเดือน' : 'จำนวนเงินต่อปี', ['regularSavings', 'amount'], d.amount, { suffix: 'บาท' }) +
+      field('อัตราผลตอบแทนคาดหวัง', ['regularSavings', 'returnRate'], d.returnRate, { type: 'percent', suffix: '%/ปี' }) +
+      field('ออมต้นงวดหรือปลายงวด', ['regularSavings', 'timing'], d.timing, { type: 'select', options: [{ value: 'end', label: 'ปลายงวด' }, { value: 'begin', label: 'ต้นงวด' }] }) +
+      '</div>';
   }
 
-  /* ---------------- Section 8 ---------------- */
-  function WindfallsSection(props) {
-    var active = props.active, list = active.windfalls;
-    function set(next) { props.update(['windfalls'], next); }
-    function add() {
-      set(list.concat([{ id: uid(), description: 'เงินก้อนใหม่', amount: 100000, ageReceived: active.personal.retireAge, phase: 'pre', reinvestReturn: 0.04 }]));
+  function renderWindfalls(a) {
+    if (!a.windfalls.length) return '<div class="note">เช่น เงินครบสัญญาประกันชีวิต, เงินจากการขายสินทรัพย์ ฯลฯ</div>' + addWindfallBtn();
+    return a.windfalls.map(function (w, i) {
+      return '<div class="list-card">' +
+        '<div class="list-card-head">' +
+        field('', ['windfalls', i, 'description'], w.description, { type: 'text', titleStyle: true }).replace('<span class="field-label"></span>', '') +
+        '<button class="btn-icon" type="button" data-action="delWindfall" data-index="' + i + '">×</button>' +
+        '</div>' +
+        '<div class="radio-row">' + radio('ก่อนเกษียณ', ['windfalls', i, 'phase'], 'pre', w.phase) + radio('หลังเกษียณ', ['windfalls', i, 'phase'], 'post', w.phase) + '</div>' +
+        '<div class="grid-3">' +
+        field('อายุที่จะได้รับเงิน', ['windfalls', i, 'ageReceived'], w.ageReceived, { suffix: 'ปี' }) +
+        field('จำนวนเงิน (มูลค่า ณ ปีที่ได้รับ)', ['windfalls', i, 'amount'], w.amount, { suffix: 'บาท' }) +
+        (w.phase === 'pre' ? field('ผลตอบแทนหากนำไปลงทุนต่อ', ['windfalls', i, 'reinvestReturn'], w.reinvestReturn, { type: 'percent', suffix: '%/ปี' }) : '') +
+        '</div></div>';
+    }).join('') + addWindfallBtn();
+  }
+  function addWindfallBtn() { return '<button class="btn btn-ghost" type="button" data-action="addWindfall">+ เพิ่มเงินก้อน</button>'; }
+
+  function renderGap(a, r) {
+    var html = '<div class="grid-2">' +
+      metricCard('กองทุนที่ควรมี ณ วันเกษียณ (หลังหักบำนาญแล้ว)', fmt(r.netRequiredCorpus) + ' บาท', 'navy') +
+      metricCard('เงินที่คาดว่าจะมี ณ วันเกษียณ', fmt(r.availableAtRetirement) + ' บาท', 'navy') +
+      '</div>' +
+      metricCard(r.gap > 0 ? 'ส่วนที่ขาด (Gap)' : 'ส่วนที่เกิน (Surplus)', fmt(Math.abs(r.gap)) + ' บาท', r.gap > 0 ? 'red' : 'green');
+    if (r.gap > 0) {
+      html += '<div class="subblock">' +
+        '<div class="radio-row">' +
+        radio('ออมเพิ่มคงที่ทุกปี', ['extraSavingMode'], 'flat', a.extraSavingMode) +
+        radio('ออมเพิ่มขึ้นตามอัตราขึ้นเงินเดือน', ['extraSavingMode'], 'growing', a.extraSavingMode) +
+        '</div>' +
+        field('อัตราผลตอบแทนของเงินออมเพิ่ม', ['extraSavingReturn'], a.extraSavingReturn, { type: 'percent', suffix: '%/ปี' }) +
+        metricCard('ควรออมเพิ่มเดือนละ', fmt(r.extraMonthlySaving) + ' บาท/เดือน', 'green', a.extraSavingMode === 'growing' ? '(เดือนแรก, เพิ่มขึ้นทุกปีตามเงินเดือน)' : '(คงที่ตลอดจนเกษียณ)') +
+        '</div>';
+    } else html += '<div class="note">เงินที่มีเพียงพอตามเป้าหมายที่ตั้งไว้แล้ว</div>';
+    return html;
+  }
+
+  function renderNoExtra(r) {
+    return '<div class="grid-2">' +
+      '<div class="list-card"><div class="list-card-head"><strong>ทางเลือก A: ใช้ได้เท่ากันตลอด (ปรับเพิ่มตามเงินเฟ้อ)</strong></div>' +
+      metricCard('ใช้ได้เดือนแรก', fmt(r.sustainableMonthly) + ' บาท/เดือน', 'green') +
+      '<div class="note">หลังจากนั้นเพิ่มขึ้นตามอัตราเงินเฟ้อทุกปี จนถึงอายุขัยพอดี</div></div>' +
+      '<div class="list-card"><div class="list-card-head"><strong>ทางเลือก B: ใช้ตามแผนเดิมตั้งแต่แรก</strong></div>' +
+      metricCard('เงินจะอยู่ได้ถึง', r.depletionAge ? ('อายุ ' + r.depletionAge + ' ปี') : 'ตลอดอายุขัย (มีเงินเหลือ)', r.depletionAge ? 'red' : 'green') +
+      '<div class="note">ใช้เดือนละ ' + fmt(r.firstYearMonthlyNeed) + ' บาท เพิ่มตามเงินเฟ้อทุกปี</div></div>' +
+      '</div>';
+  }
+
+  function renderBuckets(a, r) {
+    var b = a.buckets;
+    var html = '<div class="radio-row">' +
+      '<label class="radio"><input type="radio" data-action="bucketMode" data-value="single"' + (b.mode === 'single' ? ' checked' : '') + '> พอร์ตเดียวตลอดช่วงเกษียณ</label>' +
+      '<label class="radio"><input type="radio" data-action="bucketMode" data-value="three"' + (b.mode === 'three' ? ' checked' : '') + '> แบ่ง 3 บัคเก็ต (3 ช่วงอายุ)</label>' +
+      '</div>';
+    r.bucketResults.forEach(function (bk, i) {
+      html += '<div class="list-card">' +
+        '<div class="list-card-head"><strong>' + (b.mode === 'three' ? 'บัคเก็ตที่ ' + (i + 1) : 'พอร์ตเดียว') + '</strong></div>' +
+        '<div class="grid-3">' +
+        field('จำนวนปีของช่วงนี้', ['buckets', 'splits', i, 'years'], b.splits[i].years == null ? r.yearsRetired : b.splits[i].years, { suffix: 'ปี' }) +
+        field('% ของเงินก้อนที่แบ่งมาช่วงนี้', ['buckets', 'splits', i, 'amountPct'], b.splits[i].amountPct / 100, { type: 'percent', suffix: '%' }) +
+        field('ผลตอบแทนของพอร์ตช่วงนี้', ['buckets', 'splits', i, 'returnRate'], b.splits[i].returnRate, { type: 'percent', suffix: '%/ปี' }) +
+        '</div>' +
+        metricCard('ใช้ได้เดือนแรกของช่วงนี้', fmt(bk.monthlyC1) + ' บาท/เดือน', 'green', 'เงินต้นช่วงนี้: ' + fmt(bk.amount) + ' บาท') +
+        '</div>';
+    });
+    return html;
+  }
+
+  function renderCharts(r) {
+    return '<div class="charts-panel no-print">' +
+      '<div class="chart-card"><div class="chart-title">เงินสะสมก่อนเกษียณ (บาท, ตามปี พ.ศ.)</div>' + lineChart(r.accumPath, { color: '#0B2545' }) + '</div>' +
+      '<div class="chart-card"><div class="chart-title">เงินคงเหลือหลังเกษียณ (บาท, กรณีไม่ออมเพิ่ม)</div>' + lineChart(r.drawdownPath, { color: '#3FA772' }) + '</div>' +
+      '</div>';
+  }
+
+  function renderSummaryBar(r) {
+    return '<div class="summary-bar no-print">' +
+      metricCard('ต้องมี ณ เกษียณ', fmt(r.netRequiredCorpus), 'navy') +
+      metricCard('คาดว่าจะมี', fmt(r.availableAtRetirement), 'navy') +
+      metricCard(r.gap > 0 ? 'ขาดอยู่' : 'เกินอยู่', fmt(Math.abs(r.gap)), r.gap > 0 ? 'red' : 'green') +
+      metricCard('ควรออมเพิ่ม/เดือน', r.gap > 0 ? fmt(r.extraMonthlySaving) : '0', 'green') +
+      '</div>';
+  }
+
+  function renderPrintReport(a, r) {
+    var p = a.personal;
+    var rows = [
+      ['อายุปัจจุบัน / อายุเกษียณ / อายุขัย', p.currentAge + ' / ' + p.retireAge + ' / ' + p.lifeExpectancy + ' ปี'],
+      ['ปีเกษียณ (พ.ศ.)', String(p.currentYearAD + 543 + (p.retireAge - p.currentAge))],
+      ['ค่าใช้จ่ายเดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน'],
+      ['กองทุนที่ควรมี ณ วันเกษียณ', fmt(r.netRequiredCorpus) + ' บาท'],
+      ['เงินที่คาดว่าจะมี ณ วันเกษียณ', fmt(r.availableAtRetirement) + ' บาท'],
+      [r.gap > 0 ? 'ส่วนที่ขาด' : 'ส่วนที่เกิน', fmt(Math.abs(r.gap)) + ' บาท']
+    ];
+    if (r.gap > 0) rows.push(['ควรออมเพิ่ม', fmt(r.extraMonthlySaving) + ' บาท/เดือน']);
+    rows.push(['ถ้าใช้เท่ากันตลอด (ไม่ออมเพิ่ม)', fmt(r.sustainableMonthly) + ' บาท/เดือน']);
+    rows.push(['ถ้าใช้ตามแผนเดิม เงินจะอยู่ได้ถึง', r.depletionAge ? ('อายุ ' + r.depletionAge) : 'ตลอดอายุขัย']);
+    return '<div class="print-report">' +
+      '<h1>แผนการเงินเพื่อการเกษียณ</h1>' +
+      '<p>ชื่อลูกค้า: ' + esc(p.clientName || '-') + ' | เคส: ' + esc(a.name) + '</p>' +
+      '<p>จัดทำโดย ป้าเป็ด CFP&reg; — Bangkok Life Assurance</p>' +
+      '<table class="print-table"><tbody>' +
+      rows.map(function (row) { return '<tr><td>' + esc(row[0]) + '</td><td>' + row[1] + '</td></tr>'; }).join('') +
+      '</tbody></table>' +
+      '<p class="print-note">เอกสารนี้จัดทำขึ้นเพื่อประกอบการวางแผนการเงินเบื้องต้นเท่านั้น ตัวเลขจริงอาจแตกต่างไปตามผลตอบแทนการลงทุนและอัตราเงินเฟ้อที่เกิดขึ้นจริง</p>' +
+      '</div>';
+  }
+
+  /* ================= MAIN RENDER ================= */
+  function renderSidebar() {
+    var ids = Object.keys(STORE.cases);
+    return '<aside class="sidebar no-print">' +
+      '<div class="brand"><div class="brand-mark">RP</div><div><div class="brand-title">แผนเกษียณ</div><div class="brand-sub">Retirement Planning Tool</div></div></div>' +
+      '<div class="case-list">' +
+      ids.map(function (id) {
+        var c = STORE.cases[id];
+        return '<div class="case-item' + (id === STORE.activeId ? ' active' : '') + '" data-action="selectCase" data-id="' + id + '">' +
+          '<span class="case-name">' + esc(c.name) + '</span>' +
+          (id === STORE.activeId ? '<button class="case-del" type="button" data-action="deleteCase" data-id="' + id + '">×</button>' : '') +
+          '</div>';
+      }).join('') +
+      '</div>' +
+      '<div class="sidebar-actions">' +
+      '<button class="btn btn-ghost" type="button" data-action="addCase">+ เคสใหม่</button>' +
+      '<button class="btn btn-ghost" type="button" data-action="duplicateCase">ทำสำเนาเคสนี้</button>' +
+      '</div></aside>';
+  }
+
+  function renderMain(a, r) {
+    var sections = [
+      [1, 'ข้อมูลผู้รับการวางแผน', '', 'navy', renderPersonal(a.personal)],
+      [2, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน (มูลค่า ณ ปีเกษียณ)', 'green', renderNeedSummary(r)],
+      [3, 'กองทุนสำรองเลี้ยงชีพ / กบข. และประกันสังคม', '', 'navy', renderPension(a)],
+      [4, 'เงินชดเชยตามกฎหมายแรงงานเมื่อออกจากงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'navy', renderSeverance(r)],
+      [5, 'เป้าหมายระยะสั้น / กลาง / ยาว', '', 'navy', renderGoals(a)],
+      [6, 'เงินออม/เงินลงทุนปัจจุบัน', '', 'navy', renderCurrentSavings(a.currentSavings)],
+      [7, 'เงินออมประจำ (รายเดือน/รายปี)', '', 'navy', renderRegularSavings(a.regularSavings)],
+      [8, 'เงินก้อนระหว่างทาง (ประกันชีวิต / ขายสินทรัพย์ ฯลฯ)', '', 'navy', renderWindfalls(a)],
+      [9, 'สรุปกองทุนที่ต้องมี ณ วันเกษียณ และส่วนที่ขาด', '', 'green', renderGap(a, r)],
+      [10, 'ถ้าไม่ออมเพิ่ม — จะใช้เงินได้เท่าไหร่/ถึงอายุเท่าไหร่', '', 'green', renderNoExtra(r)],
+      [11, 'การบริหารเงินหลังเกษียณ (พอร์ตเดียว / 3 บัคเก็ต)', '', 'green', renderBuckets(a, r)]
+    ];
+    return '<main class="main">' +
+      '<div class="header no-print">' +
+      '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
+      '<button class="btn btn-primary" type="button" data-action="printPdf">ส่งออก PDF</button>' +
+      '</div>' +
+      renderSummaryBar(r) +
+      renderCharts(r) +
+      '<div class="sections">' +
+      sections.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4]); }).join('') +
+      '</div>' +
+      '<div class="print-only">' + renderPrintReport(a, r) + '</div>' +
+      '</main>';
+  }
+
+  function render() {
+    var focusInfo = captureFocus();
+    var a = activeCase();
+    var r = computeAll(a);
+    document.getElementById('root').innerHTML = renderSidebar() + renderMain(a, r);
+    restoreFocus(focusInfo);
+  }
+
+  function captureFocus() {
+    var el = document.activeElement;
+    if (!el || !el.dataset || !el.dataset.path) return null;
+    var info = { path: el.dataset.path };
+    if (typeof el.selectionStart === 'number') { info.start = el.selectionStart; info.end = el.selectionEnd; }
+    return info;
+  }
+  function restoreFocus(info) {
+    if (!info) return;
+    var els = document.querySelectorAll('[data-path]');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].dataset.path === info.path) {
+        els[i].focus();
+        if (info.start !== undefined && els[i].setSelectionRange) {
+          try { els[i].setSelectionRange(info.start, info.end); } catch (e) {}
+        }
+        break;
+      }
     }
-    function upd(i, key, val) { var next = clone(list); next[i][key] = val; set(next); }
-    function del(i) { var next = clone(list); next.splice(i, 1); set(next); }
-    return E('div', null,
-      list.length === 0 ? E('div', { className: 'note' }, 'เช่น เงินครบสัญญาประกันชีวิต, เงินจากการขายสินทรัพย์ ฯลฯ') : null,
-      list.map(function (w, i) {
-        return E('div', { className: 'list-card', key: w.id },
-          E('div', { className: 'list-card-head' },
-            E('input', { className: 'inp inp-title', type: 'text', value: w.description, onChange: function (e) { upd(i, 'description', e.target.value); } }),
-            E('button', { className: 'btn-icon', type: 'button', onClick: function () { del(i); } }, '×')
-          ),
-          E('div', { className: 'radio-row' },
-            E('label', { className: 'radio' }, E('input', { type: 'radio', checked: w.phase === 'pre', onChange: function () { upd(i, 'phase', 'pre'); } }), ' ก่อนเกษียณ'),
-            E('label', { className: 'radio' }, E('input', { type: 'radio', checked: w.phase === 'post', onChange: function () { upd(i, 'phase', 'post'); } }), ' หลังเกษียณ')
-          ),
-          E('div', { className: 'grid-3' },
-            E(Field, { label: 'อายุที่จะได้รับเงิน', value: w.ageReceived, suffix: 'ปี', onChange: function (v) { upd(i, 'ageReceived', v); } }),
-            E(Field, { label: 'จำนวนเงิน (มูลค่า ณ ปีที่ได้รับ)', value: w.amount, suffix: 'บาท', onChange: function (v) { upd(i, 'amount', v); } }),
-            w.phase === 'pre' ? E(Field, { label: 'ผลตอบแทนหากนำไปลงทุนต่อ', type: 'percent', value: w.reinvestReturn, suffix: '%/ปี', onChange: function (v) { upd(i, 'reinvestReturn', v); } }) : null
-          )
-        );
-      }),
-      E('button', { className: 'btn btn-ghost', type: 'button', onClick: add }, '+ เพิ่มเงินก้อน')
-    );
   }
 
-  /* ---------------- Section 9: Gap ---------------- */
-  function GapSection(props) {
-    var r = props.results, active = props.active;
-    return E('div', null,
-      E('div', { className: 'grid-2' },
-        E(MetricCard, { label: 'กองทุนที่ควรมี ณ วันเกษียณ (หักบำนาญ/หลังหักแล้ว)', value: fmt(r.netRequiredCorpus) + ' บาท', tone: 'navy' }),
-        E(MetricCard, { label: 'เงินที่คาดว่าจะมี ณ วันเกษียณ', value: fmt(r.availableAtRetirement) + ' บาท', tone: 'navy' })
-      ),
-      E(MetricCard, {
-        label: r.gap > 0 ? 'ส่วนที่ขาด (Gap)' : 'ส่วนที่เกิน (Surplus)',
-        value: fmt(Math.abs(r.gap)) + ' บาท',
-        tone: r.gap > 0 ? 'red' : 'green'
-      }),
-      r.gap > 0 ? E('div', { className: 'subblock' },
-        E('div', { className: 'radio-row' },
-          E('label', { className: 'radio' },
-            E('input', { type: 'radio', checked: active.extraSavingMode === 'flat', onChange: function () { props.update(['extraSavingMode'], 'flat'); } }),
-            ' ออมเพิ่มคงที่ทุกปี'),
-          E('label', { className: 'radio' },
-            E('input', { type: 'radio', checked: active.extraSavingMode === 'growing', onChange: function () { props.update(['extraSavingMode'], 'growing'); } }),
-            ' ออมเพิ่มขึ้นตามอัตราขึ้นเงินเดือน')
-        ),
-        E(Field, { label: 'อัตราผลตอบแทนของเงินออมเพิ่ม', type: 'percent', value: active.extraSavingReturn, suffix: '%/ปี', onChange: function (v) { props.update(['extraSavingReturn'], v); } }),
-        E(MetricCard, { label: 'ควรออมเพิ่มเดือนละ', value: fmt(r.extraMonthlySaving) + ' บาท/เดือน', sub: active.extraSavingMode === 'growing' ? '(เดือนแรก, เพิ่มขึ้นทุกปีตามเงินเดือน)' : '(คงที่ตลอดจนเกษียณ)', tone: 'green' })
-      ) : E('div', { className: 'note' }, 'เงินที่มีเพียงพอตามเป้าหมายที่ตั้งไว้แล้ว')
-    );
-  }
+  /* ================= EVENT DELEGATION ================= */
+  var root = document.getElementById('root');
 
-  /* ---------------- Section 10 ---------------- */
-  function NoExtraSection(props) {
-    var r = props.results;
-    return E('div', { className: 'grid-2' },
-      E('div', { className: 'list-card' },
-        E('div', { className: 'list-card-head' }, E('strong', null, 'ทางเลือก A: ใช้ได้เท่ากันตลอด (ปรับเพิ่มตามเงินเฟ้อ)')),
-        E(MetricCard, { label: 'ใช้ได้เดือนแรก', value: fmt(r.sustainableMonthly) + ' บาท/เดือน', tone: 'green' }),
-        E('div', { className: 'note' }, 'หลังจากนั้นเพิ่มขึ้นตามอัตราเงินเฟ้อทุกปี จนถึงอายุขัยพอดี')
-      ),
-      E('div', { className: 'list-card' },
-        E('div', { className: 'list-card-head' }, E('strong', null, 'ทางเลือก B: ใช้ตามแผนเดิมตั้งแต่แรก')),
-        E(MetricCard, {
-          label: 'เงินจะอยู่ได้ถึง',
-          value: r.depletionAge ? ('อายุ ' + r.depletionAge + ' ปี') : 'ตลอดอายุขัย (มีเงินเหลือ)',
-          tone: r.depletionAge ? 'red' : 'green'
-        }),
-        E('div', { className: 'note' }, 'ใช้เดือนละ ' + fmt(r.firstYearMonthlyNeed) + ' บาท เพิ่มตามเงินเฟ้อทุกปี')
-      )
-    );
-  }
+  root.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t.dataset || !t.dataset.path) return;
+    var path = JSON.parse(t.dataset.path);
+    var a = activeCase();
+    var val;
+    if (t.dataset.type === 'number') val = parseFloat(t.value) || 0;
+    else if (t.dataset.type === 'percent') val = (parseFloat(t.value) || 0) / 100;
+    else val = t.value;
+    if (path[0] === 'name') a.name = val;
+    else if (path[0] === 'personal' && path[1] === 'currentYearADasBE') a.personal.currentYearAD = (parseFloat(t.value) || 0) - 543;
+    else setPath(a, path, val);
+    saveStore();
+    render();
+  });
 
-  /* ---------------- Section 11: Buckets ---------------- */
-  function BucketsSection(props) {
-    var active = props.active, b = active.buckets, r = props.results;
-    function setMode(mode) {
+  root.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.dataset && t.dataset.type === 'select') {
+      setPath(activeCase(), JSON.parse(t.dataset.path), t.value);
+      saveStore(); render(); return;
+    }
+    if (t.dataset && t.dataset.type === 'checkbox') {
+      setPath(activeCase(), JSON.parse(t.dataset.path), t.checked);
+      saveStore(); render(); return;
+    }
+    if (t.dataset && t.dataset.type === 'radio') {
+      setPath(activeCase(), JSON.parse(t.dataset.path), t.dataset.radioValue);
+      saveStore(); render(); return;
+    }
+    if (t.dataset && t.dataset.action === 'bucketMode') {
+      var a = activeCase();
+      var mode = t.dataset.value;
+      var r = computeAll(a);
       var splits;
       if (mode === 'single') splits = [{ years: null, amountPct: 100, returnRate: 0.04 }];
       else {
@@ -655,235 +629,41 @@
           { years: r.yearsRetired - per * 2, amountPct: 33, returnRate: 0.06 }
         ];
       }
-      props.update(['buckets'], { mode: mode, splits: splits });
+      a.buckets = { mode: mode, splits: splits };
+      saveStore(); render();
     }
-    function updSplit(i, key, val) {
-      var splits = clone(b.splits);
-      splits[i][key] = val;
-      props.update(['buckets', 'splits'], splits);
+  });
+
+  root.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-action]');
+    if (!t) return;
+    var action = t.dataset.action;
+    var a = activeCase();
+    if (action === 'toggleSection') { var n = t.dataset.num; OPEN[n] = !OPEN[n]; render(); }
+    else if (action === 'selectCase') { STORE.activeId = t.dataset.id; saveStore(); render(); }
+    else if (action === 'deleteCase') {
+      e.stopPropagation();
+      if (Object.keys(STORE.cases).length <= 1) return;
+      delete STORE.cases[t.dataset.id];
+      if (STORE.activeId === t.dataset.id) STORE.activeId = Object.keys(STORE.cases)[0];
+      saveStore(); render();
     }
-    return E('div', null,
-      E('div', { className: 'radio-row' },
-        E('label', { className: 'radio' }, E('input', { type: 'radio', checked: b.mode === 'single', onChange: function () { setMode('single'); } }), ' พอร์ตเดียวตลอดช่วงเกษียณ'),
-        E('label', { className: 'radio' }, E('input', { type: 'radio', checked: b.mode === 'three', onChange: function () { setMode('three'); } }), ' แบ่ง 3 บัคเก็ต (3 ช่วงอายุ)')
-      ),
-      (r.bucketResults || []).map(function (bk, i) {
-        return E('div', { className: 'list-card', key: i },
-          E('div', { className: 'list-card-head' }, E('strong', null, b.mode === 'three' ? 'บัคเก็ตที่ ' + (i + 1) : 'พอร์ตเดียว')),
-          E('div', { className: 'grid-3' },
-            E(Field, { label: 'จำนวนปีของช่วงนี้', value: b.splits[i].years == null ? r.yearsRetired : b.splits[i].years, onChange: function (v) { updSplit(i, 'years', v); }, suffix: 'ปี' }),
-            E(Field, { label: '% ของเงินก้อนที่แบ่งมาช่วงนี้', type: 'percent', value: b.splits[i].amountPct / 100, suffix: '%', onChange: function (v) { updSplit(i, 'amountPct', v * 100); } }),
-            E(Field, { label: 'ผลตอบแทนของพอร์ตช่วงนี้', type: 'percent', value: b.splits[i].returnRate, suffix: '%/ปี', onChange: function (v) { updSplit(i, 'returnRate', v); } })
-          ),
-          E(MetricCard, { label: 'ใช้ได้เดือนแรกของช่วงนี้', value: fmt(bk.monthlyC1) + ' บาท/เดือน', tone: 'green', sub: 'เงินต้นช่วงนี้: ' + fmt(bk.amount) + ' บาท' })
-        );
-      })
-    );
-  }
-
-  /* ---------------- Charts ---------------- */
-  function ChartsPanel(props) {
-    var canvasRef1 = useRef(null), canvasRef2 = useRef(null);
-    var chart1 = useRef(null), chart2 = useRef(null);
-    useEffect(function () {
-      var r = props.results;
-      if (canvasRef1.current) {
-        if (chart1.current) chart1.current.destroy();
-        chart1.current = new Chart(canvasRef1.current.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: r.accumPath.map(function (p) { return p.beYear; }),
-            datasets: [{
-              label: 'เงินสะสมก่อนเกษียณ (บาท)', data: r.accumPath.map(function (p) { return Math.round(p.total); }),
-              borderColor: '#0B2545', backgroundColor: 'rgba(11,37,69,0.08)', fill: true, tension: 0.25, pointRadius: 0
-            }]
-          },
-          options: { responsive: true, plugins: { legend: { display: true } }, scales: { y: { ticks: { callback: function (v) { return fmt(v); } } } } }
-        });
-      }
-      if (canvasRef2.current) {
-        if (chart2.current) chart2.current.destroy();
-        chart2.current = new Chart(canvasRef2.current.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: r.drawdownPath.map(function (p) { return p.beYear; }),
-            datasets: [{
-              label: 'เงินคงเหลือหลังเกษียณ (บาท, กรณีไม่ออมเพิ่ม)', data: r.drawdownPath.map(function (p) { return Math.round(Math.max(0, p.balance)); }),
-              borderColor: '#3FA772', backgroundColor: 'rgba(63,167,114,0.12)', fill: true, tension: 0.25, pointRadius: 0
-            }]
-          },
-          options: { responsive: true, plugins: { legend: { display: true } }, scales: { y: { ticks: { callback: function (v) { return fmt(v); } } } } }
-        });
-      }
-    }, [props.results]);
-    return E('div', { className: 'charts-panel no-print' },
-      E('div', { className: 'chart-card' }, E('canvas', { ref: canvasRef1, height: 180 })),
-      E('div', { className: 'chart-card' }, E('canvas', { ref: canvasRef2, height: 180 }))
-    );
-  }
-
-  /* ---------------- Summary bar ---------------- */
-  function SummaryBar(props) {
-    var r = props.results;
-    return E('div', { className: 'summary-bar no-print' },
-      E(MetricCard, { label: 'ต้องมี ณ เกษียณ', value: fmt(r.netRequiredCorpus), tone: 'navy' }),
-      E(MetricCard, { label: 'คาดว่าจะมี', value: fmt(r.availableAtRetirement), tone: 'navy' }),
-      E(MetricCard, { label: r.gap > 0 ? 'ขาดอยู่' : 'เกินอยู่', value: fmt(Math.abs(r.gap)), tone: r.gap > 0 ? 'red' : 'green' }),
-      E(MetricCard, { label: 'ควรออมเพิ่ม/เดือน', value: r.gap > 0 ? fmt(r.extraMonthlySaving) : '0', tone: 'green' })
-    );
-  }
-
-  /* ---------------- Print report ---------------- */
-  function PrintReport(props) {
-    var a = props.active, r = props.results, p = a.personal;
-    return E('div', { className: 'print-report' },
-      E('h1', null, 'แผนการเงินเพื่อการเกษียณ'),
-      E('p', null, 'ชื่อลูกค้า: ' + (p.clientName || '-') + ' | เคส: ' + a.name),
-      E('p', null, 'จัดทำโดย ป้าเป็ด CFP\u00AE — Bangkok Life Assurance'),
-      E('table', { className: 'print-table' },
-        E('tbody', null,
-          E('tr', null, E('td', null, 'อายุปัจจุบัน / อายุเกษียณ / อายุขัย'), E('td', null, p.currentAge + ' / ' + p.retireAge + ' / ' + p.lifeExpectancy + ' ปี')),
-          E('tr', null, E('td', null, 'ปีเกษียณ (พ.ศ.)'), E('td', null, (p.currentYearAD + 543 + (p.retireAge - p.currentAge)))),
-          E('tr', null, E('td', null, 'ค่าใช้จ่ายเดือนแรกหลังเกษียณ'), E('td', null, fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน')),
-          E('tr', null, E('td', null, 'กองทุนที่ควรมี ณ วันเกษียณ'), E('td', null, fmt(r.netRequiredCorpus) + ' บาท')),
-          E('tr', null, E('td', null, 'เงินที่คาดว่าจะมี ณ วันเกษียณ'), E('td', null, fmt(r.availableAtRetirement) + ' บาท')),
-          E('tr', null, E('td', null, r.gap > 0 ? 'ส่วนที่ขาด' : 'ส่วนที่เกิน'), E('td', null, fmt(Math.abs(r.gap)) + ' บาท')),
-          r.gap > 0 ? E('tr', null, E('td', null, 'ควรออมเพิ่ม'), E('td', null, fmt(r.extraMonthlySaving) + ' บาท/เดือน')) : null,
-          E('tr', null, E('td', null, 'ถ้าใช้เท่ากันตลอด (ไม่ออมเพิ่ม)'), E('td', null, fmt(r.sustainableMonthly) + ' บาท/เดือน')),
-          E('tr', null, E('td', null, 'ถ้าใช้ตามแผนเดิม เงินจะอยู่ได้ถึง'), E('td', null, r.depletionAge ? ('อายุ ' + r.depletionAge) : 'ตลอดอายุขัย'))
-        )
-      ),
-      E('p', { className: 'print-note' }, 'เอกสารนี้จัดทำขึ้นเพื่อประกอบการวางแผนการเงินเบื้องต้นเท่านั้น ตัวเลขจริงอาจแตกต่างไปตามผลตอบแทนการลงทุนและอัตราเงินเฟ้อที่เกิดขึ้นจริง')
-    );
-  }
-
-  /* ---------------- Master calculation ---------------- */
-  function computeAll(a) {
-    var C = window.RPCalc;
-    var p = a.personal;
-    var yearsToRetire = p.retireAge - p.currentAge;
-    var yearsRetired = p.lifeExpectancy - p.retireAge;
-
-    var salaryAtRetire = p.currentSalary * Math.pow(1 + p.salaryGrowth, yearsToRetire);
-    var firstYearMonthlyNeed;
-    if (p.spendingMethod === 'replacement') firstYearMonthlyNeed = salaryAtRetire * p.replacementRate;
-    else firstYearMonthlyNeed = p.customMonthlyExpense * Math.pow(1 + p.inflation, yearsToRetire);
-    var firstYearAnnualNeed = firstYearMonthlyNeed * 12;
-
-    /* PVD */
-    var pvdResult = { finalBalance: 0, path: [] };
-    if (a.pvd.enabled) {
-      pvdResult = C.simulatePVD({
-        startSalaryMonthly: p.currentSalary, salaryGrowth: p.salaryGrowth, employeeRate: a.pvd.employeeRate,
-        employerMode: a.pvd.employerMode, employerFlatRate: a.pvd.employerFlatRate, employerTiers: a.pvd.employerTiers,
-        fundReturn: a.pvd.fundReturn, yearsToRetire: yearsToRetire, startingBalance: a.pvd.startingBalance,
-        serviceYearsSoFar: a.pvd.serviceYearsSoFar, currentAge: p.currentAge
-      });
+    else if (action === 'addCase') {
+      var c = newCase('ลูกค้ารายที่ ' + (Object.keys(STORE.cases).length + 1));
+      STORE.cases[c.id] = c; STORE.activeId = c.id; saveStore(); render();
     }
-
-    /* SSO */
-    var ssoMonthly = 0;
-    if (a.sso.enabled) ssoMonthly = C.ssoPensionMonthly(a.sso.avgWageCapped, a.sso.monthsPaidSoFar + yearsToRetire * 12);
-    var ssoAnnual = ssoMonthly * 12;
-
-    /* Severance */
-    var severance = null;
-    if (a.severance.enabled) {
-      var serviceYears = (a.pvd.serviceYearsSoFar || 0) + yearsToRetire;
-      var months = C.severanceMonths(serviceYears);
-      severance = { serviceYears: serviceYears, months: months, amount: months * salaryAtRetire };
+    else if (action === 'duplicateCase') {
+      var d = clone(a); d.id = uid(); d.name = a.name + ' (สำเนา)';
+      STORE.cases[d.id] = d; STORE.activeId = d.id; saveStore(); render();
     }
+    else if (action === 'printPdf') { window.print(); }
+    else if (action === 'addTier') { a.pvd.employerTiers.push({ minYears: 0, employerRate: 0.03 }); saveStore(); render(); }
+    else if (action === 'delTier') { a.pvd.employerTiers.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'addGoal') { a.goals.push({ id: uid(), name: 'เป้าหมายใหม่', phase: 'pre', targetAge: a.personal.currentAge + 5, amountToday: 100000, returnRate: 0.05 }); saveStore(); render(); }
+    else if (action === 'delGoal') { a.goals.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'addWindfall') { a.windfalls.push({ id: uid(), description: 'เงินก้อนใหม่', amount: 100000, ageReceived: a.personal.retireAge, phase: 'pre', reinvestReturn: 0.04 }); saveStore(); render(); }
+    else if (action === 'delWindfall') { a.windfalls.splice(+t.dataset.index, 1); saveStore(); render(); }
+  });
 
-    /* Current savings + regular savings */
-    var savingsFV = C.fv(a.currentSavings.amount, a.currentSavings.returnRate, yearsToRetire);
-    var regAnnual = a.regularSavings.frequency === 'monthly' ? a.regularSavings.amount * 12 : a.regularSavings.amount;
-    var regularFV = C.annuityFV(regAnnual, a.regularSavings.returnRate, yearsToRetire, a.regularSavings.timing === 'begin');
-
-    /* Windfalls pre-retirement -> FV; post-retirement -> oneOffs */
-    var windfallsFV = 0;
-    var postWindfalls = [];
-    (a.windfalls || []).forEach(function (w) {
-      if (w.phase === 'pre') {
-        var n = Math.max(0, p.retireAge - w.ageReceived);
-        windfallsFV += C.fv(w.amount, w.reinvestReturn || 0, n);
-      } else postWindfalls.push(w);
-    });
-
-    var availableAtRetirement = pvdResult.finalBalance + (severance ? severance.amount : 0) + savingsFV + regularFV + windfallsFV;
-
-    /* Required corpus */
-    var requiredCorpus = C.growingAnnuityPV(firstYearAnnualNeed, p.postReturn, p.inflation, yearsRetired, true);
-    var ssoPV = ssoAnnual > 0 ? C.growingAnnuityPV(ssoAnnual, p.postReturn, 0, yearsRetired, true) : 0;
-    var netRequiredCorpus = Math.max(0, requiredCorpus - ssoPV);
-
-    var gap = netRequiredCorpus - availableAtRetirement;
-    var extraMonthlySaving = 0;
-    if (gap > 0) {
-      if (a.extraSavingMode === 'growing') {
-        extraMonthlySaving = C.pmtFromFVGrowing(gap, a.extraSavingReturn, p.salaryGrowth, yearsToRetire, false) / 12;
-      } else {
-        extraMonthlySaving = C.pmtFromFV(gap, a.extraSavingReturn, yearsToRetire, false) / 12;
-      }
-    }
-
-    /* one-offs during drawdown from post-retirement goals & windfalls */
-    var oneOffs = {};
-    (a.goals || []).forEach(function (g) {
-      if (g.phase === 'post') {
-        var yi = g.targetAge - p.retireAge;
-        if (yi >= 1) {
-          var amt = g.amountToday * Math.pow(1 + p.inflation, Math.max(0, g.targetAge - p.currentAge));
-          oneOffs[yi] = (oneOffs[yi] || 0) - amt;
-        }
-      }
-    });
-    postWindfalls.forEach(function (w) {
-      var yi = w.ageReceived - p.retireAge;
-      if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) + w.amount;
-    });
-
-    /* No-extra-saving scenarios */
-    var sustainableAnnual = C.solveSustainableW1(availableAtRetirement, p.inflation, ssoAnnual, p.postReturn, yearsRetired, oneOffs);
-    var sustainableMonthly = sustainableAnnual / 12;
-    var depletionYear = C.findDepletionYear(availableAtRetirement, firstYearAnnualNeed, p.inflation, ssoAnnual, p.postReturn, 80, oneOffs);
-    var depletionAge = depletionYear ? p.retireAge + depletionYear : null;
-
-    /* Buckets */
-    var bucketResults = (a.buckets.splits || []).map(function (s) {
-      var yrs = s.years == null ? yearsRetired : s.years;
-      var amount = availableAtRetirement * (s.amountPct / 100);
-      var monthlyC1 = C.pmtFromPVGrowing(amount, s.returnRate, p.inflation, yrs, true) / 12;
-      return { years: yrs, amount: amount, returnRate: s.returnRate, monthlyC1: monthlyC1 };
-    });
-
-    /* chart paths */
-    var accumPath = [];
-    var cumSavings = a.currentSavings.amount, cumReg = 0;
-    for (var y = 0; y <= yearsToRetire; y++) {
-      var savingsBal = C.fv(a.currentSavings.amount, a.currentSavings.returnRate, y);
-      var regBal = C.annuityFV(regAnnual, a.regularSavings.returnRate, y, a.regularSavings.timing === 'begin');
-      var pvdBal = 0;
-      if (y === 0) pvdBal = a.pvd.startingBalance || 0;
-      else if (pvdResult.path[y - 1]) pvdBal = pvdResult.path[y - 1].balance;
-      accumPath.push({ year: y, beYear: p.currentYearAD + 543 + y, total: savingsBal + regBal + pvdBal });
-    }
-    var drawdown = C.simulateDrawdown(availableAtRetirement, firstYearAnnualNeed, p.inflation, ssoAnnual, p.postReturn, yearsRetired, oneOffs);
-    var drawdownPath = drawdown.path.map(function (pt) {
-      return { year: pt.year, beYear: p.currentYearAD + 543 + yearsToRetire + pt.year, balance: pt.balance };
-    });
-
-    return {
-      yearsToRetire: yearsToRetire, yearsRetired: yearsRetired,
-      salaryAtRetire: salaryAtRetire, firstYearMonthlyNeed: firstYearMonthlyNeed, firstYearAnnualNeed: firstYearAnnualNeed,
-      pvdResult: pvdResult, ssoMonthly: ssoMonthly, severance: severance,
-      savingsFV: savingsFV, regularFV: regularFV, windfallsFV: windfallsFV,
-      availableAtRetirement: availableAtRetirement, requiredCorpus: requiredCorpus, ssoPV: ssoPV,
-      netRequiredCorpus: netRequiredCorpus, gap: gap, extraMonthlySaving: extraMonthlySaving,
-      sustainableMonthly: sustainableMonthly, depletionAge: depletionAge,
-      bucketResults: bucketResults, accumPath: accumPath, drawdownPath: drawdownPath
-    };
-  }
-
-  var root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(E(App));
+  render();
 })();
