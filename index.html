@@ -99,6 +99,9 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .section-head { width: 100%; display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: none; border: none; cursor: pointer; text-align: left; font-family: inherit; }
 .section-num { width: 32px; height: 32px; border-radius: 50%; background: var(--blue-200); color: var(--navy-900); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
 .section.open .section-num { background: var(--blue-bright); color: var(--white); }
+.section.filled { border-left-color: var(--green-500); }
+.section.filled .section-num { background: var(--green-500); color: var(--white); }
+.section.filled .section-title { color: var(--green-700); }
 .section-title-wrap { flex: 1; display: flex; flex-direction: column; }
 .section-title { font-weight: 700; color: var(--blue-bright); font-size: 21px; }
 .section-subtitle { font-size: 15px; color: var(--green-700); font-weight: 700; margin-top: 3px; }
@@ -118,6 +121,7 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .field-label { font-size: 15px; color: var(--ink-soft); font-weight: 700; }
 .field-input-row { display: flex; align-items: center; gap: 8px; }
 .inp { flex: 1; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 9px; font-family: inherit; font-size: 18px; color: var(--ink); background: var(--white); font-weight: 500; }
+.inp-filled { border-color: var(--green-500); border-width: 2.5px; padding: 11.5px 13.5px; }
 .inp:focus { outline: none; border-color: var(--blue-bright); box-shadow: 0 0 0 3px rgba(30,111,217,0.15); }
 .inp-title { font-weight: 700; font-size: 18px; }
 .field-suffix { font-size: 14.5px; color: var(--ink-soft); white-space: nowrap; font-weight: 600; }
@@ -140,6 +144,8 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .entry-cell-del { display: flex; justify-content: center; }
 .entry-empty { padding: 18px 12px; color: var(--ink-soft); font-size: 14.5px; text-align: center; }
 .entry-note { font-size: 13.5px; color: var(--ink-soft); padding: 5px 10px 8px; }
+.formula-box { background: var(--blue-100); border: 1px dashed var(--blue-bright); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 15px; color: var(--navy-900); line-height: 1.7; }
+.formula-box strong { color: var(--green-700); }
 .btn-add-row { background: var(--white); color: var(--blue-bright); border: 1.5px solid var(--blue-bright); font-weight: 700; }
 .btn-add-row:hover { background: var(--blue-100); }
 
@@ -166,7 +172,7 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .timeline-age { font-size: 13.5px; color: var(--ink-soft); font-weight: 700; }
 .timeline-label { font-size: 17px; color: var(--ink); font-weight: 600; }
 
-.story-block { background: linear-gradient(135deg, var(--navy-900), var(--blue-bright)); border: none; }
+.story-block { background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); border: none; }
 .story-block .dash-title { color: var(--white); }
 .story-text { color: #EAF4FB; font-size: 17px; line-height: 1.8; margin: 0; }
 .story-text strong { color: #FFFFFF; font-weight: 800; }
@@ -625,6 +631,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     }
   }
 
+  /* Keep data across app opens (auto-save as you work), until the user explicitly clears it. */
   var STORE = loadStore();
   if (!STORE || !STORE.cases || !Object.keys(STORE.cases).length) {
     var c0 = newCase('ลูกค้ารายที่ 1');
@@ -653,14 +660,18 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       }).join('');
       return '<select class="inp" data-path=\'' + pa + '\' data-type="select">' + optsHtml + '</select>';
     } else if (type === 'text') {
-      return '<input class="inp' + (opts.titleStyle ? ' inp-title' : '') + '" type="text" data-path=\'' + pa + '\' data-type="text" value="' + esc(value) + '">';
+      var filledText = value && String(value).trim() !== '' ? ' inp-filled' : '';
+      return '<input class="inp' + (opts.titleStyle ? ' inp-title' : '') + filledText + '" type="text" data-path=\'' + pa + '\' data-type="text" value="' + esc(value) + '">';
     } else if (type === 'percent') {
       var pctDisplay = Math.round(value * 100 * 1e6) / 1e6;
-      return '<input class="inp" type="text" inputmode="decimal" data-path=\'' + pa + '\' data-type="percent" value="' + pctDisplay + '">';
+      var filledPct = value ? ' inp-filled' : '';
+      return '<input class="inp' + filledPct + '" type="text" inputmode="decimal" data-path=\'' + pa + '\' data-type="percent" value="' + pctDisplay + '">';
     } else if (type === 'money') {
-      return '<input class="inp" type="text" inputmode="numeric" data-path=\'' + pa + '\' data-type="money" value="' + fmt(value) + '">';
+      var filledMoney = value ? ' inp-filled' : '';
+      return '<input class="inp' + filledMoney + '" type="text" inputmode="numeric" data-path=\'' + pa + '\' data-type="money" value="' + fmt(value) + '">';
     }
-    return '<input class="inp" type="text" inputmode="decimal" data-path=\'' + pa + '\' data-type="number" value="' + value + '">';
+    var filledNum = value ? ' inp-filled' : '';
+    return '<input class="inp' + filledNum + '" type="text" inputmode="decimal" data-path=\'' + pa + '\' data-type="number" value="' + value + '">';
   }
   function field(label, path, value, opts) {
     opts = opts || {};
@@ -863,11 +874,32 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var healthFvNeededAtFirstBand = healthBandsCalc.reduce(function (s, b) { return s + b.pvToday * Math.pow(1 + hi.returnRate, healthMonthsToFirstBand / 12); }, 0);
     var healthMonthlySaving = healthFvNeededAtFirstBand > 0 ? C.pmtFromFV(healthFvNeededAtFirstBand, hi.returnRate, healthMonthsToFirstBand / 12, false) / 12 : 0;
     var healthYearTable = [];
+    var firstBandAge = hi.bands.length ? Math.min.apply(null, hi.bands.map(function (b) { return b.fromAge; })) : null;
+    var hiBal = 0;
     for (var hy = 0; hy <= (p.lifeExpectancy - p.currentAge); hy++) {
       var age = p.currentAge + hy;
       var band = (hi.bands || []).find(function (b) { return age >= b.fromAge && age <= b.toAge; });
-      var premiumDue = band ? band.annualPremiumToday : 0;
-      healthYearTable.push({ year: hy, beYear: p.currentYearAD + 543 + hy, age: age, premiumDue: premiumDue, phase: age < p.retireAge ? 'สะสม/ก่อนเกษียณ' : (premiumDue > 0 ? 'จ่ายเบี้ย' : 'หลังเกษียณ') });
+      var startBal = hiBal;
+      var contribution = 0, premiumDue = 0, interestEarned = 0;
+      if (firstBandAge !== null && age < firstBandAge) {
+        contribution = healthMonthlySaving * 12;
+        interestEarned = hiBal * hi.returnRate;
+        hiBal = hiBal * (1 + hi.returnRate) + contribution;
+      } else if (band) {
+        premiumDue = band.annualPremiumToday;
+        hiBal = Math.max(0, hiBal - premiumDue) * (1 + hi.returnRate);
+        interestEarned = hiBal - Math.max(0, startBal - premiumDue);
+      } else {
+        interestEarned = hiBal * hi.returnRate;
+        hiBal = hiBal * (1 + hi.returnRate);
+      }
+      var rateUsed = hi.returnRate;
+      var phaseLabel = (firstBandAge !== null && age < firstBandAge) ? 'สะสม' : (band ? 'จ่ายเบี้ย' : (firstBandAge !== null ? 'สะสมเสร็จแล้ว' : '-'));
+      healthYearTable.push({
+        year: hy, beYear: p.currentYearAD + 543 + hy, age: age, phase: phaseLabel,
+        startBalance: startBal, contribution: contribution, interest: interestEarned,
+        premiumDue: premiumDue, rateUsed: rateUsed, endBalance: hiBal
+      });
     }
     (hi.bands || []).forEach(function (b) {
       var fromAge = Math.max(b.fromAge, p.retireAge);
@@ -920,6 +952,9 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         return lo;
       }
       var sustainable = solveSustainable(sized) / 12;
+      var bounds2 = [];
+      var accB = 0;
+      sized.forEach(function (b) { bounds2.push([accB, accB + b.years]); accB += b.years; });
       var table = [];
       var prevBal = netRequired;
       for (var ty = 1; ty <= totalYears; ty++) {
@@ -928,9 +963,12 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         var oneOffY = oneOffs[ty] || 0;
         var endBal = fwd.path[ty] ? fwd.path[ty].balance : null;
         var interest = endBal - prevBal + needY - pensionY - oneOffY;
+        var activeIdx = bounds2.findIndex(function (bd) { return ty > bd[0] && ty <= bd[1]; });
+        var rateUsedRow = activeIdx >= 0 ? sized[activeIdx].drawdownReturn : null;
         table.push({
           year: ty, beYear: p.currentYearAD + 543 + yearsToRetire + ty, age: p.retireAge + ty,
-          startBalance: prevBal, interest: interest, pension: pensionY, oneOff: oneOffY, withdrawal: needY, endBalance: endBal
+          startBalance: prevBal, interest: interest, pension: pensionY, oneOff: oneOffY, withdrawal: needY, endBalance: endBal,
+          rateUsed: rateUsedRow, bucketLabel: activeIdx >= 0 ? (sized[activeIdx].label || ('บัคเก็ต ' + (activeIdx + 1))) : '-'
         });
         prevBal = endBal;
       }
@@ -945,12 +983,22 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var netRequiredCorpus = multiPlan.netRequiredCorpus;
     var gap = netRequiredCorpus - availableAtRetirement;
 
+    function extraSavingFor(gapAmt) {
+      var out = { gap: gapAmt, flatMonthly: 0, growingFirstMonthly: 0, growingLastMonthly: 0 };
+      if (gapAmt > 0) {
+        out.flatMonthly = C.pmtFromFV(gapAmt, a.extraSavingReturn, yearsToRetire, false) / 12;
+        out.growingFirstMonthly = C.pmtFromFVGrowing(gapAmt, a.extraSavingReturn, p.salaryGrowth, yearsToRetire, false) / 12;
+        out.growingLastMonthly = yearsToRetire > 0 ? out.growingFirstMonthly * Math.pow(1 + p.salaryGrowth, yearsToRetire - 1) : out.growingFirstMonthly;
+      }
+      return out;
+    }
+    var multiExtraSaving = extraSavingFor(gap);
+    var singleGap = singlePlan.netRequiredCorpus - availableAtRetirement;
+    var singleExtraSaving = extraSavingFor(singleGap);
+
     var extraMonthlySaving = 0;
-    var extraSavingFlatMonthly = 0, extraSavingGrowingFirstMonthly = 0, extraSavingGrowingLastMonthly = 0;
+    var extraSavingFlatMonthly = multiExtraSaving.flatMonthly, extraSavingGrowingFirstMonthly = multiExtraSaving.growingFirstMonthly, extraSavingGrowingLastMonthly = multiExtraSaving.growingLastMonthly;
     if (gap > 0) {
-      extraSavingFlatMonthly = C.pmtFromFV(gap, a.extraSavingReturn, yearsToRetire, false) / 12;
-      extraSavingGrowingFirstMonthly = C.pmtFromFVGrowing(gap, a.extraSavingReturn, p.salaryGrowth, yearsToRetire, false) / 12;
-      extraSavingGrowingLastMonthly = yearsToRetire > 0 ? extraSavingGrowingFirstMonthly * Math.pow(1 + p.salaryGrowth, yearsToRetire - 1) : extraSavingGrowingFirstMonthly;
       extraMonthlySaving = a.extraSavingMode === 'growing' ? extraSavingGrowingFirstMonthly : extraSavingFlatMonthly;
     }
 
@@ -1017,15 +1065,16 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       accumPath: accumPath, drawdownPath: drawdownPath, events: events,
       pensionAnnualAtYear: pensionAnnualAtYear, drawdownTable: drawdownTable,
       healthBandsCalc: healthBandsCalc, healthRequiredToday: healthRequiredToday, healthMonthlySaving: healthMonthlySaving, healthYearTable: healthYearTable,
-      multiPlan: multiPlan, singlePlan: singlePlan, blendedRate: blendedRate
+      multiPlan: multiPlan, singlePlan: singlePlan, blendedRate: blendedRate,
+      multiExtraSaving: multiExtraSaving, singleExtraSaving: singleExtraSaving, singleGap: singleGap
     };
   }
 
   /* ================= SECTION RENDERERS ================= */
-  function sectionWrap(num, title, subtitle, tone, open, bodyHtml) {
-    return '<div class="section tone-' + tone + (open ? ' open' : '') + '">' +
+  function sectionWrap(num, title, subtitle, tone, open, bodyHtml, filled) {
+    return '<div class="section tone-' + tone + (open ? ' open' : '') + (filled ? ' filled' : '') + '">' +
       '<button class="section-head" type="button" data-action="toggleSection" data-num="' + num + '">' +
-      '<span class="section-num">' + num + '</span>' +
+      '<span class="section-num">' + (filled ? '✓' : num) + '</span>' +
       '<span class="section-title-wrap"><span class="section-title">' + esc(title) + '</span>' +
       (subtitle ? '<span class="section-subtitle">' + subtitle + '</span>' : '') + '</span>' +
       '<span class="section-chevron">' + (open ? '▾' : '▸') + '</span>' +
@@ -1083,13 +1132,17 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   function renderNeedSummary(a, r) {
     var p = a.personal;
     var cards = [];
+    var formula;
     if (p.spendingMethod === 'replacement') {
       cards.push(metricCard('เงินเดือนสุดท้ายก่อนเกษียณ (nominal)', fmt(r.salaryAtRetire) + ' บาท', 'navy'));
       cards.push(metricCard('อัตราทดแทนรายได้ที่ใช้', (p.replacementRate * 100).toFixed(2).replace(/\.00$/, '') + '%', 'navy', 'ของเงินเดือนเดือนสุดท้าย'));
+      formula = 'วิธีคิด: เงินเดือนปัจจุบัน ' + fmt(p.currentSalary) + ' บาท × (1 + อัตราขึ้นเงินเดือน ' + (p.salaryGrowth * 100).toFixed(2) + '%)<sup>' + r.yearsToRetire + ' ปี</sup> = เงินเดือนสุดท้าย ' + fmt(r.salaryAtRetire) + ' บาท<br>แล้วนำมาคูณอัตราทดแทนรายได้: ' + fmt(r.salaryAtRetire) + ' × ' + (p.replacementRate * 100).toFixed(2).replace(/\.00$/, '') + '% = <strong>' + fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน</strong>';
+    } else {
+      formula = 'วิธีคิด: ค่าใช้จ่ายที่ต้องการวันนี้ ' + fmt(p.customMonthlyExpense) + ' บาท/เดือน ปรับด้วยเงินเฟ้อ ' + (p.inflation * 100).toFixed(2) + '%/ปี เป็นเวลา ' + r.yearsToRetire + ' ปี จนถึงวันเกษียณ:<br>' + fmt(p.customMonthlyExpense) + ' × (1 + ' + (p.inflation * 100).toFixed(2) + '%)<sup>' + r.yearsToRetire + '</sup> = <strong>' + fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน</strong>';
     }
     cards.push(metricCard('ค่าใช้จ่ายเดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green'));
     cards.push(metricCard('ค่าใช้จ่ายทั้งปีแรกหลังเกษียณ', fmt(r.firstYearAnnualNeed) + ' บาท/ปี', 'green'));
-    return '<div class="grid-3">' + cards.join('') + '</div>';
+    return '<div class="formula-box">' + formula + '</div><div class="grid-3">' + cards.join('') + '</div>';
   }
 
   function renderPensionInput(a, r) {
@@ -1138,6 +1191,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var html = '';
     if (pvd.enabled) {
       html += '<div class="subblock"><div class="subblock-title">กองทุนสำรองเลี้ยงชีพ / กบข.</div>' +
+        '<div class="formula-box">วิธีคิด: ทุกปีนำ "เงินเดือนปีนั้น × (% ลูกจ้าง + % นายจ้าง)" มาบวกเข้ากองทุน แล้วให้ทั้งกองทุนโตด้วยผลตอบแทน ' + (pvd.fundReturn * 100).toFixed(2) + '%/ปี ทบต้นไปเรื่อยๆ จนถึงปีที่เกษียณ = <strong>' + fmt(r.pvdResult.finalBalance) + ' บาท</strong></div>' +
         metricCard('ยอดสะสมกองทุนโดยประมาณ ณ วันเกษียณ', fmt(r.pvdResult.finalBalance) + ' บาท', 'green') +
         detailTable(r.pvdResult.path, [
           { label: 'ปีที่', render: function (row) { return row.year; } },
@@ -1146,11 +1200,24 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
           { label: '% นายจ้าง', render: function (row) { return (row.employerRate * 100).toFixed(2) + '%'; } },
           { label: 'สมทบลูกจ้าง', render: function (row) { return fmt(row.employeeContrib); } },
           { label: 'สมทบนายจ้าง', render: function (row) { return fmt(row.employerContrib); } },
+          { label: 'อัตราผลตอบแทนที่ใช้', render: function () { return (pvd.fundReturn * 100).toFixed(2) + '%'; } },
           { label: 'ยอดสะสมปลายปี', render: function (row) { return fmt(row.balance); } }
         ], 'pvd') + '</div>';
     }
     if (sso.enabled) {
+      var yrsPaid = r.ssoYearsPaid;
+      var ssoFormula;
+      if (yrsPaid >= 15) {
+        var extraYrs = yrsPaid - 15;
+        ssoFormula = 'วิธีคิด (ตามกฎหมายประกันสังคม): ส่งเงินสมทบมาแล้ว ' + r.ssoMonthsAtRetirement + ' เดือน (' + yrsPaid.toFixed(1) + ' ปี) ครบ 15 ปีขึ้นไป จึงได้รับ:<br>' +
+          '&bull; <strong>20%</strong> ของค่าจ้างเฉลี่ย — เป็นสิทธิพื้นฐานตามกฎหมายเมื่อส่งสมทบครบ 180 เดือน (15 ปี)<br>' +
+          '&bull; <strong>+ 1.5% ต่อปี</strong> ของทุกปีที่ส่งเกิน 15 ปี — ตอนนี้ส่งเกินมา ' + extraYrs.toFixed(1) + ' ปี จึงได้เพิ่ม ' + extraYrs.toFixed(1) + ' × 1.5% = ' + (extraYrs * 1.5).toFixed(2) + '%<br>' +
+          'รวม: 20% + ' + (extraYrs * 1.5).toFixed(2) + '% = <strong>' + r.ssoPct.toFixed(2) + '%</strong> ของค่าจ้างเฉลี่ย ' + fmt(sso.avgWageCapped) + ' บาท = <strong>' + fmt(r.ssoMonthly) + ' บาท/เดือน</strong>';
+      } else {
+        ssoFormula = 'วิธีคิด: ต้องส่งเงินสมทบครบ 180 เดือน (15 ปี) จึงจะมีสิทธิรับบำนาญ — ตอนนี้ส่งมาแล้ว ' + r.ssoMonthsAtRetirement + ' เดือน (' + yrsPaid.toFixed(1) + ' ปี) ยังไม่ครบเงื่อนไข จึงคำนวณได้ 0 บาท';
+      }
       html += '<div class="subblock"><div class="subblock-title">บำนาญชราภาพประกันสังคม</div>' +
+        '<div class="formula-box">' + ssoFormula + '</div>' +
         (r.ssoMonthly > 0
           ? metricCard('บำนาญชราภาพที่จะได้รับ', fmt(r.ssoMonthly) + ' บาท/เดือน', 'green', 'รับตั้งแต่อายุ ' + a.personal.retireAge + ' ปีไปตลอดชีพ')
           : '<div class="note" style="color:#A8382E">ยังไม่เข้าเงื่อนไข (ต้องส่งสมทบครบ 180 เดือน ณ วันเกษียณ) — ตอนนี้คำนวณได้ 0 บาท</div>') +
@@ -1160,8 +1227,9 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         }], [
           { label: 'ค่าจ้างเฉลี่ย (ไม่เกิน 15,000)', render: function (row) { return fmt(row.avgWage) + ' บาท'; } },
           { label: 'เดือนที่ส่งสมทบรวม ณ เกษียณ', render: function (row) { return row.monthsAtRetirement + ' เดือน (' + row.yearsPaid.toFixed(1) + ' ปี)'; } },
-          { label: 'สูตร', render: function (row) { return row.yearsPaid >= 15 ? '20% + 1.5%×(' + (row.yearsPaid - 15).toFixed(1) + ' ปีเกิน 15 ปี)' : 'ยังไม่ครบ 15 ปี'; } },
-          { label: '% ที่ใช้คำนวณ', render: function (row) { return row.pct.toFixed(2) + '%'; } },
+          { label: 'สิทธิพื้นฐาน (ครบ 15 ปี)', render: function () { return '20%'; } },
+          { label: 'ส่วนเพิ่ม (ปีที่เกิน 15 ปี × 1.5%)', render: function (row) { return row.yearsPaid >= 15 ? '+' + ((row.yearsPaid - 15) * 1.5).toFixed(2) + '%' : '-'; } },
+          { label: '% รวมที่ใช้คำนวณ', render: function (row) { return row.pct.toFixed(2) + '%'; } },
           { label: 'บำนาญ/เดือน', render: function (row) { return fmt(row.monthly) + ' บาท'; } }
         ], 'sso') + '</div>';
     }
@@ -1372,15 +1440,21 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
       { label: 'อายุ', render: function (row) { return row.age; } },
       { label: 'ช่วง', render: function (row) { return row.phase; } },
-      { label: 'เบี้ยที่ต้องจ่ายปีนั้น', render: function (row) { return row.premiumDue > 0 ? fmt(row.premiumDue) + ' บาท' : '-'; } }
+      { label: 'อัตราที่ใช้', render: function (row) { return (row.rateUsed * 100).toFixed(2) + '%'; } },
+      { label: 'ยอดต้นปี', render: function (row) { return fmt(row.startBalance); } },
+      { label: 'สะสมเพิ่ม/ปี', render: function (row) { return row.contribution > 0 ? fmt(row.contribution) : '-'; } },
+      { label: 'ดอกเบี้ยที่ได้', render: function (row) { return fmt(row.interest); } },
+      { label: 'จ่ายเบี้ยปีนั้น', render: function (row) { return row.premiumDue > 0 ? fmt(row.premiumDue) : '-'; } },
+      { label: 'ยอดปลายปี', render: function (row) { return fmt(row.endBalance); } }
     ];
     if (!a.healthInsurance.bands.length) return '<div class="note">ยังไม่ได้ระบุช่วงอายุ/เบี้ยประกันสุขภาพ ในแท็บ "ข้อมูลลูกค้า" หัวข้อ 6</div>';
-    return '<div class="grid-2">' +
+    return '<div class="entry-note" style="padding:0 0 10px">วิธีคิด: สะสมเดือนละ <strong>' + fmt(r.healthMonthlySaving) + ' บาท</strong> (ปีละ ' + fmt(r.healthMonthlySaving * 12) + ' บาท) ตั้งแต่วันนี้ ด้วยผลตอบแทน ' + (a.healthInsurance.returnRate * 100).toFixed(2) + '%/ปี จนถึงอายุที่เริ่มจ่ายเบี้ย จากนั้นหักเบี้ยออกทุกปีตามช่วงที่ระบุ (เงินที่เหลือยังได้ดอกเบี้ยต่อไปเรื่อยๆ) จนกองทุนนี้เหลือ 0 บาทพอดีเมื่อจบช่วงสุดท้าย</div>' +
+      '<div class="grid-2">' +
       metricCard('เงินที่ต้องเตรียมไว้วันนี้ (ทุกช่วงรวมกัน)', fmt(r.healthRequiredToday) + ' บาท', 'navy') +
       metricCard('ควรออมเดือนละ (จนถึงช่วงแรก)', fmt(r.healthMonthlySaving) + ' บาท/เดือน', 'green') +
       '</div>' +
       detailTable(r.healthYearTable, yearCols, 'health') +
-      '<div class="entry-note"><strong>หมายเหตุ:</strong> คำนวณแบบ "ต้นงวด" คือสมมติว่าจ่ายเบี้ยตอนต้นปีของแต่ละช่วงอายุ (ไม่ใช่ปลายปี) เพื่อให้ตรงกับความเป็นจริงที่ต้องจ่ายเบี้ยล่วงหน้า — เบี้ยในช่วงหลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) โดยอัตโนมัติแล้ว</div>';
+      '<div class="entry-note"><strong>หมายเหตุ:</strong> การหักเบี้ยคำนวณแบบ "ต้นงวด" คือหักเบี้ยออกก่อนตอนต้นปี แล้วเงินที่เหลือค่อยได้ดอกเบี้ยของปีนั้นต่อ — เบี้ยในช่วงหลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) โดยอัตโนมัติแล้วเช่นกัน (ไม่ได้นับซ้ำกับตารางนี้ ตารางนี้เป็นกองทุนสำรองแยกต่างหากสำหรับเบี้ยประกันโดยเฉพาะ)</div>';
   }
 
   function renderGap(a, r) {
@@ -1458,6 +1532,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       { label: 'ปีที่', render: function (row) { return row.year; } },
       { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
       { label: 'อายุ', render: function (row) { return row.age; } },
+      { label: 'บัคเก็ตที่ใช้', render: function (row) { return esc(row.bucketLabel); } },
+      { label: 'อัตราที่ใช้', render: function (row) { return row.rateUsed != null ? (row.rateUsed * 100).toFixed(2) + '%' : '-'; } },
       { label: 'ยอดต้นปี', render: function (row) { return fmt(row.startBalance); } },
       { label: 'ดอกเบี้ยที่ได้ปีนั้น', render: function (row) { return fmt(row.interest); } },
       { label: 'บำนาญที่ได้รับ', render: function (row) { return fmt(row.pension); } },
@@ -1466,6 +1542,27 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       { label: 'ยอดปลายปี', render: function (row) { return fmt(row.endBalance); } }
     ];
     return detailTable(plan.table, cols, 'plan' + Math.random().toString(36).slice(2, 6));
+  }
+
+  function planScenarioBlock(title, plan, extraSaving, a) {
+    var html = '<div class="list-card"><div class="list-card-head"><strong>' + esc(title) + '</strong></div>' +
+      metricCard('เงินต้องมี ณ วันเกษียณ', fmt(plan.netRequiredCorpus) + ' บาท', 'navy') +
+      '<div class="subblock-title" style="margin-top:14px;font-size:15px">ถ้าไม่ออมเพิ่ม</div>' +
+      '<div class="grid-2">' +
+      metricCard('ใช้เท่ากันตลอด (เดือนแรก)', fmt(plan.sustainableMonthly) + ' บาท/เดือน', 'green', 'ไปจนถึงอายุขัยพอดี') +
+      metricCard('ถ้าใช้ตามเป้าหมายเดิม จะอยู่ได้ถึง', plan.depletionAge ? ('อายุ ' + plan.depletionAge + ' ปี') : 'ตลอดอายุขัย', plan.depletionAge ? 'red' : 'green') +
+      '</div>';
+    if (extraSaving.gap > 0) {
+      html += '<div class="subblock-title" style="margin-top:14px;font-size:15px">ถ้าจะออมเพิ่มให้พอตามเป้าหมาย (ขาดอยู่ ' + fmt(extraSaving.gap) + ' บาท)</div>' +
+        '<div class="grid-2">' +
+        metricCard('ออมคงที่ทุกเดือน', fmt(extraSaving.flatMonthly) + ' บาท/เดือน', 'green', 'ที่ผลตอบแทน ' + (a.extraSavingReturn * 100).toFixed(2) + '%/ปี') +
+        metricCard('หรือออมเพิ่มขึ้นตามเงินเดือน', fmt(extraSaving.growingFirstMonthly) + ' → ' + fmt(extraSaving.growingLastMonthly) + ' บาท/เดือน', 'navy', 'เดือนแรก → เดือนสุดท้ายก่อนเกษียณ') +
+        '</div>';
+    } else {
+      html += '<div class="note" style="margin-top:10px">เงินที่มีเพียงพอตามเป้าหมายแล้ว ไม่ต้องออมเพิ่ม</div>';
+    }
+    html += fullPlanTable(plan) + '</div>';
+    return html;
   }
 
   function renderBuckets(a, r) {
@@ -1490,18 +1587,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       rowsHtml + '<button class="btn btn-add-row" type="button" data-action="addBucket">+ เพิ่มบัคเก็ต</button>' +
       '<div class="subblock"><div class="subblock-title">เปรียบเทียบ 2 แนวทางการบริหาร (ใช้ข้อมูลเดียวกัน)</div>' +
       '<div class="grid-2">' +
-      '<div class="list-card"><div class="list-card-head"><strong>แบบพอร์ตเดียวตลอดช่วงเกษียณ</strong></div>' +
-      metricCard('เงินต้องมี ณ วันเกษียณ', fmt(r.singlePlan.netRequiredCorpus) + ' บาท', 'navy', 'ใช้ผลตอบแทนเฉลี่ยถ่วงน้ำหนัก ' + (r.blendedRate * 100).toFixed(2) + '%/ปี จากบัคเก็ตที่ตั้งไว้') +
-      metricCard('ใช้ได้เท่ากันตลอด (เดือนแรก)', fmt(r.singlePlan.sustainableMonthly) + ' บาท/เดือน', 'green') +
-      metricCard('เงินจะอยู่ได้ถึง', r.singlePlan.depletionAge ? ('อายุ ' + r.singlePlan.depletionAge) : 'ตลอดอายุขัย', r.singlePlan.depletionAge ? 'red' : 'green') +
-      fullPlanTable(r.singlePlan) +
-      '</div>' +
-      '<div class="list-card"><div class="list-card-head"><strong>แบบแบ่งบัคเก็ตตามที่ตั้งค่าไว้</strong></div>' +
-      metricCard('เงินต้องมี ณ วันเกษียณ', fmt(r.multiPlan.netRequiredCorpus) + ' บาท', 'navy') +
-      metricCard('ใช้ได้เท่ากันตลอด (เดือนแรก)', fmt(r.multiPlan.sustainableMonthly) + ' บาท/เดือน', 'green') +
-      metricCard('เงินจะอยู่ได้ถึง', r.multiPlan.depletionAge ? ('อายุ ' + r.multiPlan.depletionAge) : 'ตลอดอายุขัย', r.multiPlan.depletionAge ? 'red' : 'green') +
-      fullPlanTable(r.multiPlan) +
-      '</div>' +
+      planScenarioBlock('แบบพอร์ตเดียวตลอดช่วงเกษียณ (ผลตอบแทนเฉลี่ยถ่วงน้ำหนัก ' + (r.blendedRate * 100).toFixed(2) + '%/ปี)', r.singlePlan, r.singleExtraSaving, a) +
+      planScenarioBlock('แบบแบ่งบัคเก็ตตามที่ตั้งค่าไว้', r.multiPlan, r.multiExtraSaving, a) +
       '</div></div>';
   }
 
@@ -1641,13 +1728,19 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function renderMain(a, r) {
+    var filled1 = !!(a.personal.clientName && a.personal.clientName.trim() !== '');
+    var filled2 = !!(a.pvd.enabled || a.sso.enabled);
+    var filled3 = a.goals.length > 0;
+    var filled4 = a.currentSavings.items.length > 0 || a.regularSavings.items.length > 0;
+    var filled5 = a.windfalls.length > 0;
+    var filled6 = a.healthInsurance.bands.length > 0;
     var clientSections = [
-      [1, 'ข้อมูลผู้รับการวางแผน + พอร์ตก่อนเกษียณ', '', 'navy', renderPersonal(a)],
-      [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPensionInput(a, r)],
-      [3, 'เป้าหมายระยะสั้น/กลาง/ยาว', '', 'navy', renderGoals(a)],
-      [4, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r)],
-      [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a)],
-      [6, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsuranceInput(a, r)]
+      [1, 'ข้อมูลผู้รับการวางแผน + พอร์ตก่อนเกษียณ', '', 'navy', renderPersonal(a), filled1],
+      [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPensionInput(a, r), filled2],
+      [3, 'เป้าหมายระยะสั้น/กลาง/ยาว', '', 'navy', renderGoals(a), filled3],
+      [4, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r), filled4],
+      [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a), filled5],
+      [6, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsuranceInput(a, r), filled6]
     ];
     var calcSections = [
       [7, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(a, r)],
@@ -1659,7 +1752,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       [13, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r)],
       [14, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r)]
     ];
-    function sectionsHtml(list) { return '<div class="sections">' + list.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4]); }).join('') + '</div>'; }
+    function sectionsHtml(list) { return '<div class="sections">' + list.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4], s[5]); }).join('') + '</div>'; }
     var dashHtml = '<div class="dashboard">' +
       renderStorySummary(a, r) +
       renderSummaryBar(r) + renderCharts(r) +
@@ -1769,8 +1862,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       try {
         var imported = JSON.parse(ev.target.result);
         if (imported && imported.cases) {
-          Object.keys(imported.cases).forEach(function (id) { STORE.cases[id] = imported.cases[id]; });
-          STORE.activeId = imported.activeId || STORE.activeId;
+          Object.keys(imported.cases).forEach(function (id) { STORE.cases[id] = normalizeCase(imported.cases[id]); });
+          STORE.activeId = (imported.activeId && STORE.cases[imported.activeId]) ? imported.activeId : STORE.activeId;
           saveStore(); render();
         }
       } catch (e) { alert('ไฟล์ไม่ถูกต้อง'); }
