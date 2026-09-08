@@ -829,7 +829,11 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
 
     /* current savings: each item grows at its own rate ("as-is") */
     var currentItems = (a.currentSavings.items || []).map(function (it) {
-      return { id: it.id, name: it.name, amount: it.amount, returnRate: it.returnRate, fv: C.fv(it.amount, it.returnRate, yearsToRetire) };
+      var path = [];
+      for (var yy1 = 0; yy1 <= yearsToRetire; yy1++) {
+        path.push({ year: yy1, age: p.currentAge + yy1, beYear: p.currentYearAD + 543 + yy1, balance: C.fv(it.amount, it.returnRate, yy1) });
+      }
+      return { id: it.id, name: it.name, amount: it.amount, returnRate: it.returnRate, fv: C.fv(it.amount, it.returnRate, yearsToRetire), path: path };
     });
     var currentTotalAmount = currentItems.reduce(function (s, it) { return s + it.amount; }, 0);
     var currentSavingsFV_asis = currentItems.reduce(function (s, it) { return s + it.fv; }, 0);
@@ -838,8 +842,13 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     /* regular (recurring) savings: each item uses its own return rate */
     var regularItems = (a.regularSavings.items || []).map(function (it) {
       var annualAmt = it.frequency === 'monthly' ? it.amount * 12 : it.amount;
-      var fv = C.annuityFV(annualAmt, it.returnRate, yearsToRetire, it.timing === 'begin');
-      return { id: it.id, frequency: it.frequency, amount: it.amount, timing: it.timing, returnRate: it.returnRate, annualAmt: annualAmt, fv: fv };
+      var due = it.timing === 'begin';
+      var fv = C.annuityFV(annualAmt, it.returnRate, yearsToRetire, due);
+      var path = [];
+      for (var yy2 = 0; yy2 <= yearsToRetire; yy2++) {
+        path.push({ year: yy2, age: p.currentAge + yy2, beYear: p.currentYearAD + 543 + yy2, contribution: yy2 === 0 ? 0 : annualAmt, balance: C.annuityFV(annualAmt, it.returnRate, yy2, due) });
+      }
+      return { id: it.id, frequency: it.frequency, amount: it.amount, timing: it.timing, returnRate: it.returnRate, annualAmt: annualAmt, fv: fv, path: path };
     });
     var savingsRegularFV = regularItems.reduce(function (s, it) { return s + it.fv; }, 0);
 
@@ -1239,11 +1248,21 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
 
   function renderSeverance(r) {
     if (!r.severance) return '<div class="note">ยังไม่ได้เปิดใช้งาน (เปิดได้ในแท็บ "ข้อมูลลูกค้า" หัวข้อ 2)</div>';
-    return '<div class="grid-3">' +
-      metricCard('อายุงานรวม ณ วันเกษียณ', r.severance.serviceYears.toFixed(1) + ' ปี') +
-      metricCard('สิทธิเงินชดเชย', r.severance.months.toFixed(2) + ' เท่าของเงินเดือน') +
-      metricCard('จำนวนเงินชดเชยโดยประมาณ', fmt(r.severance.amount) + ' บาท', 'green') + '</div>' +
-      detailTable([{ svcYears: r.severance.serviceYears, months: r.severance.months, salary: r.salaryAtRetire, amount: r.severance.amount }], [
+    var s = r.severance;
+    var tierNote;
+    var yrs = s.serviceYears;
+    if (yrs >= 20) tierNote = 'อายุงาน ' + yrs.toFixed(1) + ' ปี ≥ 20 ปี → ได้รับสูงสุด 400 วัน (13.33 เท่าของเงินเดือน)';
+    else if (yrs >= 10) tierNote = 'อายุงาน ' + yrs.toFixed(1) + ' ปี อยู่ในช่วง 10-20 ปี → ได้รับ 300 วัน (10 เท่าของเงินเดือน)';
+    else if (yrs >= 6) tierNote = 'อายุงาน ' + yrs.toFixed(1) + ' ปี อยู่ในช่วง 6-10 ปี → ได้รับ 240 วัน (8 เท่าของเงินเดือน)';
+    else if (yrs >= 3) tierNote = 'อายุงาน ' + yrs.toFixed(1) + ' ปี อยู่ในช่วง 3-6 ปี → ได้รับ 180 วัน (6 เท่าของเงินเดือน)';
+    else if (yrs >= 1) tierNote = 'อายุงาน ' + yrs.toFixed(1) + ' ปี อยู่ในช่วง 1-3 ปี → ได้รับ 90 วัน (3 เท่าของเงินเดือน)';
+    else tierNote = 'อายุงาน ' + yrs.toFixed(1) + ' ปี (120 วัน - 1 ปี) → ได้รับ 30 วัน (1 เท่าของเงินเดือน)';
+    return '<div class="formula-box">วิธีคิด (ไม่ใช่สูตร TVM แต่เป็นสิทธิตามกฎหมายคุ้มครองแรงงาน ตามอายุงาน ณ วันเกษียณ):<br>' + tierNote + '<br>เงินชดเชย = เงินเดือนสุดท้าย ' + fmt(r.salaryAtRetire) + ' บาท × ' + s.months.toFixed(2) + ' เท่า = <strong>' + fmt(s.amount) + ' บาท</strong></div>' +
+      '<div class="grid-3">' +
+      metricCard('อายุงานรวม ณ วันเกษียณ', s.serviceYears.toFixed(1) + ' ปี') +
+      metricCard('สิทธิเงินชดเชย', s.months.toFixed(2) + ' เท่าของเงินเดือน') +
+      metricCard('จำนวนเงินชดเชยโดยประมาณ', fmt(s.amount) + ' บาท', 'green') + '</div>' +
+      detailTable([{ svcYears: s.serviceYears, months: s.months, salary: r.salaryAtRetire, amount: s.amount }], [
         { label: 'อายุงานรวม', render: function (row) { return row.svcYears.toFixed(1) + ' ปี'; } },
         { label: 'สิทธิตามกฎหมาย (ตารางวัน)', render: function (row) { return row.months.toFixed(2) + ' เท่าของเงินเดือน'; } },
         { label: 'เงินเดือนสุดท้าย (nominal)', render: function (row) { return fmt(row.salary) + ' บาท'; } },
@@ -1349,15 +1368,39 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       { label: 'ผลตอบแทน/ปี', render: function (row) { return (row.returnRate * 100).toFixed(2) + '%'; } },
       { label: 'มูลค่า ณ วันเกษียณ', render: function (row) { return fmt(row.fv); } }
     ];
+    var pathCols = [
+      { label: 'ปีที่', render: function (row) { return row.year; } },
+      { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
+      { label: 'อายุ', render: function (row) { return row.age; } },
+      { label: 'มูลค่าสะสม', render: function (row) { return fmt(row.balance); } }
+    ];
+    var regPathCols = [
+      { label: 'ปีที่', render: function (row) { return row.year; } },
+      { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
+      { label: 'อายุ', render: function (row) { return row.age; } },
+      { label: 'เงินสมทบปีนั้น', render: function (row) { return row.contribution > 0 ? fmt(row.contribution) : '-'; } },
+      { label: 'มูลค่าสะสม', render: function (row) { return fmt(row.balance); } }
+    ];
+    var currentBlocks = (r.currentItems || []).map(function (it) {
+      return '<div class="formula-box">' + esc(it.name) + ' — วิธีคิด (สูตร FV เงินก้อนเดียว): ' + fmt(it.amount) + ' × (1 + ' + (it.returnRate * 100).toFixed(2) + '%)<sup>' + r.yearsToRetire + ' ปี</sup> = <strong>' + fmt(it.fv) + ' บาท</strong></div>' +
+        detailTable(it.path, pathCols, 'item' + it.id);
+    }).join('');
+    var regularBlocks = (r.regularItems || []).map(function (it) {
+      var dueLabel = it.timing === 'begin' ? 'ต้นงวด' : 'ปลายงวด';
+      return '<div class="formula-box">รายการออม' + (it.frequency === 'monthly' ? 'รายเดือน' : 'รายปี') + ' ' + fmt(it.amount) + ' บาท (' + dueLabel + ') — วิธีคิด (สูตร FV เงินออมสม่ำเสมอ/Annuity): เงินสมทบปีละ ' + fmt(it.annualAmt) + ' บาท ที่ผลตอบแทน ' + (it.returnRate * 100).toFixed(2) + '%/ปี เป็นเวลา ' + r.yearsToRetire + ' ปี = <strong>' + fmt(it.fv) + ' บาท</strong></div>' +
+        detailTable(it.path, regPathCols, 'regitem' + it.id);
+    }).join('');
     return '<div class="subblock"><div class="subblock-title">เงินออม/เงินลงทุนปัจจุบัน</div>' +
       '<div class="grid-2">' +
       metricCard('รวมมูลค่า ณ วันเกษียณ (คงพอร์ตเดิมแต่ละตัว)', fmt(r.currentSavingsFV_asis) + ' บาท', 'navy') +
       metricCard('ถ้าย้ายทั้งหมดไปพอร์ตตามแผน (ข้อ 1)', fmt(r.currentSavingsFV_ifPlanned) + ' บาท', 'green', 'ใช้อัตราผลตอบแทนพอร์ตก่อนเกษียณที่ตั้งค่าไว้') +
       '</div>' +
-      detailTable(r.currentItems, itemCols, 'currentsavingscalc') + '</div>' +
+      detailTable(r.currentItems, itemCols, 'currentsavingscalc') +
+      currentBlocks + '</div>' +
       '<div class="subblock"><div class="subblock-title">เงินออมประจำ</div>' +
       metricCard('มูลค่ารวม ณ วันเกษียณ (เงินออมประจำ)', fmt(r.savingsRegularFV) + ' บาท', 'green') +
-      detailTable(r.regularItems, regCols, 'regularsavingscalc') + '</div>';
+      detailTable(r.regularItems, regCols, 'regularsavingscalc') +
+      regularBlocks + '</div>';
   }
 
   function renderWindfalls(a) {
