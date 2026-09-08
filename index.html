@@ -45,16 +45,16 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .brand-title { font-weight: 800; font-size: 21px; letter-spacing: 0.2px; }
 .brand-sub { font-size: 11px; color: #B9D2EA; letter-spacing: 0.5px; margin-top: 2px; }
 
-.action-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.action-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; width: 100%; align-self: stretch; }
 .action-divider { width: 1px; align-self: stretch; background: rgba(255,255,255,0.18); margin: 0 2px; }
 .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; background: rgba(255,255,255,0.08); border: none; border-radius: 8px; padding: 7px 10px; color: #DCEBFA; cursor: pointer; font-family: inherit; flex: 1; min-width: 58px; }
 .icon-btn:hover { background: rgba(255,255,255,0.16); }
 .icon-btn-ic { font-size: 16px; line-height: 1; }
 .icon-btn-label { font-size: 10px; font-weight: 600; white-space: nowrap; }
-.btn-danger-outline { background: transparent; border: 1px solid rgba(193,84,74,0.6); color: #E8A9A2; margin-top: auto; }
+.btn-danger-outline { background: transparent; border: 1px solid rgba(193,84,74,0.6); color: #E8A9A2; margin-top: auto; width: 100%; align-self: stretch; }
 .btn-danger-outline:hover { background: rgba(193,84,74,0.15); }
-.case-list { display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
-.case-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 10px; border-radius: 8px; cursor: pointer; color: #DCEBFA; font-size: 14px; }
+.case-list { display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; width: 100%; align-self: stretch; }
+.case-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 10px; border-radius: 8px; cursor: pointer; color: #DCEBFA; font-size: 14px; width: 100%; }
 .case-item:hover { background: rgba(255,255,255,0.08); }
 .case-item.active { background: var(--blue-bright); color: var(--white); font-weight: 700; }
 .case-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -70,8 +70,8 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .btn-icon { background: none; border: none; color: var(--red-500); font-size: 20px; cursor: pointer; line-height: 1; padding: 2px 6px; font-weight: 700; }
 
 .main { padding: 20px 28px 60px; max-width: 1140px; }
-.header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
-.case-name-input { font-size: 23px; font-weight: 700; color: var(--navy-900); border: none; background: transparent; font-family: inherit; padding: 4px 2px; border-bottom: 2px solid transparent; flex: 1; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.case-name-input { font-size: 23px; font-weight: 700; color: var(--navy-900); border: none; background: transparent; font-family: inherit; padding: 4px 2px; border-bottom: 2px solid transparent; flex: 1; min-width: 0; }
 .case-name-input:focus { outline: none; border-bottom: 2px solid var(--blue-bright); }
 
 .tabs { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 2px solid var(--line); }
@@ -137,6 +137,8 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .entry-cell-del { display: flex; justify-content: center; }
 .entry-empty { padding: 16px 10px; color: var(--ink-soft); font-size: 13px; text-align: center; }
 .entry-note { font-size: 12px; color: var(--ink-soft); padding: 4px 10px 8px; }
+.btn-add-row { background: var(--white); color: var(--blue-bright); border: 1.5px solid var(--blue-bright); font-weight: 700; }
+.btn-add-row:hover { background: var(--blue-100); }
 
 .list-card { background: var(--blue-100); border-radius: 8px; padding: 12px 14px; margin-top: 12px; border: 1px solid var(--blue-200); }
 .list-card-head { display: flex; align-items: center; gap: 10px; }
@@ -403,7 +405,7 @@ function bucketRequiredToday(needAnnualAtBucketStart, pensionAnnualFlat, drawdow
    buckets: [{years, waitingReturn, drawdownReturn, requiredToday}]
    needAnnualFn(yearIndex) -> desired annual withdrawal that year (1-based, inflation already applied)
    pensionAnnualFn(yearIndex) -> flat pension income that year (SSO + annuities + recurring post-retirement income) */
-function simulateBucketsForward(buckets, needAnnualFn, pensionAnnualFn, totalYears) {
+function simulateBucketsForward(buckets, needAnnualFn, pensionAnnualFn, totalYears, oneOffs) {
   var bals = buckets.map(function (b) { return b.requiredToday; });
   var bounds = [];
   var acc = 0;
@@ -413,10 +415,11 @@ function simulateBucketsForward(buckets, needAnnualFn, pensionAnnualFn, totalYea
   for (var y = 1; y <= totalYears; y++) {
     var need = needAnnualFn(y);
     var pension = pensionAnnualFn(y);
+    var oneOff = (oneOffs && oneOffs[y]) || 0;
     for (var i = 0; i < buckets.length; i++) {
       var active = y > bounds[i][0] && y <= bounds[i][1];
       if (active) {
-        var proposed = bals[i] * (1 + buckets[i].drawdownReturn) + pension - need;
+        var proposed = bals[i] * (1 + buckets[i].drawdownReturn) + pension - need + oneOff;
         if (proposed < 0) {
           if (shortfallStartYear === null) shortfallStartYear = y;
           bals[i] = 0;
@@ -508,15 +511,15 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         fundReturn: 0.04, startingBalance: 0, serviceYearsSoFar: 3
       },
       sso: { enabled: true, avgWageCapped: 15000, monthsPaidSoFar: 60 },
-      lifeAnnuities: [],
       severance: { enabled: true },
-      goals: [{ id: uid(), name: 'เป้าหมายตัวอย่าง (แก้ไข/ลบได้)', kind: 'lumpsum', phase: 'pre', targetAge: 40, amountToday: 200000, returnRate: 0.05, annualPremiumToday: 20000, startAge: 35, paymentYears: 10 }],
+      goals: [{ id: uid(), name: 'เป้าหมายตัวอย่าง (แก้ไข/ลบได้)', startAge: 40, endAge: 40, amountToday: 200000, returnRate: 0.05 }],
       currentSavings: { items: [
         { id: uid(), name: 'กองทุนรวมหุ้น (ตัวอย่าง)', amount: 200000, returnRate: 0.07 },
         { id: uid(), name: 'เงินฝากประจำ (ตัวอย่าง)', amount: 100000, returnRate: 0.02 }
       ] },
       regularSavings: { amount: 5000, frequency: 'monthly', timing: 'end' },
-      windfalls: [{ id: uid(), description: 'เงินก้อนตัวอย่าง (แก้ไข/ลบได้)', flowType: 'lumpsum', amount: 100000, ageReceived: 60, phase: 'pre', frequency: 'annual', amountPerPeriod: 10000, startAge: 60, durationYears: 5 }],
+      windfalls: [{ id: uid(), description: 'เงินก้อนตัวอย่าง (แก้ไข/ลบได้)', flowType: 'lumpsum', amount: 100000, ageReceived: 60, frequency: 'annual', amountPerPeriod: 10000, startAge: 61, endAge: 65 }],
+      healthInsurance: { returnRate: 0.04, bands: [{ id: uid(), fromAge: 61, toAge: 70, annualPremiumToday: 30000 }] },
       extraSavingMode: 'flat', extraSavingReturn: 0.05,
       buckets: defaultBuckets(25),
       stressTestDelta: -0.01
@@ -545,11 +548,21 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       base.pvd = mergeObj(base.pvd, loaded.pvd);
       if (loaded.pvd && Array.isArray(loaded.pvd.employerTiers) && loaded.pvd.employerTiers.length) base.pvd.employerTiers = loaded.pvd.employerTiers;
       base.sso = mergeObj(base.sso, loaded.sso);
-      if (Array.isArray(loaded.lifeAnnuities)) base.lifeAnnuities = loaded.lifeAnnuities;
       base.severance = mergeObj(base.severance, loaded.severance);
+      /* migrate old goal shapes: kind/phase/targetAge -> startAge/endAge (drop 'premium' kind entirely, folded into healthInsurance) */
       if (Array.isArray(loaded.goals)) {
-        base.goals = loaded.goals.map(function (g) {
-          return Object.assign({ kind: 'lumpsum', phase: 'pre', returnRate: 0.05, annualPremiumToday: 20000, startAge: base.personal.currentAge, paymentYears: 10 }, g);
+        base.goals = loaded.goals.filter(function (g) { return g.kind !== 'premium'; }).map(function (g) {
+          var startAge = g.startAge != null ? g.startAge : (g.targetAge != null ? g.targetAge : base.personal.currentAge + 5);
+          var endAge = g.endAge != null ? g.endAge : (g.targetAge != null ? g.targetAge : startAge);
+          return { id: g.id || uid(), name: g.name || 'เป้าหมาย', startAge: startAge, endAge: endAge, amountToday: g.amountToday != null ? g.amountToday : 100000, returnRate: g.returnRate != null ? g.returnRate : 0.05 };
+        });
+        if (!base.goals.length) base.goals = [];
+      }
+      /* migrate old life annuities into recurring windfalls (post-retirement income) */
+      var migratedAnnuityWindfalls = [];
+      if (Array.isArray(loaded.lifeAnnuities)) {
+        migratedAnnuityWindfalls = loaded.lifeAnnuities.map(function (la) {
+          return { id: la.id || uid(), description: la.label || 'บำนาญประกันชีวิต', flowType: 'recurring', frequency: 'annual', amountPerPeriod: la.amountPerYear || 0, startAge: la.startAge || base.personal.retireAge, endAge: la.endAge != null ? la.endAge : (base.personal.lifeExpectancy) };
         });
       }
       /* migrate old currentSavings.amount (single value) -> items[] (list) */
@@ -563,9 +576,18 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       base.regularSavings = mergeObj(base.regularSavings, loaded.regularSavings);
       if (Array.isArray(loaded.windfalls)) {
         base.windfalls = loaded.windfalls.map(function (w) {
-          return Object.assign({ flowType: 'lumpsum', frequency: 'annual', amountPerPeriod: 10000, startAge: base.personal.retireAge, durationYears: 5 }, w);
-        });
+          var endAge = w.endAge != null ? w.endAge : (w.durationYears != null ? (w.startAge || base.personal.retireAge) + w.durationYears - 1 : (w.startAge || base.personal.retireAge) + 4);
+          return {
+            id: w.id || uid(), description: w.description || 'เงินก้อน', flowType: w.flowType || 'lumpsum',
+            amount: w.amount != null ? w.amount : 100000, ageReceived: w.ageReceived != null ? w.ageReceived : base.personal.retireAge,
+            frequency: w.frequency || 'annual', amountPerPeriod: w.amountPerPeriod != null ? w.amountPerPeriod : 10000,
+            startAge: w.startAge != null ? w.startAge : base.personal.retireAge, endAge: endAge
+          };
+        }).concat(migratedAnnuityWindfalls);
+      } else if (migratedAnnuityWindfalls.length) {
+        base.windfalls = base.windfalls.concat(migratedAnnuityWindfalls);
       }
+      if (loaded.healthInsurance && Array.isArray(loaded.healthInsurance.bands)) base.healthInsurance = loaded.healthInsurance;
       base.extraSavingMode = loaded.extraSavingMode || base.extraSavingMode;
       if (typeof loaded.extraSavingReturn === 'number') base.extraSavingReturn = loaded.extraSavingReturn;
       if (loaded.buckets && Array.isArray(loaded.buckets.list) && loaded.buckets.list.length) base.buckets = loaded.buckets;
@@ -636,7 +658,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       return '<div class="entry-row" style="grid-template-columns:' + cols + '">' + cells + '<div class="entry-cell entry-cell-del">' + delBtn + '</div></div>';
     }).join('') : '<div class="entry-empty">' + esc(opts.emptyMsg || 'ยังไม่มีรายการ') + '</div>';
     return '<div class="entry-table"><div class="entry-table-scroll">' + head + body + '</div></div>' +
-      '<button class="btn btn-ghost btn-sm" type="button" data-action="' + opts.addAction + '" style="margin-top:8px">+ ' + esc(opts.addLabel) + '</button>';
+      '<button class="btn btn-add-row btn-sm" type="button" data-action="' + opts.addAction + '" style="margin-top:8px">+ ' + esc(opts.addLabel) + '</button>';
   }
   function radio(label, path, val, current) {
     var pa = pathAttr(path);
@@ -741,29 +763,21 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       severance = { serviceYears: serviceYears, months: months, amount: months * salaryAtRetire };
     }
 
-    /* windfalls: split lumpsum/recurring x pre/post */
+    /* windfalls: auto-split lumpsum/recurring into pre/post portions based on retireAge */
     var windfallsFV = 0;
     var postWindfallOneOffs = [];
     var postIncomeStreams = []; /* {startAge, endAge, amountPerYear} */
     (a.windfalls || []).forEach(function (w) {
       if (w.flowType === 'recurring') {
         var perYearAmt = w.frequency === 'monthly' ? w.amountPerPeriod * 12 : w.amountPerPeriod;
-        var endAge = w.startAge + Math.max(1, w.durationYears) - 1;
-        if (w.phase === 'pre') {
-          var lastAge = Math.min(endAge, p.retireAge - 1);
-          for (var age = w.startAge; age <= lastAge; age++) windfallsFV += C.fvAlongGlide(perYearAmt, age, p.retireAge, segs, portfolio.flatReturn);
-        } else {
-          postIncomeStreams.push({ startAge: Math.max(w.startAge, p.retireAge), endAge: endAge, amountPerYear: perYearAmt });
-        }
+        var preEndAge = Math.min(w.endAge, p.retireAge - 1);
+        for (var age = w.startAge; age <= preEndAge; age++) windfallsFV += C.fvAlongGlide(perYearAmt, age, p.retireAge, segs, portfolio.flatReturn);
+        var postStartAge = Math.max(w.startAge, p.retireAge);
+        if (postStartAge <= w.endAge) postIncomeStreams.push({ startAge: postStartAge, endAge: w.endAge, amountPerYear: perYearAmt });
       } else {
-        if (w.phase === 'pre') windfallsFV += C.fvAlongGlide(w.amount, w.ageReceived, p.retireAge, segs, portfolio.flatReturn);
+        if (w.ageReceived < p.retireAge) windfallsFV += C.fvAlongGlide(w.amount, w.ageReceived, p.retireAge, segs, portfolio.flatReturn);
         else postWindfallOneOffs.push(w);
       }
-    });
-
-    /* life annuities -> post income streams */
-    (a.lifeAnnuities || []).forEach(function (la) {
-      postIncomeStreams.push({ startAge: la.startAge, endAge: la.endAge == null ? Infinity : la.endAge, amountPerYear: la.amountPerYear });
     });
 
     function pensionAnnualAtAge(age) {
@@ -792,15 +806,72 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
 
     var availableAtRetirement = pvdResult.finalBalance + (severance ? severance.amount : 0) + savingsRegularFV + currentSavingsFV_asis + windfallsFV;
 
-    /* ---- buckets: size each bucket, then sum for required corpus ---- */
+    /* one-offs during drawdown: post-retirement portion of goals (-), post lumpsum windfalls (+), post-retirement health premiums (-) */
+    var oneOffs = {};
+    (a.goals || []).forEach(function (g) {
+      var fromAge = Math.max(g.startAge, p.retireAge);
+      for (var age = fromAge; age <= g.endAge; age++) {
+        var yi = age - p.retireAge;
+        if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) - g.amountToday * Math.pow(1 + p.inflation, age - p.currentAge);
+      }
+    });
+    postWindfallOneOffs.forEach(function (w) {
+      var yi = w.ageReceived - p.retireAge;
+      if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) + w.amount;
+    });
+
+    /* health insurance premiums: age-banded, inflation-adjusted; post-retirement portion feeds oneOffs */
+    var hi = a.healthInsurance || { returnRate: 0.04, bands: [] };
+    var healthBandsCalc = (hi.bands || []).map(function (b) {
+      var yearsFromNow = Math.max(0, b.fromAge - p.currentAge);
+      var premiumAtStart = b.annualPremiumToday * Math.pow(1 + p.inflation, yearsFromNow);
+      var bandYears = Math.max(1, b.toAge - b.fromAge + 1);
+      var pvAtStart = C.growingAnnuityPV(premiumAtStart, hi.returnRate, p.inflation, bandYears, true);
+      var pvToday = pvAtStart / Math.pow(1 + hi.returnRate, yearsFromNow);
+      return { id: b.id, fromAge: b.fromAge, toAge: b.toAge, annualPremiumToday: b.annualPremiumToday, premiumAtStart: premiumAtStart, pvToday: pvToday };
+    });
+    var healthRequiredToday = healthBandsCalc.reduce(function (s, b) { return s + b.pvToday; }, 0);
+    var healthMonthsToFirstBand = hi.bands.length ? Math.max(1, (Math.min.apply(null, hi.bands.map(function (b) { return b.fromAge; })) - p.currentAge) * 12) : 12;
+    /* target the FV needed at the point savings are first used (start of earliest band), not the present-value figure */
+    var healthFvNeededAtFirstBand = healthBandsCalc.reduce(function (s, b) { return s + b.pvToday * Math.pow(1 + hi.returnRate, healthMonthsToFirstBand / 12); }, 0);
+    var healthMonthlySaving = healthFvNeededAtFirstBand > 0 ? C.pmtFromFV(healthFvNeededAtFirstBand, hi.returnRate, healthMonthsToFirstBand / 12, false) / 12 : 0;
+    var healthYearTable = [];
+    for (var hy = 0; hy <= (p.lifeExpectancy - p.currentAge); hy++) {
+      var age = p.currentAge + hy;
+      var band = (hi.bands || []).find(function (b) { return age >= b.fromAge && age <= b.toAge; });
+      var premiumDue = band ? band.annualPremiumToday * Math.pow(1 + p.inflation, hy) : 0;
+      healthYearTable.push({ year: hy, beYear: p.currentYearAD + 543 + hy, age: age, premiumDue: premiumDue, phase: age < p.retireAge ? 'สะสม/ก่อนเกษียณ' : (premiumDue > 0 ? 'จ่ายเบี้ย' : 'หลังเกษียณ') });
+    }
+    (hi.bands || []).forEach(function (b) {
+      var fromAge = Math.max(b.fromAge, p.retireAge);
+      for (var age = fromAge; age <= b.toAge; age++) {
+        var yi = age - p.retireAge;
+        if (yi >= 1) {
+          var amt = b.annualPremiumToday * Math.pow(1 + p.inflation, age - p.currentAge);
+          oneOffs[yi] = (oneOffs[yi] || 0) - amt;
+        }
+      }
+    });
+
+    function pvOfOneOffsInRange(fromYear, toYear, rate) {
+      var pv = 0;
+      for (var y = fromYear; y <= toYear; y++) { if (oneOffs[y]) pv += oneOffs[y] / Math.pow(1 + rate, y - fromYear); }
+      return pv;
+    }
+
+    /* ---- buckets: size each bucket (ongoing need + any lumpy cashflows in its window), then sum for required corpus ---- */
     var bucketDefs = a.buckets.list;
     var cum = 0;
     var sizedBuckets = bucketDefs.map(function (b, i) {
       var startAgeOfBucket = p.retireAge + cum;
       var needAtStart = firstYearAnnualNeed * Math.pow(1 + p.inflation, cum);
       var pensionFlatForBucket = pensionAnnualAtAge(startAgeOfBucket);
-      var reqToday = C.bucketRequiredToday(needAtStart, pensionFlatForBucket, b.drawdownReturn, p.inflation, b.years, i === 0 ? 0 : b.waitingReturn, cum);
-      var sized = { id: b.id, label: b.label, years: b.years, waitingReturn: b.waitingReturn, drawdownReturn: b.drawdownReturn, startAge: startAgeOfBucket, requiredToday: reqToday, pensionFlatForBucket: pensionFlatForBucket, needAtStart: needAtStart };
+      var reqAtStart = C.growingAnnuityPV(needAtStart, b.drawdownReturn, p.inflation, b.years, true)
+        - (pensionFlatForBucket > 0 ? C.growingAnnuityPV(pensionFlatForBucket, b.drawdownReturn, 0, b.years, true) : 0);
+      var oneOffsPV = pvOfOneOffsInRange(cum + 1, cum + b.years, b.drawdownReturn);
+      reqAtStart = Math.max(0, reqAtStart - oneOffsPV);
+      var reqToday = reqAtStart / Math.pow(1 + (i === 0 ? 0 : b.waitingReturn), cum);
+      var sized = { id: b.id, label: b.label, years: b.years, waitingReturn: b.waitingReturn, drawdownReturn: b.drawdownReturn, startAge: startAgeOfBucket, requiredToday: reqToday, pensionFlatForBucket: pensionFlatForBucket, needAtStart: needAtStart, oneOffsPV: oneOffsPV };
       cum += b.years;
       return sized;
     });
@@ -816,23 +887,10 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       extraMonthlySaving = a.extraSavingMode === 'growing' ? extraSavingGrowingFirstMonthly : extraSavingFlatMonthly;
     }
 
-    /* one-offs during drawdown: post lumpsum goals (-), post lumpsum windfalls (+) */
-    var oneOffs = {};
-    (a.goals || []).forEach(function (g) {
-      if (g.kind !== 'premium' && g.phase === 'post') {
-        var yi = g.targetAge - p.retireAge;
-        if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) - g.amountToday * Math.pow(1 + p.inflation, Math.max(0, g.targetAge - p.currentAge));
-      }
-    });
-    postWindfallOneOffs.forEach(function (w) {
-      var yi = w.ageReceived - p.retireAge;
-      if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) + w.amount;
-    });
-
     var totalBucketYears = sizedBuckets.reduce(function (s, b) { return s + b.years; }, 0);
 
-    /* forward simulation with the planned withdrawal (option B) */
-    var fwdPlanned = C.simulateBucketsForward(sizedBuckets, needAnnualAtYear, pensionAnnualAtYear, totalBucketYears);
+    /* forward simulation with the planned withdrawal (option B) — now includes one-off cashflows */
+    var fwdPlanned = C.simulateBucketsForward(sizedBuckets, needAnnualAtYear, pensionAnnualAtYear, totalBucketYears, oneOffs);
     var depletionAge = fwdPlanned.shortfallStartYear ? p.retireAge + fwdPlanned.shortfallStartYear : null;
 
     var drawdownTable = [];
@@ -850,11 +908,11 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
 
     /* option A: solve sustainable flat (inflation-adjusted) withdrawal */
     function sustainableSolve(bucketsForSolve) {
-      var lo = 0, hi = Math.max(netRequiredCorpus * 3, 1e6) + 1;
+      var lo = 0, hiBound = Math.max(netRequiredCorpus * 3, 1e6) + 1;
       for (var i = 0; i < 60; i++) {
-        var mid = (lo + hi) / 2;
-        var fwd = C.simulateBucketsForward(bucketsForSolve, function (y) { return mid * Math.pow(1 + p.inflation, y - 1); }, pensionAnnualAtYear, totalBucketYears);
-        if (fwd.shortfallStartYear === null) lo = mid; else hi = mid;
+        var mid = (lo + hiBound) / 2;
+        var fwd = C.simulateBucketsForward(bucketsForSolve, function (y) { return mid * Math.pow(1 + p.inflation, y - 1); }, pensionAnnualAtYear, totalBucketYears, oneOffs);
+        if (fwd.shortfallStartYear === null) lo = mid; else hiBound = mid;
       }
       return lo;
     }
@@ -862,7 +920,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
 
     /* stress test: apply delta to drawdownReturn of every bucket */
     var stressedBuckets = sizedBuckets.map(function (b) { return Object.assign({}, b, { drawdownReturn: Math.max(-0.5, b.drawdownReturn + a.stressTestDelta) }); });
-    var fwdStressed = C.simulateBucketsForward(stressedBuckets, needAnnualAtYear, pensionAnnualAtYear, totalBucketYears);
+    var fwdStressed = C.simulateBucketsForward(stressedBuckets, needAnnualAtYear, pensionAnnualAtYear, totalBucketYears, oneOffs);
     var depletionAgeStressed = fwdStressed.shortfallStartYear ? p.retireAge + fwdStressed.shortfallStartYear : null;
     var sustainableMonthlyStressed = sustainableSolve(stressedBuckets) / 12;
 
@@ -881,14 +939,15 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     events.push({ age: p.currentAge, be: p.currentYearAD + 543, label: 'เริ่มวางแผน', type: 'milestone' });
     events.push({ age: p.retireAge, be: p.currentYearAD + 543 + yearsToRetire, label: 'วันเกษียณอายุ', type: 'milestone' });
     (a.goals || []).forEach(function (g) {
-      if (g.kind !== 'premium') events.push({ age: g.targetAge, be: p.currentYearAD + 543 + (g.targetAge - p.currentAge), label: 'เป้าหมาย: ' + g.name, type: 'goal' });
+      var label = g.startAge === g.endAge ? ('เป้าหมาย: ' + g.name) : ('เริ่มเป้าหมาย: ' + g.name);
+      events.push({ age: g.startAge, be: p.currentYearAD + 543 + (g.startAge - p.currentAge), label: label, type: 'goal' });
     });
     (a.windfalls || []).forEach(function (w) {
       if (w.flowType === 'lumpsum') events.push({ age: w.ageReceived, be: p.currentYearAD + 543 + (w.ageReceived - p.currentAge), label: 'เงินก้อนเข้า: ' + w.description, type: 'income' });
       else events.push({ age: w.startAge, be: p.currentYearAD + 543 + (w.startAge - p.currentAge), label: 'เริ่มรับ: ' + w.description, type: 'income' });
     });
-    (a.lifeAnnuities || []).forEach(function (la) {
-      events.push({ age: la.startAge, be: p.currentYearAD + 543 + (la.startAge - p.currentAge), label: 'เริ่มบำนาญ: ' + la.label, type: 'income' });
+    (a.healthInsurance.bands || []).forEach(function (b) {
+      events.push({ age: b.fromAge, be: p.currentYearAD + 543 + (b.fromAge - p.currentAge), label: 'เริ่มจ่ายเบี้ยประกันสุขภาพ (' + b.fromAge + '-' + b.toAge + ' ปี)', type: 'goal' });
     });
     cum = 0;
     sizedBuckets.forEach(function (b, i) {
@@ -912,7 +971,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       fwdPlanned: fwdPlanned, depletionAge: depletionAge, sustainableMonthly: sustainableMonthly,
       depletionAgeStressed: depletionAgeStressed, sustainableMonthlyStressed: sustainableMonthlyStressed,
       accumPath: accumPath, drawdownPath: drawdownPath, events: events,
-      pensionAnnualAtYear: pensionAnnualAtYear, drawdownTable: drawdownTable
+      pensionAnnualAtYear: pensionAnnualAtYear, drawdownTable: drawdownTable,
+      healthBandsCalc: healthBandsCalc, healthRequiredToday: healthRequiredToday, healthMonthlySaving: healthMonthlySaving, healthYearTable: healthYearTable
     };
   }
 
@@ -944,7 +1004,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '</div>' +
       (portfolio.mode === 'flat'
         ? field('อัตราผลตอบแทนก่อนเกษียณ', ['preRetirementPortfolio', 'flatReturn'], portfolio.flatReturn, { type: 'percent', suffix: '%/ปี' })
-        : '<div class="tier-table">' + segHtml + '<button class="btn btn-ghost btn-sm" type="button" data-action="addSegment">+ เพิ่มช่วงอายุ</button></div>');
+        : '<div class="tier-table">' + segHtml + '<button class="btn btn-add-row btn-sm" type="button" data-action="addSegment">+ เพิ่มช่วงอายุ</button></div>');
   }
 
   function renderPersonal(a) {
@@ -996,23 +1056,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       },
       addAction: 'addTier', addLabel: 'เพิ่มขั้น', delAction: 'delTier', emptyMsg: 'ยังไม่มีขั้นบันได'
     });
-    var annuitiesTable = entryTable({
-      headers: ['ชื่อ/กรมธรรม์', 'เงินบำนาญ/ปี', 'เริ่มรับอายุ', 'รับถึงอายุ (ว่าง=ตลอดชีพ)'],
-      colTemplate: '1.3fr 1fr 0.8fr 1fr',
-      rows: (a.lifeAnnuities || []).map(function (la, i) { return { la: la, idx: i }; }),
-      rowCells: function (row) {
-        var la = row.la, i = row.idx;
-        return [
-          rawInput(['lifeAnnuities', i, 'label'], la.label, { type: 'text' }),
-          rawInput(['lifeAnnuities', i, 'amountPerYear'], la.amountPerYear, { type: 'money' }),
-          rawInput(['lifeAnnuities', i, 'startAge'], la.startAge, {}),
-          la.endAge == null
-            ? '<span class="entry-note">ตลอดชีพ <button type="button" class="btn-icon" style="color:var(--blue-bright);font-size:13px" data-action="toggleLifeLong" data-index="' + i + '">แก้ไข</button></span>'
-            : '<span style="display:flex;gap:4px;align-items:center">' + rawInput(['lifeAnnuities', i, 'endAge'], la.endAge, {}) + '<button type="button" class="btn-icon" style="font-size:16px" data-action="toggleLifeLong" data-index="' + i + '" title="ตั้งเป็นตลอดชีพ">∞</button></span>'
-        ];
-      },
-      addAction: 'addAnnuity', addLabel: 'เพิ่มบำนาญ', delAction: 'delAnnuity', emptyMsg: 'เช่น บำนาญจากกรมธรรม์ประกันชีวิต'
-    });
     return '<div class="subblock">' +
       checkbox('มีกองทุนสำรองเลี้ยงชีพ / กบข.', ['pvd', 'enabled'], pvd.enabled) +
       (pvd.enabled ? (
@@ -1059,9 +1102,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
             { label: 'บำนาญ/เดือน', render: function (row) { return fmt(row.monthly) + ' บาท'; } }
           ], 'sso')
         : '') +
-      '</div>' +
-      '<div class="subblock"><div class="subblock-title">บำนาญ/เงินรายงวดจากกรมธรรม์ประกันชีวิต</div>' +
-      annuitiesTable + '</div>';
+      '<div class="entry-note" style="margin-top:8px">บำนาญประกันชีวิตหรือเงินรายงวดอื่นๆ ให้ไปเพิ่มที่หัวข้อ "เงินก้อน/เงินได้ระหว่างทาง" แบบรายงวด — ระบบจะรวมให้อัตโนมัติ</div>' +
+      '</div>';
   }
 
   function renderSeverance(r) {
@@ -1078,9 +1120,10 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       ], 'severance');
   }
 
-  function goalTerm(g, currentAge) {
-    var yearsAway = g.targetAge - currentAge;
-    if (yearsAway <= 3) return 'ระยะสั้น'; if (yearsAway <= 10) return 'ระยะกลาง'; return 'ระยะยาว';
+  function goalPhaseLabel(g, retireAge) {
+    if (g.endAge < retireAge) return 'ก่อนเกษียณ';
+    if (g.startAge >= retireAge) return 'หลังเกษียณ';
+    return 'คาบเกี่ยว';
   }
   function pmtMonthlyForGoal(target, annualRate, years) {
     var r = annualRate / 12, n = years * 12;
@@ -1089,54 +1132,33 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
   function renderGoals(a) {
     var p = a.personal;
-    var lumpRows = [], premRows = [];
-    a.goals.forEach(function (g, i) { (g.kind === 'premium' ? premRows : lumpRows).push({ g: g, idx: i }); });
-
-    var lumpTable = entryTable({
-      headers: ['ชื่อเป้าหมาย', 'ช่วง', 'อายุเป้าหมาย', 'จำนวนเงิน (วันนี้)', 'ผลตอบแทน/ปี', 'มูลค่าปรับเงินเฟ้อ', 'ควรออมเพิ่ม/ด.'],
-      colTemplate: '1.3fr 0.9fr 0.7fr 1fr 0.8fr 1fr 1fr',
-      rows: lumpRows,
+    var table = entryTable({
+      headers: ['ชื่อเป้าหมาย', 'อายุเริ่ม', 'อายุสิ้นสุด', 'ช่วง', 'จำนวนเงิน/ปี (วันนี้)', 'ผลตอบแทน/ปี (ถ้าก่อนเกษียณ)', 'มูลค่าปรับเงินเฟ้อรวม', 'ควรออมเพิ่ม/ด. (ถ้าก่อนเกษียณ)'],
+      colTemplate: '1.2fr 0.7fr 0.7fr 0.9fr 1fr 1fr 1fr 1.1fr',
+      rows: a.goals.map(function (g, i) { return { g: g, idx: i }; }),
       rowCells: function (row) {
         var g = row.g, i = row.idx;
-        var yearsAway = g.targetAge - p.currentAge;
-        var amountFuture = g.amountToday * Math.pow(1 + p.inflation, Math.max(0, yearsAway));
-        var extraSave = (g.phase === 'pre' && yearsAway > 0) ? pmtMonthlyForGoal(amountFuture, g.returnRate, yearsAway) : null;
+        var phaseLabel = goalPhaseLabel(g, p.retireAge);
+        var isPre = g.endAge < p.retireAge;
+        var totalFuture = 0;
+        for (var age = g.startAge; age <= g.endAge; age++) totalFuture += g.amountToday * Math.pow(1 + p.inflation, age - p.currentAge);
+        var yearsToStart = g.startAge - p.currentAge;
+        var suggestedSaving = (isPre && yearsToStart > 0) ? pmtMonthlyForGoal(totalFuture, g.returnRate, yearsToStart) : null;
         return [
           rawInput(['goals', i, 'name'], g.name, { type: 'text' }),
-          rawInput(['goals', i, 'phase'], g.phase, { type: 'select', options: [{ value: 'pre', label: 'ก่อนเกษียณ' }, { value: 'post', label: 'หลังเกษียณ' }] }),
-          rawInput(['goals', i, 'targetAge'], g.targetAge, {}),
+          rawInput(['goals', i, 'startAge'], g.startAge, {}),
+          rawInput(['goals', i, 'endAge'], g.endAge, {}),
+          '<span class="entry-note">' + phaseLabel + '</span>',
           rawInput(['goals', i, 'amountToday'], g.amountToday, { type: 'money' }),
-          g.phase === 'pre' ? rawInput(['goals', i, 'returnRate'], g.returnRate, { type: 'percent' }) : '<span class="entry-note">-</span>',
-          '<span class="entry-note">' + fmt(amountFuture) + ' บาท</span>',
-          extraSave !== null ? '<span class="entry-note">' + fmt(extraSave) + ' บาท</span>' : '<span class="entry-note">-</span>'
+          isPre ? rawInput(['goals', i, 'returnRate'], g.returnRate, { type: 'percent' }) : '<span class="entry-note">-</span>',
+          '<span class="entry-note">' + fmt(totalFuture) + ' บาท</span>',
+          suggestedSaving !== null ? '<span class="entry-note">' + fmt(suggestedSaving) + ' บาท</span>' : '<span class="entry-note">-</span>'
         ];
       },
       addAction: 'addGoalLumpsum', addLabel: 'เพิ่มเป้าหมาย', delAction: 'delGoal',
-      emptyMsg: 'ยังไม่มีเป้าหมาย เช่น "ซื้อบ้านในอีก 5 ปี มูลค่าวันนี้ 1,000,000 บาท" — กด + เพิ่มเป้าหมาย ด้านล่าง'
+      emptyMsg: 'เช่น "ซื้อบ้านตอนอายุ 40 มูลค่าวันนี้ 1,000,000 บาท" (อายุเริ่ม=สิ้นสุด=40) หรือค่าใช้จ่ายต่อเนื่องหลายปี — กด + เพิ่มเป้าหมาย ด้านล่าง'
     });
-
-    var premTable = entryTable({
-      headers: ['ชื่อ/กรมธรรม์', 'เบี้ยต่อปี (วันนี้)', 'เริ่มจ่ายอายุ', 'จ่ายกี่ปี', 'รวมเบี้ยตลอดสัญญา'],
-      colTemplate: '1.3fr 1fr 0.8fr 0.8fr 1.2fr',
-      rows: premRows,
-      rowCells: function (row) {
-        var g = row.g, i = row.idx;
-        var totalNominal = 0;
-        for (var yy = 0; yy < g.paymentYears; yy++) totalNominal += g.annualPremiumToday * Math.pow(1 + p.inflation, (g.startAge - p.currentAge) + yy);
-        return [
-          rawInput(['goals', i, 'name'], g.name, { type: 'text' }),
-          rawInput(['goals', i, 'annualPremiumToday'], g.annualPremiumToday, { type: 'money' }),
-          rawInput(['goals', i, 'startAge'], g.startAge, {}),
-          rawInput(['goals', i, 'paymentYears'], g.paymentYears, {}),
-          '<span class="entry-note">' + fmt(totalNominal) + ' บาท</span>'
-        ];
-      },
-      addAction: 'addGoalPremium', addLabel: 'เพิ่มเบี้ยประกันที่ต้องเตรียม', delAction: 'delGoal',
-      emptyMsg: 'ยังไม่มีรายการเบี้ยประกันที่ต้องเตรียมเงิน'
-    });
-
-    return '<div class="subblock-title" style="margin-top:0">เป้าหมายเงินก้อน (ระยะสั้น/กลาง/ยาว)</div>' + lumpTable +
-      '<div class="subblock"><div class="subblock-title">เตรียมเงินจ่ายเบี้ยประกัน <span style="font-weight:400;color:var(--ink-soft);font-size:12px">(แสดงแยกเพื่อการวางแผน ไม่รวมในกองทุนเกษียณหลัก)</span></div>' + premTable + '</div>';
+    return '<div class="entry-note" style="padding:0 0 4px">ถ้าเป็นเป้าหมายครั้งเดียว ใส่อายุเริ่ม=อายุสิ้นสุดเท่ากัน (เช่น 40=40) — ถ้าเป็นค่าใช้จ่ายต่อเนื่องหลายปี ใส่ช่วงอายุ และ "จำนวนเงิน" จะถือเป็นยอดต่อปี ระบบจะแยกก่อน/หลังเกษียณให้อัตโนมัติจากอายุที่ใส่ เป้าหมายส่วนที่อยู่หลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 9-10) ให้อัตโนมัติ</div>' + table;
   }
 
   function renderSavings(a, r) {
@@ -1178,19 +1200,26 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function renderWindfalls(a) {
+    var p = a.personal;
     var lumpRows = [], recurRows = [];
     a.windfalls.forEach(function (w, i) { (w.flowType === 'recurring' ? recurRows : lumpRows).push({ w: w, idx: i }); });
 
+    function phaseNote(startAge, endAge) {
+      if ((endAge != null ? endAge : startAge) < p.retireAge) return 'ก่อนเกษียณ';
+      if (startAge >= p.retireAge) return 'หลังเกษียณ';
+      return 'คาบเกี่ยว';
+    }
+
     var lumpTable = entryTable({
-      headers: ['รายการ', 'ช่วง', 'อายุที่ได้รับ', 'จำนวนเงิน (ณ ปีที่ได้รับ)'],
-      colTemplate: '1.4fr 0.9fr 0.8fr 1.1fr',
+      headers: ['รายการ', 'อายุที่ได้รับ', 'ช่วง (อัตโนมัติ)', 'จำนวนเงิน (ณ ปีที่ได้รับ)'],
+      colTemplate: '1.4fr 0.8fr 0.9fr 1.1fr',
       rows: lumpRows,
       rowCells: function (row) {
         var w = row.w, i = row.idx;
         return [
           rawInput(['windfalls', i, 'description'], w.description, { type: 'text' }),
-          rawInput(['windfalls', i, 'phase'], w.phase, { type: 'select', options: [{ value: 'pre', label: 'ก่อนเกษียณ' }, { value: 'post', label: 'หลังเกษียณ' }] }),
           rawInput(['windfalls', i, 'ageReceived'], w.ageReceived, {}),
+          '<span class="entry-note">' + phaseNote(w.ageReceived) + '</span>',
           rawInput(['windfalls', i, 'amount'], w.amount, { type: 'money' })
         ];
       },
@@ -1199,27 +1228,64 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     });
 
     var recurTable = entryTable({
-      headers: ['รายการ', 'ช่วง', 'ความถี่', 'จำนวนเงิน/งวด', 'เริ่มรับอายุ', 'รับกี่ปี'],
-      colTemplate: '1.2fr 0.9fr 0.8fr 1fr 0.8fr 0.7fr',
+      headers: ['รายการ', 'ความถี่', 'จำนวนเงิน/งวด', 'เริ่มรับอายุ', 'รับถึงอายุ', 'ช่วง (อัตโนมัติ)'],
+      colTemplate: '1.2fr 0.8fr 1fr 0.8fr 0.8fr 0.9fr',
       rows: recurRows,
       rowCells: function (row) {
         var w = row.w, i = row.idx;
         return [
           rawInput(['windfalls', i, 'description'], w.description, { type: 'text' }),
-          rawInput(['windfalls', i, 'phase'], w.phase, { type: 'select', options: [{ value: 'pre', label: 'ก่อนเกษียณ' }, { value: 'post', label: 'หลังเกษียณ' }] }),
           rawInput(['windfalls', i, 'frequency'], w.frequency, { type: 'select', options: [{ value: 'monthly', label: 'รายเดือน' }, { value: 'annual', label: 'รายปี' }] }),
           rawInput(['windfalls', i, 'amountPerPeriod'], w.amountPerPeriod, { type: 'money' }),
           rawInput(['windfalls', i, 'startAge'], w.startAge, {}),
-          rawInput(['windfalls', i, 'durationYears'], w.durationYears, {})
+          rawInput(['windfalls', i, 'endAge'], w.endAge, {}),
+          '<span class="entry-note">' + phaseNote(w.startAge, w.endAge) + '</span>'
         ];
       },
       addAction: 'addWindfallRecurring', addLabel: 'เพิ่มเงินรายงวด', delAction: 'delWindfall',
-      emptyMsg: 'เช่น เงินปันผลกองทุน, ค่าเช่า, บำนาญพิเศษ ที่ได้รับเป็นงวดๆ'
+      emptyMsg: 'เช่น เงินปันผลกองทุน, ค่าเช่า, บำนาญพิเศษ (รวมถึงบำนาญประกันชีวิต) ที่ได้รับเป็นงวดๆ'
     });
 
     return '<div class="subblock-title" style="margin-top:0">เงินก้อน (เข้าครั้งเดียว)</div>' + lumpTable +
       '<div class="subblock"><div class="subblock-title">เงินรายงวด</div>' + recurTable + '</div>' +
-      '<div class="entry-note" style="padding:8px 0 0">เงินที่เข้ามาก่อนเกษียณจะถูกลงทุนต่อตามพอร์ตก่อนเกษียณ (ข้อ 1) โดยอัตโนมัติ</div>';
+      '<div class="entry-note" style="padding:8px 0 0">ระบบแยกก่อน/หลังเกษียณให้อัตโนมัติจากอายุที่ใส่ — เงินที่เข้ามาก่อนเกษียณจะถูกลงทุนต่อตามพอร์ตก่อนเกษียณ (ข้อ 1) โดยอัตโนมัติ</div>';
+  }
+
+  function renderHealthInsurance(a, r) {
+    var hi = a.healthInsurance;
+    var bandsTable = entryTable({
+      headers: ['อายุตั้งแต่', 'อายุถึง', 'เบี้ยประกัน/ปี (มูลค่าวันนี้)', 'เบี้ยเมื่อถึงช่วงนั้น (ปรับเงินเฟ้อ)'],
+      colTemplate: '0.8fr 0.8fr 1.1fr 1.3fr',
+      rows: hi.bands.map(function (b, i) { return { b: b, idx: i }; }),
+      rowCells: function (row) {
+        var b = row.b, i = row.idx;
+        var calc = r.healthBandsCalc[i];
+        return [
+          rawInput(['healthInsurance', 'bands', i, 'fromAge'], b.fromAge, {}),
+          rawInput(['healthInsurance', 'bands', i, 'toAge'], b.toAge, {}),
+          rawInput(['healthInsurance', 'bands', i, 'annualPremiumToday'], b.annualPremiumToday, { type: 'money' }),
+          '<span class="entry-note">' + fmt(calc ? calc.premiumAtStart : 0) + ' บาท/ปี</span>'
+        ];
+      },
+      addAction: 'addHealthBand', addLabel: 'เพิ่มช่วงอายุ/เบี้ยประกัน', delAction: 'delHealthBand',
+      emptyMsg: 'เช่น อายุ 61-65 เบี้ยปีละ 30,000 บาท, อายุ 66-70 เบี้ยปีละ 45,000 บาท'
+    });
+    var yearCols = [
+      { label: 'ปีที่', render: function (row) { return row.year; } },
+      { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
+      { label: 'อายุ', render: function (row) { return row.age; } },
+      { label: 'ช่วง', render: function (row) { return row.phase; } },
+      { label: 'เบี้ยที่ต้องจ่ายปีนั้น', render: function (row) { return row.premiumDue > 0 ? fmt(row.premiumDue) + ' บาท' : '-'; } }
+    ];
+    return '<div class="entry-note" style="padding:0 0 4px">ระบุช่วงอายุและเบี้ยประกันสุขภาพที่คาดว่าจะต้องจ่าย ระบบจะคำนวณเงินที่ต้องเตรียมไว้ ณ วันนี้ให้พอสำหรับทุกช่วง</div>' +
+      bandsTable +
+      '<div class="grid-2" style="margin-top:14px">' +
+      metricCard('เงินที่ต้องเตรียมไว้วันนี้ (ทุกช่วงรวมกัน)', fmt(r.healthRequiredToday) + ' บาท', 'navy') +
+      metricCard('ควรออมเดือนละ (จนถึงช่วงแรก)', fmt(r.healthMonthlySaving) + ' บาท/เดือน', 'green') +
+      '</div>' +
+      field('อัตราผลตอบแทนของเงินสำรองนี้', ['healthInsurance', 'returnRate'], hi.returnRate, { type: 'percent', suffix: '%/ปี' }) +
+      detailTable(r.healthYearTable, yearCols, 'health') +
+      '<div class="entry-note">เบี้ยในช่วงหลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 9-10) โดยอัตโนมัติแล้ว</div>';
   }
 
   function renderGap(a, r) {
@@ -1294,7 +1360,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         '</div>';
     }).join('');
     return '<div class="note">แบ่งเงินหลังเกษียณเป็นกี่บัคเก็ตก็ได้ — บัคเก็ตแรกใช้ก่อน (ความเสี่ยงต่ำทันที) บัคเก็ตถัดไปลงทุนความเสี่ยงสูงขึ้นได้ระหว่างรอคิว แล้วจะถูกปรับเป็นความเสี่ยงต่ำเมื่อถึงคิวใช้เงินของตัวเอง</div>' +
-      rowsHtml + '<button class="btn btn-ghost" type="button" data-action="addBucket">+ เพิ่มบัคเก็ต</button>';
+      rowsHtml + '<button class="btn btn-add-row" type="button" data-action="addBucket">+ เพิ่มบัคเก็ต</button>';
   }
 
   function renderStressTest(a, r) {
@@ -1387,17 +1453,18 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   function renderMain(a, r) {
     var clientSections = [
       [1, 'ข้อมูลผู้รับการวางแผน + พอร์ตก่อนเกษียณ', '', 'navy', renderPersonal(a)],
-      [3, 'กองทุนสำรอง/กบข. ประกันสังคม และบำนาญประกันชีวิต', '', 'navy', renderPension(a, r)],
-      [4, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'navy', renderSeverance(r)],
-      [5, 'เป้าหมายระยะสั้น/กลาง/ยาว และเบี้ยประกัน', '', 'navy', renderGoals(a)],
-      [6, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r)],
-      [7, 'เงินก้อน/เงินได้ระหว่างทาง', '', 'navy', renderWindfalls(a)]
+      [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPension(a, r)],
+      [3, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'navy', renderSeverance(r)],
+      [4, 'เป้าหมายระยะสั้น/กลาง/ยาว', '', 'navy', renderGoals(a)],
+      [5, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r)],
+      [6, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a)],
+      [7, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsurance(a, r)]
     ];
     var calcSections = [
-      [2, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(r)],
-      [8, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด', '', 'green', renderGap(a, r)],
-      [9, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r)],
-      [10, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r)]
+      [8, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(r)],
+      [9, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด', '', 'green', renderGap(a, r)],
+      [10, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r)],
+      [11, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r)]
     ];
     function sectionsHtml(list) { return '<div class="sections">' + list.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4]); }).join('') + '</div>'; }
     var dashHtml = '<div class="dashboard">' +
@@ -1544,19 +1611,18 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     else if (action === 'delSegment') { a.preRetirementPortfolio.segments.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addTier') { a.pvd.employerTiers.push({ minYears: 0, employerRate: 0.03 }); saveStore(); render(); }
     else if (action === 'delTier') { a.pvd.employerTiers.splice(+t.dataset.index, 1); saveStore(); render(); }
-    else if (action === 'addAnnuity') { a.lifeAnnuities.push({ id: uid(), label: 'บำนาญประกันชีวิต', amountPerYear: 60000, startAge: a.personal.retireAge, endAge: null }); saveStore(); render(); }
-    else if (action === 'toggleLifeLong') {
-      var la = a.lifeAnnuities[+t.dataset.index];
-      la.endAge = la.endAge == null ? (la.startAge + 20) : null;
+    else if (action === 'addGoalLumpsum') { a.goals.push({ id: uid(), name: 'เป้าหมายใหม่', startAge: a.personal.currentAge + 5, endAge: a.personal.currentAge + 5, amountToday: 100000, returnRate: 0.05 }); saveStore(); render(); }
+    else if (action === 'delGoal') { a.goals.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'addWindfallLump') { a.windfalls.push({ id: uid(), description: 'เงินก้อนใหม่', flowType: 'lumpsum', amount: 100000, ageReceived: a.personal.retireAge, frequency: 'annual', amountPerPeriod: 10000, startAge: a.personal.retireAge, endAge: a.personal.retireAge + 4 }); saveStore(); render(); }
+    else if (action === 'addWindfallRecurring') { a.windfalls.push({ id: uid(), description: 'เงินรายงวดใหม่', flowType: 'recurring', amount: 100000, ageReceived: a.personal.retireAge, frequency: 'annual', amountPerPeriod: 10000, startAge: a.personal.retireAge, endAge: a.personal.lifeExpectancy }); saveStore(); render(); }
+    else if (action === 'delWindfall') { a.windfalls.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'addHealthBand') {
+      var lastBand = a.healthInsurance.bands[a.healthInsurance.bands.length - 1];
+      var fromAge = lastBand ? lastBand.toAge + 1 : a.personal.retireAge;
+      a.healthInsurance.bands.push({ id: uid(), fromAge: fromAge, toAge: fromAge + 4, annualPremiumToday: 30000 });
       saveStore(); render();
     }
-    else if (action === 'delAnnuity') { a.lifeAnnuities.splice(+t.dataset.index, 1); saveStore(); render(); }
-    else if (action === 'addGoalLumpsum') { a.goals.push({ id: uid(), name: 'เป้าหมายใหม่', kind: 'lumpsum', phase: 'pre', targetAge: a.personal.currentAge + 5, amountToday: 100000, returnRate: 0.05, annualPremiumToday: 20000, startAge: a.personal.currentAge, paymentYears: 10 }); saveStore(); render(); }
-    else if (action === 'addGoalPremium') { a.goals.push({ id: uid(), name: 'กรมธรรม์ใหม่', kind: 'premium', phase: 'pre', targetAge: a.personal.currentAge + 5, amountToday: 100000, returnRate: 0.05, annualPremiumToday: 20000, startAge: a.personal.currentAge, paymentYears: 10 }); saveStore(); render(); }
-    else if (action === 'delGoal') { a.goals.splice(+t.dataset.index, 1); saveStore(); render(); }
-    else if (action === 'addWindfallLump') { a.windfalls.push({ id: uid(), description: 'เงินก้อนใหม่', flowType: 'lumpsum', amount: 100000, ageReceived: a.personal.retireAge, phase: 'pre', frequency: 'annual', amountPerPeriod: 10000, startAge: a.personal.retireAge, durationYears: 5 }); saveStore(); render(); }
-    else if (action === 'addWindfallRecurring') { a.windfalls.push({ id: uid(), description: 'เงินรายงวดใหม่', flowType: 'recurring', amount: 100000, ageReceived: a.personal.retireAge, phase: 'post', frequency: 'annual', amountPerPeriod: 10000, startAge: a.personal.retireAge, durationYears: 5 }); saveStore(); render(); }
-    else if (action === 'delWindfall') { a.windfalls.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'delHealthBand') { a.healthInsurance.bands.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addSavingsItem') { a.currentSavings.items.push({ id: uid(), name: 'รายการลงทุนใหม่', amount: 50000, returnRate: 0.05 }); saveStore(); render(); }
     else if (action === 'delSavingsItem') { if (a.currentSavings.items.length > 1) { a.currentSavings.items.splice(+t.dataset.index, 1); saveStore(); render(); } }
     else if (action === 'addBucket') {
