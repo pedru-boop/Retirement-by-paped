@@ -482,6 +482,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   /* ---------- utils ---------- */
   function uid() { return Math.random().toString(36).slice(2, 10); }
   function fmt(n) { if (n === null || n === undefined || isNaN(n)) return '-'; return Math.round(n).toLocaleString('en-US'); }
+  function fmtSigned(n) { if (!n) return '-'; return (n > 0 ? '+' : '') + fmt(n); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -823,15 +824,14 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) + w.amount;
     });
 
-    /* health insurance premiums: age-banded, inflation-adjusted; post-retirement portion feeds oneOffs */
+    /* health insurance premiums: flat nominal amount per band (no inflation — the number entered IS the amount actually paid each year in that band) */
     var hi = a.healthInsurance || { returnRate: 0.04, bands: [] };
     var healthBandsCalc = (hi.bands || []).map(function (b) {
       var yearsFromNow = Math.max(0, b.fromAge - p.currentAge);
-      var premiumAtStart = b.annualPremiumToday * Math.pow(1 + p.inflation, yearsFromNow);
       var bandYears = Math.max(1, b.toAge - b.fromAge + 1);
-      var pvAtStart = C.growingAnnuityPV(premiumAtStart, hi.returnRate, p.inflation, bandYears, true);
+      var pvAtStart = C.growingAnnuityPV(b.annualPremiumToday, hi.returnRate, 0, bandYears, true);
       var pvToday = pvAtStart / Math.pow(1 + hi.returnRate, yearsFromNow);
-      return { id: b.id, fromAge: b.fromAge, toAge: b.toAge, annualPremiumToday: b.annualPremiumToday, premiumAtStart: premiumAtStart, pvToday: pvToday };
+      return { id: b.id, fromAge: b.fromAge, toAge: b.toAge, annualPremiumToday: b.annualPremiumToday, premiumAtStart: b.annualPremiumToday, pvToday: pvToday };
     });
     var healthRequiredToday = healthBandsCalc.reduce(function (s, b) { return s + b.pvToday; }, 0);
     var healthMonthsToFirstBand = hi.bands.length ? Math.max(1, (Math.min.apply(null, hi.bands.map(function (b) { return b.fromAge; })) - p.currentAge) * 12) : 12;
@@ -842,17 +842,14 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     for (var hy = 0; hy <= (p.lifeExpectancy - p.currentAge); hy++) {
       var age = p.currentAge + hy;
       var band = (hi.bands || []).find(function (b) { return age >= b.fromAge && age <= b.toAge; });
-      var premiumDue = band ? band.annualPremiumToday * Math.pow(1 + p.inflation, hy) : 0;
+      var premiumDue = band ? band.annualPremiumToday : 0;
       healthYearTable.push({ year: hy, beYear: p.currentYearAD + 543 + hy, age: age, premiumDue: premiumDue, phase: age < p.retireAge ? 'สะสม/ก่อนเกษียณ' : (premiumDue > 0 ? 'จ่ายเบี้ย' : 'หลังเกษียณ') });
     }
     (hi.bands || []).forEach(function (b) {
       var fromAge = Math.max(b.fromAge, p.retireAge);
       for (var age = fromAge; age <= b.toAge; age++) {
         var yi = age - p.retireAge;
-        if (yi >= 1) {
-          var amt = b.annualPremiumToday * Math.pow(1 + p.inflation, age - p.currentAge);
-          oneOffs[yi] = (oneOffs[yi] || 0) - amt;
-        }
+        if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) - b.annualPremiumToday;
       }
     });
 
@@ -862,23 +859,66 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       return pv;
     }
 
-    /* ---- buckets: size each bucket (ongoing need + any lumpy cashflows in its window), then sum for required corpus ---- */
-    var bucketDefs = a.buckets.list;
-    var cum = 0;
-    var sizedBuckets = bucketDefs.map(function (b, i) {
-      var startAgeOfBucket = p.retireAge + cum;
-      var needAtStart = firstYearAnnualNeed * Math.pow(1 + p.inflation, cum);
-      var pensionFlatForBucket = pensionAnnualAtAge(startAgeOfBucket);
-      var reqAtStart = C.growingAnnuityPV(needAtStart, b.drawdownReturn, p.inflation, b.years, true)
-        - (pensionFlatForBucket > 0 ? C.growingAnnuityPV(pensionFlatForBucket, b.drawdownReturn, 0, b.years, true) : 0);
-      var oneOffsPV = pvOfOneOffsInRange(cum + 1, cum + b.years, b.drawdownReturn);
-      reqAtStart = Math.max(0, reqAtStart - oneOffsPV);
-      var reqToday = reqAtStart / Math.pow(1 + (i === 0 ? 0 : b.waitingReturn), cum);
-      var sized = { id: b.id, label: b.label, years: b.years, waitingReturn: b.waitingReturn, drawdownReturn: b.drawdownReturn, startAge: startAgeOfBucket, requiredToday: reqToday, pensionFlatForBucket: pensionFlatForBucket, needAtStart: needAtStart, oneOffsPV: oneOffsPV };
-      cum += b.years;
-      return sized;
-    });
-    var netRequiredCorpus = sizedBuckets.reduce(function (s, b) { return s + b.requiredToday; }, 0);
+    /* Build a full plan (sizing + simulation + enriched year-by-year table) for a given bucket list.
+       The LAST bucket's years is always auto-corrected to absorb whatever remains of yearsRetired,
+       so the total can never drift away from the person's actual retirement horizon. */
+    function computeBucketPlan(rawList) {
+      var list = clone(rawList);
+      if (list.length) {
+        var sumOthers = list.slice(0, -1).reduce(function (s, b) { return s + b.years; }, 0);
+        list[list.length - 1].years = Math.max(1, yearsRetired - sumOthers);
+      }
+      var cum2 = 0;
+      var sized = list.map(function (b, i) {
+        var startAgeOfBucket = p.retireAge + cum2;
+        var needAtStart = firstYearAnnualNeed * Math.pow(1 + p.inflation, cum2);
+        var pensionFlatForBucket = pensionAnnualAtAge(startAgeOfBucket);
+        var reqAtStart = C.growingAnnuityPV(needAtStart, b.drawdownReturn, p.inflation, b.years, true)
+          - (pensionFlatForBucket > 0 ? C.growingAnnuityPV(pensionFlatForBucket, b.drawdownReturn, 0, b.years, true) : 0);
+        var oneOffsPV = pvOfOneOffsInRange(cum2 + 1, cum2 + b.years, b.drawdownReturn);
+        reqAtStart = Math.max(0, reqAtStart - oneOffsPV);
+        var reqToday = reqAtStart / Math.pow(1 + (i === 0 ? 0 : b.waitingReturn), cum2);
+        var s = { id: b.id, label: b.label, years: b.years, waitingReturn: b.waitingReturn, drawdownReturn: b.drawdownReturn, startAge: startAgeOfBucket, requiredToday: reqToday, pensionFlatForBucket: pensionFlatForBucket, needAtStart: needAtStart, oneOffsPV: oneOffsPV };
+        cum2 += b.years;
+        return s;
+      });
+      var totalYears = sized.reduce(function (s, b) { return s + b.years; }, 0);
+      var netRequired = sized.reduce(function (s, b) { return s + b.requiredToday; }, 0);
+      var fwd = C.simulateBucketsForward(sized, needAnnualAtYear, pensionAnnualAtYear, totalYears, oneOffs);
+      var depAge = fwd.shortfallStartYear ? p.retireAge + fwd.shortfallStartYear : null;
+      function solveSustainable(sizedForSolve) {
+        var lo = 0, hiB = Math.max(netRequired * 3, 1e6) + 1;
+        for (var i = 0; i < 60; i++) {
+          var mid = (lo + hiB) / 2;
+          var f = C.simulateBucketsForward(sizedForSolve, function (y) { return mid * Math.pow(1 + p.inflation, y - 1); }, pensionAnnualAtYear, totalYears, oneOffs);
+          if (f.shortfallStartYear === null) lo = mid; else hiB = mid;
+        }
+        return lo;
+      }
+      var sustainable = solveSustainable(sized) / 12;
+      var table = [];
+      var prevBal = netRequired;
+      for (var ty = 1; ty <= totalYears; ty++) {
+        var needY = needAnnualAtYear(ty);
+        var pensionY = pensionAnnualAtYear(ty);
+        var oneOffY = oneOffs[ty] || 0;
+        var endBal = fwd.path[ty] ? fwd.path[ty].balance : null;
+        var interest = endBal - prevBal + needY - pensionY - oneOffY;
+        table.push({
+          year: ty, beYear: p.currentYearAD + 543 + yearsToRetire + ty, age: p.retireAge + ty,
+          startBalance: prevBal, interest: interest, pension: pensionY, oneOff: oneOffY, withdrawal: needY, endBalance: endBal
+        });
+        prevBal = endBal;
+      }
+      return { sizedBuckets: sized, totalYears: totalYears, netRequiredCorpus: netRequired, fwdPlanned: fwd, depletionAge: depAge, sustainableMonthly: sustainable, table: table, solveSustainable: solveSustainable };
+    }
+
+    var multiPlan = computeBucketPlan(a.buckets.list);
+    var blendedRate = multiPlan.sizedBuckets.reduce(function (s, b) { return s + b.years * b.drawdownReturn; }, 0) / (multiPlan.totalYears || 1);
+    var singlePlan = computeBucketPlan([{ id: 'single', label: 'พอร์ตเดียวตลอดช่วงเกษียณ', years: yearsRetired, waitingReturn: 0, drawdownReturn: blendedRate }]);
+
+    var sizedBuckets = multiPlan.sizedBuckets;
+    var netRequiredCorpus = multiPlan.netRequiredCorpus;
     var gap = netRequiredCorpus - availableAtRetirement;
 
     var extraMonthlySaving = 0;
@@ -890,42 +930,17 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       extraMonthlySaving = a.extraSavingMode === 'growing' ? extraSavingGrowingFirstMonthly : extraSavingFlatMonthly;
     }
 
-    var totalBucketYears = sizedBuckets.reduce(function (s, b) { return s + b.years; }, 0);
+    var totalBucketYears = multiPlan.totalYears;
+    var fwdPlanned = multiPlan.fwdPlanned;
+    var depletionAge = multiPlan.depletionAge;
+    var drawdownTable = multiPlan.table;
+    var sustainableMonthly = multiPlan.sustainableMonthly;
 
-    /* forward simulation with the planned withdrawal (option B) — now includes one-off cashflows */
-    var fwdPlanned = C.simulateBucketsForward(sizedBuckets, needAnnualAtYear, pensionAnnualAtYear, totalBucketYears, oneOffs);
-    var depletionAge = fwdPlanned.shortfallStartYear ? p.retireAge + fwdPlanned.shortfallStartYear : null;
-
-    var drawdownTable = [];
-    var prevBal = availableAtRetirement;
-    for (var ty = 1; ty <= totalBucketYears; ty++) {
-      var needY = needAnnualAtYear(ty);
-      var pensionY = pensionAnnualAtYear(ty);
-      var endBal = fwdPlanned.path[ty] ? fwdPlanned.path[ty].balance : null;
-      drawdownTable.push({
-        year: ty, beYear: p.currentYearAD + 543 + yearsToRetire + ty, age: p.retireAge + ty,
-        startBalance: prevBal, need: needY, pension: pensionY, endBalance: endBal
-      });
-      prevBal = endBal;
-    }
-
-    /* option A: solve sustainable flat (inflation-adjusted) withdrawal */
-    function sustainableSolve(bucketsForSolve) {
-      var lo = 0, hiBound = Math.max(netRequiredCorpus * 3, 1e6) + 1;
-      for (var i = 0; i < 60; i++) {
-        var mid = (lo + hiBound) / 2;
-        var fwd = C.simulateBucketsForward(bucketsForSolve, function (y) { return mid * Math.pow(1 + p.inflation, y - 1); }, pensionAnnualAtYear, totalBucketYears, oneOffs);
-        if (fwd.shortfallStartYear === null) lo = mid; else hiBound = mid;
-      }
-      return lo;
-    }
-    var sustainableMonthly = sustainableSolve(sizedBuckets) / 12;
-
-    /* stress test: apply delta to drawdownReturn of every bucket */
-    var stressedBuckets = sizedBuckets.map(function (b) { return Object.assign({}, b, { drawdownReturn: Math.max(-0.5, b.drawdownReturn + a.stressTestDelta) }); });
-    var fwdStressed = C.simulateBucketsForward(stressedBuckets, needAnnualAtYear, pensionAnnualAtYear, totalBucketYears, oneOffs);
-    var depletionAgeStressed = fwdStressed.shortfallStartYear ? p.retireAge + fwdStressed.shortfallStartYear : null;
-    var sustainableMonthlyStressed = sustainableSolve(stressedBuckets) / 12;
+    /* stress test: apply delta to drawdownReturn of every bucket, for both plans */
+    var stressedMultiList = a.buckets.list.map(function (b) { return Object.assign({}, b, { drawdownReturn: Math.max(-0.5, b.drawdownReturn + a.stressTestDelta) }); });
+    var multiPlanStressed = computeBucketPlan(stressedMultiList);
+    var depletionAgeStressed = multiPlanStressed.depletionAge;
+    var sustainableMonthlyStressed = multiPlanStressed.sustainableMonthly;
 
     /* accumulation chart path (พ.ศ.) */
     var accumPath = accumSim.path.map(function (pt) {
@@ -952,10 +967,10 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     (a.healthInsurance.bands || []).forEach(function (b) {
       events.push({ age: b.fromAge, be: p.currentYearAD + 543 + (b.fromAge - p.currentAge), label: 'เริ่มจ่ายเบี้ยประกันสุขภาพ (' + b.fromAge + '-' + b.toAge + ' ปี)', type: 'goal' });
     });
-    cum = 0;
+    var cumEvt = 0;
     sizedBuckets.forEach(function (b, i) {
-      if (i > 0) events.push({ age: p.retireAge + cum, be: p.currentYearAD + 543 + yearsToRetire + cum, label: 'เปลี่ยนช่วงบัคเก็ต: ' + (b.label || ('บัคเก็ตที่ ' + (i + 1))), type: 'bucket' });
-      cum += b.years;
+      if (i > 0) events.push({ age: p.retireAge + cumEvt, be: p.currentYearAD + 543 + yearsToRetire + cumEvt, label: 'เปลี่ยนช่วงบัคเก็ต: ' + (b.label || ('บัคเก็ตที่ ' + (i + 1))), type: 'bucket' });
+      cumEvt += b.years;
     });
     if (depletionAge) events.push({ age: depletionAge, be: p.currentYearAD + 543 + (depletionAge - p.currentAge), label: 'เงินลงทุนคาดว่าจะหมด (เหลือเฉพาะบำนาญ)', type: 'warning' });
     events.push({ age: p.lifeExpectancy, be: p.currentYearAD + 543 + (p.lifeExpectancy - p.currentAge), label: 'สิ้นสุดแผน (อายุขัย)', type: 'milestone' });
@@ -975,7 +990,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       depletionAgeStressed: depletionAgeStressed, sustainableMonthlyStressed: sustainableMonthlyStressed,
       accumPath: accumPath, drawdownPath: drawdownPath, events: events,
       pensionAnnualAtYear: pensionAnnualAtYear, drawdownTable: drawdownTable,
-      healthBandsCalc: healthBandsCalc, healthRequiredToday: healthRequiredToday, healthMonthlySaving: healthMonthlySaving, healthYearTable: healthYearTable
+      healthBandsCalc: healthBandsCalc, healthRequiredToday: healthRequiredToday, healthMonthlySaving: healthMonthlySaving, healthYearTable: healthYearTable,
+      multiPlan: multiPlan, singlePlan: singlePlan, blendedRate: blendedRate
     };
   }
 
@@ -1263,21 +1279,19 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   function renderHealthInsurance(a, r) {
     var hi = a.healthInsurance;
     var bandsTable = entryTable({
-      headers: ['อายุตั้งแต่', 'อายุถึง', 'เบี้ยประกัน/ปี (มูลค่าวันนี้)', 'เบี้ยเมื่อถึงช่วงนั้น (ปรับเงินเฟ้อ)'],
-      colTemplate: '0.8fr 0.8fr 1.1fr 1.3fr',
+      headers: ['อายุตั้งแต่', 'อายุถึง', 'เบี้ยประกัน/ปี (จ่ายจริงเท่านี้ทุกปีในช่วงนี้)'],
+      colTemplate: '0.8fr 0.8fr 1.3fr',
       rows: hi.bands.map(function (b, i) { return { b: b, idx: i }; }),
       rowCells: function (row) {
         var b = row.b, i = row.idx;
-        var calc = r.healthBandsCalc[i];
         return [
           rawInput(['healthInsurance', 'bands', i, 'fromAge'], b.fromAge, {}),
           rawInput(['healthInsurance', 'bands', i, 'toAge'], b.toAge, {}),
-          rawInput(['healthInsurance', 'bands', i, 'annualPremiumToday'], b.annualPremiumToday, { type: 'money' }),
-          '<span class="entry-note">' + fmt(calc ? calc.premiumAtStart : 0) + ' บาท/ปี</span>'
+          rawInput(['healthInsurance', 'bands', i, 'annualPremiumToday'], b.annualPremiumToday, { type: 'money' })
         ];
       },
       addAction: 'addHealthBand', addLabel: 'เพิ่มช่วงอายุ/เบี้ยประกัน', delAction: 'delHealthBand',
-      emptyMsg: 'เช่น อายุ 61-65 เบี้ยปีละ 30,000 บาท, อายุ 66-70 เบี้ยปีละ 45,000 บาท'
+      emptyMsg: 'เช่น อายุ 61-65 จ่ายเบี้ยปีละ 30,000 บาท (คงที่ทุกปีในช่วงนี้), อายุ 66-70 จ่ายปีละ 45,000 บาท'
     });
     var yearCols = [
       { label: 'ปีที่', render: function (row) { return row.year; } },
@@ -1286,7 +1300,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       { label: 'ช่วง', render: function (row) { return row.phase; } },
       { label: 'เบี้ยที่ต้องจ่ายปีนั้น', render: function (row) { return row.premiumDue > 0 ? fmt(row.premiumDue) + ' บาท' : '-'; } }
     ];
-    return '<div class="entry-note" style="padding:0 0 4px">ระบุช่วงอายุและเบี้ยประกันสุขภาพที่คาดว่าจะต้องจ่าย ระบบจะคำนวณเงินที่ต้องเตรียมไว้ ณ วันนี้ให้พอสำหรับทุกช่วง (เพิ่มช่วงใหม่จะต่อจากช่วงล่าสุดให้อัตโนมัติ แก้ไขเองได้)</div>' +
+    return '<div class="entry-note" style="padding:0 0 4px">ระบุช่วงอายุและ "จำนวนเบี้ยที่ต้องจ่ายจริง" ในแต่ละช่วง (ไม่ต้องปรับเงินเฟ้อเอง ใส่ตัวเลขที่จะจ่ายจริงในปีนั้นๆ ได้เลย เช่น กรมธรรม์กำหนดเบี้ยตายตัวตามช่วงอายุอยู่แล้ว) ระบบจะคำนวณเงินที่ต้องเตรียมไว้ ณ วันนี้ให้พอสำหรับทุกช่วง (เพิ่มช่วงใหม่จะต่อจากช่วงล่าสุดให้อัตโนมัติ แก้ไขเองได้)</div>' +
       bandsTable +
       '<div class="grid-2" style="margin-top:14px">' +
       metricCard('เงินที่ต้องเตรียมไว้วันนี้ (ทุกช่วงรวมกัน)', fmt(r.healthRequiredToday) + ' บาท', 'navy') +
@@ -1367,31 +1381,56 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     return html;
   }
 
+  function fullPlanTable(plan) {
+    var cols = [
+      { label: 'ปีที่', render: function (row) { return row.year; } },
+      { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
+      { label: 'อายุ', render: function (row) { return row.age; } },
+      { label: 'ยอดต้นปี', render: function (row) { return fmt(row.startBalance); } },
+      { label: 'ดอกเบี้ยที่ได้ปีนั้น', render: function (row) { return fmt(row.interest); } },
+      { label: 'บำนาญที่ได้รับ', render: function (row) { return fmt(row.pension); } },
+      { label: 'รายการพิเศษ (เป้าหมาย/เงินก้อน/เบี้ยสุขภาพ)', render: function (row) { return row.oneOff ? fmtSigned(row.oneOff) : '-'; } },
+      { label: 'เงินที่ใช้จ่ายปีนั้น', render: function (row) { return fmt(row.withdrawal); } },
+      { label: 'ยอดปลายปี', render: function (row) { return fmt(row.endBalance); } }
+    ];
+    return detailTable(plan.table, cols, 'plan' + Math.random().toString(36).slice(2, 6));
+  }
+
   function renderBuckets(a, r) {
     var list = a.buckets.list;
     var rowsHtml = list.map(function (b, i) {
-      var sb = r.sizedBuckets[i];
-      var withdrawalRows = r.fwdPlanned.path.filter(function (pt) { return pt.year > (sb.startAge - a.personal.retireAge) && pt.year <= (sb.startAge - a.personal.retireAge + b.years); });
-      var cols = [
-        { label: 'ปี', render: function (row) { return row.year; } },
-        { label: 'พ.ศ.', render: function (row) { return a.personal.currentYearAD + 543 + (a.personal.retireAge - a.personal.currentAge) + row.year; } },
-        { label: 'อายุ', render: function (row) { return a.personal.retireAge + row.year; } },
-        { label: 'ยอดคงเหลือรวมทุกบัคเก็ต', render: function (row) { return fmt(row.balance); } }
-      ];
+      var sb = r.multiPlan.sizedBuckets[i];
+      var isLast = i === list.length - 1;
       return '<div class="list-card">' +
         '<div class="list-card-head">' + field('', ['buckets', 'list', i, 'label'], b.label, { type: 'text', titleStyle: true }) +
         (list.length > 1 ? '<button class="btn-icon" type="button" data-action="delBucket" data-index="' + i + '">×</button>' : '') + '</div>' +
         '<div class="grid-3">' +
-        field('จำนวนปีของช่วงนี้', ['buckets', 'list', i, 'years'], b.years, { suffix: 'ปี' }) +
+        (isLast
+          ? '<div class="field"><span class="field-label">จำนวนปีของช่วงนี้</span><div class="field-input-row"><span class="entry-note" style="font-size:15px;font-weight:700;color:var(--navy-900)">' + sb.years + ' ปี (อัตโนมัติ)</span></div><span class="field-hint">คำนวณจากปีที่เหลือทั้งหมด ให้รวมพอดีกับอายุขัย</span></div>'
+          : field('จำนวนปีของช่วงนี้', ['buckets', 'list', i, 'years'], b.years, { suffix: 'ปี' })) +
         (i === 0 ? '<div class="note" style="align-self:end">เริ่มใช้ทันทีที่เกษียณ ไม่มีช่วงรอ</div>' : field('ผลตอบแทนช่วงรอคิว', ['buckets', 'list', i, 'waitingReturn'], b.waitingReturn, { type: 'percent', suffix: '%/ปี' })) +
         field('ผลตอบแทนช่วงถอนใช้ (ความเสี่ยงต่ำ)', ['buckets', 'list', i, 'drawdownReturn'], b.drawdownReturn, { type: 'percent', suffix: '%/ปี' }) +
         '</div>' +
-        metricCard('เงินต้องมี ณ วันเกษียณสำหรับบัคเก็ตนี้', fmt(sb.requiredToday) + ' บาท', 'green', 'เริ่มใช้ที่อายุ ' + sb.startAge + ' ปี') +
-        detailTable(withdrawalRows, cols, 'bucket' + i) +
+        metricCard('เงินต้องมี ณ วันเกษียณสำหรับบัคเก็ตนี้', fmt(sb.requiredToday) + ' บาท', 'green', 'เริ่มใช้ที่อายุ ' + sb.startAge + ' ปี, ' + sb.years + ' ปี') +
         '</div>';
     }).join('');
-    return '<div class="note">แบ่งเงินหลังเกษียณเป็นกี่บัคเก็ตก็ได้ — บัคเก็ตแรกใช้ก่อน (ความเสี่ยงต่ำทันที) บัคเก็ตถัดไปลงทุนความเสี่ยงสูงขึ้นได้ระหว่างรอคิว แล้วจะถูกปรับเป็นความเสี่ยงต่ำเมื่อถึงคิวใช้เงินของตัวเอง</div>' +
-      rowsHtml + '<button class="btn btn-add-row" type="button" data-action="addBucket">+ เพิ่มบัคเก็ต</button>';
+    return '<div class="note">ตั้งค่าบัคเก็ตของคุณด้านล่าง — บัคเก็ตแรกใช้ก่อน (ความเสี่ยงต่ำทันที) บัคเก็ตถัดไปลงทุนความเสี่ยงสูงขึ้นได้ระหว่างรอคิว บัคเก็ตสุดท้ายจะปรับจำนวนปีให้อัตโนมัติเสมอเพื่อให้รวมพอดีกับอายุขัย (แก้ไขปีของบัคเก็ตอื่นแทน)</div>' +
+      rowsHtml + '<button class="btn btn-add-row" type="button" data-action="addBucket">+ เพิ่มบัคเก็ต</button>' +
+      '<div class="subblock"><div class="subblock-title">เปรียบเทียบ 2 แนวทางการบริหาร (ใช้ข้อมูลเดียวกัน)</div>' +
+      '<div class="grid-2">' +
+      '<div class="list-card"><div class="list-card-head"><strong>แบบพอร์ตเดียวตลอดช่วงเกษียณ</strong></div>' +
+      metricCard('เงินต้องมี ณ วันเกษียณ', fmt(r.singlePlan.netRequiredCorpus) + ' บาท', 'navy', 'ใช้ผลตอบแทนเฉลี่ยถ่วงน้ำหนัก ' + (r.blendedRate * 100).toFixed(2) + '%/ปี จากบัคเก็ตที่ตั้งไว้') +
+      metricCard('ใช้ได้เท่ากันตลอด (เดือนแรก)', fmt(r.singlePlan.sustainableMonthly) + ' บาท/เดือน', 'green') +
+      metricCard('เงินจะอยู่ได้ถึง', r.singlePlan.depletionAge ? ('อายุ ' + r.singlePlan.depletionAge) : 'ตลอดอายุขัย', r.singlePlan.depletionAge ? 'red' : 'green') +
+      fullPlanTable(r.singlePlan) +
+      '</div>' +
+      '<div class="list-card"><div class="list-card-head"><strong>แบบแบ่งบัคเก็ตตามที่ตั้งค่าไว้</strong></div>' +
+      metricCard('เงินต้องมี ณ วันเกษียณ', fmt(r.multiPlan.netRequiredCorpus) + ' บาท', 'navy') +
+      metricCard('ใช้ได้เท่ากันตลอด (เดือนแรก)', fmt(r.multiPlan.sustainableMonthly) + ' บาท/เดือน', 'green') +
+      metricCard('เงินจะอยู่ได้ถึง', r.multiPlan.depletionAge ? ('อายุ ' + r.multiPlan.depletionAge) : 'ตลอดอายุขัย', r.multiPlan.depletionAge ? 'red' : 'green') +
+      fullPlanTable(r.multiPlan) +
+      '</div>' +
+      '</div></div>';
   }
 
   function renderStressTest(a, r) {
@@ -1657,8 +1696,10 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     else if (action === 'addSavingsItem') { a.currentSavings.items.push({ id: uid(), name: 'รายการลงทุนใหม่', amount: 50000, returnRate: 0.05 }); saveStore(); render(); }
     else if (action === 'delSavingsItem') { if (a.currentSavings.items.length > 1) { a.currentSavings.items.splice(+t.dataset.index, 1); saveStore(); render(); } }
     else if (action === 'addBucket') {
-      var last = a.buckets.list[a.buckets.list.length - 1];
-      a.buckets.list.push({ id: uid(), label: 'บัคเก็ตที่ ' + (a.buckets.list.length + 1), years: last ? last.years : 10, waitingReturn: 0.05, drawdownReturn: 0.03 });
+      var lastB = a.buckets.list[a.buckets.list.length - 1];
+      var half = lastB ? Math.max(1, Math.round(lastB.years / 2)) : 10;
+      if (lastB) lastB.years = half;
+      a.buckets.list.push({ id: uid(), label: 'บัคเก็ตที่ ' + (a.buckets.list.length + 1), years: half, waitingReturn: 0.05, drawdownReturn: 0.03 });
       saveStore(); render();
     }
     else if (action === 'delBucket') { if (a.buckets.list.length > 1) { a.buckets.list.splice(+t.dataset.index, 1); saveStore(); render(); } }
