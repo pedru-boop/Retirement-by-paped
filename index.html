@@ -58,6 +58,10 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .case-item:hover { background: rgba(255,255,255,0.08); }
 .case-item.active { background: var(--blue-bright); color: var(--white); font-weight: 700; }
 .case-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case-name-edit { flex: 1; min-width: 0; background: transparent; border: 1px solid transparent; border-radius: 6px; color: inherit; font: inherit; padding: 4px 6px; cursor: text; }
+.case-name-edit:hover { border-color: rgba(255,255,255,0.3); }
+.case-name-edit:focus { outline: none; background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.5); }
+.case-item.active .case-name-edit:focus { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.6); }
 .case-del { background: none; border: none; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; opacity: 0.8; padding: 0 4px; }
 .sidebar-actions { display: flex; flex-direction: column; gap: 8px; }
 .btn { border: none; border-radius: 10px; padding: 11px 16px; font-size: 15.5px; font-family: inherit; cursor: pointer; font-weight: 600; }
@@ -521,8 +525,31 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   function defaultBuckets(yearsRetired) {
     return { list: [{ id: uid(), label: 'พอร์ตเดียวตลอดช่วงเกษียณ', years: yearsRetired || 25, waitingReturn: 0.02, drawdownReturn: 0.04 }] };
   }
-  function newCase(name) {
+  function newCase(name, blank) {
     var thisYear = new Date().getFullYear();
+    if (blank) {
+      return {
+        id: uid(), name: name || 'ลูกค้าใหม่',
+        personal: {
+          clientName: '', currentAge: 35, retireAge: 60, lifeExpectancy: 85,
+          currentYearAD: thisYear, currentSalary: 0, salaryGrowth: 0.03,
+          spendingMethod: 'replacement', replacementRate: 0.7, customMonthlyExpense: 0,
+          inflation: 0.03
+        },
+        preRetirementPortfolio: { mode: 'flat', flatReturn: 0.05, segments: [] },
+        pvd: { enabled: false, employeeRate: 0.03, employerMode: 'flat', employerFlatRate: 0.03, employerTiers: [], fundReturn: 0.04, startingBalance: 0, serviceYearsSoFar: 0 },
+        sso: { enabled: false, avgWageCapped: 15000, monthsPaidSoFar: 0 },
+        severance: { enabled: false },
+        goals: [],
+        currentSavings: { items: [] },
+        regularSavings: { items: [] },
+        windfalls: [],
+        healthInsurance: { returnRate: 0.04, bands: [] },
+        extraSavingMode: 'flat', extraSavingReturn: 0.05,
+        buckets: defaultBuckets(25),
+        stressTestDelta: -0.01
+      };
+    }
     return {
       id: uid(), name: name || 'ลูกค้าใหม่',
       personal: {
@@ -1506,18 +1533,24 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var goalRows = (a.goals || []).map(function (g, i) {
       var fromAge = Math.max(g.startAge, p.retireAge);
       var pvAtRetirement = 0;
-      for (var age = fromAge; age <= g.endAge; age++) {
+      var totalInflated = 0;
+      for (var age = g.startAge; age <= g.endAge; age++) {
         var amt = g.amountToday * Math.pow(1 + p.inflation, age - p.currentAge);
-        pvAtRetirement += amt / Math.pow(1 + discountRate, age - p.retireAge);
+        totalInflated += amt;
+        if (age >= fromAge) pvAtRetirement += amt / Math.pow(1 + discountRate, age - p.retireAge);
       }
-      return { n: i + 1, name: g.name, phase: goalPhaseLabel(g, p.retireAge), pv: pvAtRetirement };
+      return { n: i + 1, name: g.name, startAge: g.startAge, endAge: g.endAge, amountToday: g.amountToday, phase: goalPhaseLabel(g, p.retireAge), totalInflated: totalInflated, pv: pvAtRetirement };
     });
     var goalTotal = goalRows.reduce(function (s, gr) { return s + gr.pv; }, 0);
     var goalCols = [
       { label: 'ลำดับ', render: function (row) { return row.n; } },
       { label: 'ชื่อเป้าหมาย', render: function (row) { return esc(row.name); } },
+      { label: 'อายุเริ่ม', render: function (row) { return row.startAge; } },
+      { label: 'อายุสิ้นสุด', render: function (row) { return row.endAge; } },
+      { label: 'จำนวนเงิน/ปี (วันนี้)', render: function (row) { return fmt(row.amountToday); } },
       { label: 'ช่วง', render: function (row) { return row.phase; } },
-      { label: 'มูลค่าที่ต้องใช้ ณ วันเกษียณ (PV)', render: function (row) { return row.pv > 0 ? fmt(row.pv) + ' บาท' : '- (ก่อนเกษียณทั้งหมด ไม่กระทบกองทุนหลัก)'; } }
+      { label: 'มูลค่ารวมปรับเงินเฟ้อ', render: function (row) { return fmt(row.totalInflated) + ' บาท'; } },
+      { label: 'ที่ต้องใช้ ณ วันเกษียณ (PV)', render: function (row) { return row.pv > 0 ? fmt(row.pv) + ' บาท' : 'ไม่กระทบกองทุนหลัก'; } }
     ];
     var sumRows = r.sizedBuckets.map(function (b) { return { label: b.label || 'บัคเก็ต', need: b.needAtStart, pension: b.pensionFlatForBucket, req: b.requiredToday }; });
     var sumCols = [
@@ -1756,7 +1789,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="case-list">' + ids.map(function (id) {
         var c = STORE.cases[id];
         return '<div class="case-item' + (id === STORE.activeId ? ' active' : '') + '" data-action="selectCase" data-id="' + id + '">' +
-          '<span class="case-name">' + esc(c.name) + '</span>' +
+          '<input class="case-name-edit" type="text" value="' + esc(c.name) + '" data-path=\'["__rename__","' + id + '"]\' data-type="text">' +
           (id === STORE.activeId ? '<button class="case-del" type="button" data-action="deleteCase" data-id="' + id + '">×</button>' : '') + '</div>';
       }).join('') + '</div>' +
       '<button class="btn btn-danger-outline" type="button" data-action="clearAll">🗑 ล้างข้อมูลทั้งหมด</button>' +
@@ -1875,6 +1908,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     if (!t.dataset || !t.dataset.path) return;
     if (t.dataset.type === 'radio' || t.dataset.type === 'checkbox' || t.dataset.type === 'select') return;
     var path = JSON.parse(t.dataset.path);
+    if (path[0] === '__rename__') { STORE.cases[path[1]].name = t.value; saveStore(); render(); return; }
     var a = activeCase();
     var val;
     if (t.dataset.type === 'number') val = parseFloat(t.value) || 0;
@@ -1970,7 +2004,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     else if (action === 'delBucket') { if (a.buckets.list.length > 1) { a.buckets.list.splice(+t.dataset.index, 1); saveStore(); render(); } }
     else if (action === 'clearAll') {
       if (window.confirm('ล้างข้อมูลทั้งหมดทุกเคส และเริ่มใหม่หมด? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
-        var nc = newCase('ลูกค้ารายที่ 1');
+        var nc = newCase('ลูกค้ารายที่ 1', true);
         STORE = { activeId: nc.id, cases: {} };
         STORE.cases[nc.id] = nc;
         OPEN = { 1: true }; TAB = 'client';
