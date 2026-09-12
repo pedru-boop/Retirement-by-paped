@@ -31,6 +31,8 @@
   --white: #FFFFFF;
   --line: #CBDAEA;
   --radius: 14px;
+  --cyan: #17C3E0;
+  --navy-950: #071A33;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -38,9 +40,10 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 #root { min-height: 100vh; }
 .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
 
-.sidebar { background: var(--navy-900); color: var(--white); padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; }
+.sidebar { background: linear-gradient(165deg, var(--navy-900), var(--navy-950)); color: var(--white); padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; position: relative; }
+.sidebar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--cyan), var(--blue-bright), var(--green-500)); }
 .brand { display: flex; align-items: center; gap: 12px; }
-.brand-mark { width: 58px; height: 58px; border-radius: 14px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.brand-mark { width: 58px; height: 58px; border-radius: 14px; overflow: hidden; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(23,195,224,0.4), 0 4px 14px rgba(23,195,224,0.35); }
 .brand-mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .brand-title { font-weight: 800; font-size: 27px; letter-spacing: 0.2px; }
 .brand-sub { font-size: 13px; color: #B9D2EA; letter-spacing: 0.5px; margin-top: 2px; }
@@ -56,7 +59,7 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .case-list { display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; width: 100%; align-self: stretch; }
 .case-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 10px; cursor: pointer; color: #DCEBFA; font-size: 16px; width: 100%; }
 .case-item:hover { background: rgba(255,255,255,0.08); }
-.case-item.active { background: var(--blue-bright); color: var(--white); font-weight: 700; }
+.case-item.active { background: linear-gradient(135deg, var(--blue-bright), var(--navy-700)); color: var(--white); font-weight: 700; box-shadow: 0 2px 10px rgba(23,195,224,0.3); }
 .case-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .case-name-edit { flex: 1; min-width: 0; background: transparent; border: 1px solid transparent; border-radius: 6px; color: inherit; font: inherit; padding: 4px 6px; cursor: text; }
 .case-name-edit:hover { border-color: rgba(255,255,255,0.3); }
@@ -67,7 +70,7 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .btn { border: none; border-radius: 10px; padding: 11px 16px; font-size: 15.5px; font-family: inherit; cursor: pointer; font-weight: 600; }
 .btn-ghost { background: rgba(255,255,255,0.10); color: var(--white); text-align: center; }
 .btn-ghost:hover { background: rgba(255,255,255,0.2); }
-.btn-primary { background: var(--blue-bright); color: var(--white); }
+.btn-primary { background: linear-gradient(135deg, var(--blue-bright), var(--navy-700)); color: var(--white); box-shadow: 0 4px 14px rgba(30,111,217,0.35); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-sm { padding: 6px 10px; font-size: 12.5px; }
 .btn-file { display: block; }
@@ -90,18 +93,19 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .legend-item { display: flex; align-items: center; gap: 5px; }
 .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
-.metric-card { background: var(--white); border-radius: var(--radius); padding: 18px 20px; border-left: 5px solid var(--navy-700); box-shadow: 0 2px 8px rgba(11,37,69,0.08); }
+.metric-card { background: var(--white); border-radius: var(--radius); padding: 18px 20px; border-left: 5px solid var(--navy-700); box-shadow: 0 3px 14px rgba(11,37,69,0.1); position: relative; overflow: hidden; }
+.metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--cyan), transparent); opacity: 0.6; }
 .metric-card.tone-green { border-left-color: var(--green-500); }
 .metric-card.tone-red { border-left-color: var(--red-500); }
 .metric-label { font-size: 14.5px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 600; }
-.metric-value { font-size: 32px; font-weight: 800; color: var(--navy-900); line-height: 1.2; }
+.metric-value { font-size: 32px; font-weight: 800; color: var(--navy-900); line-height: 1.2; letter-spacing: -0.3px; }
 .metric-sub { font-size: 13.5px; color: var(--ink-soft); margin-top: 4px; }
 
 .sections { display: flex; flex-direction: column; gap: 12px; }
 .section { background: var(--white); border-radius: var(--radius); border: 1px solid var(--line); border-left: 6px solid var(--navy-700); overflow: hidden; box-shadow: 0 2px 10px rgba(11,37,69,0.06); }
 .section.tone-green { border-left-color: var(--green-500); }
 .section-head { width: 100%; display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: none; border: none; cursor: pointer; text-align: left; font-family: inherit; }
-.section-num { width: 32px; height: 32px; border-radius: 50%; background: var(--blue-200); color: var(--navy-900); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+.section-num { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #CFF4F9, var(--blue-200)); color: var(--navy-900); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(23,195,224,0.15); }
 .section.open .section-num { background: var(--blue-bright); color: var(--white); }
 .section.filled { border-left-color: var(--green-500); }
 .section.filled .section-num { background: var(--green-500); color: var(--white); }
@@ -174,12 +178,41 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .timeline-item { display: flex; gap: 12px; padding: 8px 0; border-left: 2px solid var(--line); margin-left: 5px; padding-left: 16px; position: relative; }
 .timeline-dot { width: 12px; height: 12px; border-radius: 50%; position: absolute; left: -7px; top: 12px; border: 2px solid var(--white); }
 .timeline-age { font-size: 13.5px; color: var(--ink-soft); font-weight: 700; }
+.checklist-box { background: var(--white); border: 1.5px dashed var(--blue-bright); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px; }
+.checklist-title { font-weight: 700; font-size: 16px; color: var(--navy-900); margin-bottom: 10px; }
+.checklist-hint { font-weight: 400; font-size: 13px; color: var(--ink-soft); }
+.checklist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.checklist-item { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 9px; background: var(--blue-100); font-size: 15px; font-weight: 600; color: var(--ink-soft); cursor: pointer; border: 1.5px solid transparent; }
+.checklist-item.checked { background: var(--green-100); color: var(--green-700); border-color: var(--green-500); }
+.checklist-item input { width: 18px; height: 18px; accent-color: var(--green-500); }
+.progress-box { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 4px 2px; }
+.progress-box-text { font-size: 14px; color: var(--ink-soft); white-space: nowrap; }
+.progress-box-text strong { color: var(--navy-900); }
+.progress-bar-track { flex: 1; height: 8px; background: var(--blue-200); border-radius: 5px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue-bright), var(--green-500)); border-radius: 5px; transition: width 0.3s; }
 .timeline-label { font-size: 17px; color: var(--ink); font-weight: 600; }
 
 .story-block { background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); border: none; }
 .story-block .dash-title { color: var(--white); }
 .story-text { color: #EAF4FB; font-size: 17px; line-height: 1.8; margin: 0; }
 .story-text strong { color: #FFFFFF; font-weight: 800; }
+
+.plan-health { display: flex; align-items: center; gap: 16px; padding: 20px 22px; border-radius: var(--radius); margin-bottom: 16px; box-shadow: 0 2px 10px rgba(11,37,69,0.08); }
+.plan-health-badge { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; color: white; flex-shrink: 0; }
+.plan-health-label { font-size: 19px; font-weight: 800; margin-bottom: 4px; }
+.plan-health-advice { font-size: 14.5px; line-height: 1.6; }
+.plan-health-green { background: var(--green-100); }
+.plan-health-green .plan-health-badge { background: var(--green-500); }
+.plan-health-green .plan-health-label { color: var(--green-700); }
+.plan-health-green .plan-health-advice { color: #2A6B4A; }
+.plan-health-yellow { background: #FEF6E7; }
+.plan-health-yellow .plan-health-badge { background: var(--amber-500); }
+.plan-health-yellow .plan-health-label { color: #8A5C10; }
+.plan-health-yellow .plan-health-advice { color: #7A5A1E; }
+.plan-health-red { background: var(--red-100); }
+.plan-health-red .plan-health-badge { background: var(--red-500); }
+.plan-health-red .plan-health-label { color: var(--red-500); }
+.plan-health-red .plan-health-advice { color: #8A3A32; }
 
 .compare-table-wrap { overflow-x: auto; margin-top: 14px; }
 .compare-table { width: 100%; border-collapse: collapse; min-width: 480px; }
@@ -213,10 +246,13 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
   .app { grid-template-columns: 1fr; }
   .sidebar { flex-direction: row; align-items: center; overflow-x: auto; flex-wrap: wrap; }
   .case-list { flex-direction: row; }
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
   .summary-bar { grid-template-columns: 1fr 1fr; }
   .charts-panel { grid-template-columns: 1fr; }
   .main { padding: 16px; }
+}
+@media (max-width: 340px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
 }
 
 </style>
@@ -542,6 +578,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         pvd: { enabled: false, employeeRate: 0.03, employerMode: 'flat', employerFlatRate: 0.03, employerTiers: [], fundReturn: 0.04, startingBalance: 0, serviceYearsSoFar: 0 },
         sso: { enabled: false, avgWageCapped: 15000, monthsPaidSoFar: 0 },
         severance: { enabled: false },
+        goalsEnabled: false, windfallsEnabled: false, healthInsuranceEnabled: false,
         goals: [],
         currentSavings: { items: [] },
         regularSavings: { items: [] },
@@ -568,6 +605,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       },
       sso: { enabled: true, avgWageCapped: 15000, monthsPaidSoFar: 60 },
       severance: { enabled: true },
+      goalsEnabled: true, windfallsEnabled: true, healthInsuranceEnabled: true,
       goals: [{ id: uid(), name: 'เป้าหมายตัวอย่าง (แก้ไข/ลบได้)', startAge: 40, endAge: 40, amountToday: 200000, returnRate: 0.05 }],
       currentSavings: { items: [
         { id: uid(), name: 'กองทุนรวมหุ้น (ตัวอย่าง)', amount: 200000, returnRate: 0.07 },
@@ -605,6 +643,9 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       if (loaded.pvd && Array.isArray(loaded.pvd.employerTiers) && loaded.pvd.employerTiers.length) base.pvd.employerTiers = loaded.pvd.employerTiers;
       base.sso = mergeObj(base.sso, loaded.sso);
       base.severance = mergeObj(base.severance, loaded.severance);
+      base.goalsEnabled = typeof loaded.goalsEnabled === 'boolean' ? loaded.goalsEnabled : (Array.isArray(loaded.goals) && loaded.goals.length > 0);
+      base.windfallsEnabled = typeof loaded.windfallsEnabled === 'boolean' ? loaded.windfallsEnabled : (Array.isArray(loaded.windfalls) && loaded.windfalls.length > 0);
+      base.healthInsuranceEnabled = typeof loaded.healthInsuranceEnabled === 'boolean' ? loaded.healthInsuranceEnabled : (loaded.healthInsurance && Array.isArray(loaded.healthInsurance.bands) && loaded.healthInsurance.bands.length > 0);
       /* migrate old goal shapes: kind/phase/targetAge -> startAge/endAge (drop 'premium' kind entirely, folded into healthInsurance) */
       if (Array.isArray(loaded.goals)) {
         base.goals = loaded.goals.filter(function (g) { return g.kind !== 'premium'; }).map(function (g) {
@@ -707,9 +748,10 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var suffix = opts.suffix || '';
     var hint = opts.hint || '';
     var inputHtml = rawInput(path, value, opts);
+    var labelText = label && suffix ? (label + ' (' + suffix + ')') : label;
     return '<label class="field">' +
-      (label ? '<span class="field-label">' + esc(label) + '</span>' : '') +
-      '<div class="field-input-row">' + inputHtml + (suffix ? '<span class="field-suffix">' + esc(suffix) + '</span>' : '') + '</div>' +
+      (labelText ? '<span class="field-label">' + esc(labelText) + '</span>' : '') +
+      '<div class="field-input-row">' + inputHtml + '</div>' +
       (hint ? '<span class="field-hint">' + esc(hint) + '</span>' : '') +
       '</label>';
   }
@@ -1113,10 +1155,11 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   /* ================= SECTION RENDERERS ================= */
+  var SECTION_ICONS = { 1: '👤', 2: '🏦', 3: '🎯', 4: '💰', 5: '🎁', 6: '🏥', 7: '📊', 8: '🏦', 9: '📜', 10: '💹', 11: '🏥', 12: '🧮', 13: '🪣', 14: '⚡' };
   function sectionWrap(num, title, subtitle, tone, open, bodyHtml, filled) {
     return '<div class="section tone-' + tone + (open ? ' open' : '') + (filled ? ' filled' : '') + '">' +
       '<button class="section-head" type="button" data-action="toggleSection" data-num="' + num + '">' +
-      '<span class="section-num">' + (filled ? '✓' : num) + '</span>' +
+      '<span class="section-num">' + (filled ? '✓' : (SECTION_ICONS[num] || num)) + '</span>' +
       '<span class="section-title-wrap"><span class="section-title">' + esc(title) + '</span>' +
       (subtitle ? '<span class="section-subtitle">' + subtitle + '</span>' : '') + '</span>' +
       '<span class="section-chevron">' + (open ? '▾' : '▸') + '</span>' +
@@ -1125,24 +1168,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         '<div class="section-footer"><button class="section-collapse-btn" type="button" data-action="toggleSection" data-num="' + num + '" title="ย่อหัวข้อนี้">▲ ย่อ</button></div>' +
         '</div>' : '') +
       '</div>';
-  }
-
-  function renderPortfolio(p, portfolio) {
-    var segHtml = portfolio.segments.map(function (s, i) {
-      return '<div class="tier-row">' +
-        field('อายุตั้งแต่', ['preRetirementPortfolio', 'segments', i, 'fromAge'], s.fromAge, {}) +
-        field('ถึงอายุ (ไม่รวม)', ['preRetirementPortfolio', 'segments', i, 'toAge'], s.toAge, {}) +
-        field('ผลตอบแทนช่วงนี้', ['preRetirementPortfolio', 'segments', i, 'returnRate'], s.returnRate, { type: 'percent' }) +
-        '<button class="btn-icon" type="button" data-action="delSegment" data-index="' + i + '">×</button></div>';
-    }).join('');
-    return '<div class="subblock-title">พอร์ตการลงทุนก่อนเกษียณ (ใช้กับเงินออมปัจจุบัน+เงินออมประจำ)</div>' +
-      '<div class="radio-row">' +
-      radio('อัตราเดียวตลอดจนเกษียณ', ['preRetirementPortfolio', 'mode'], 'flat', portfolio.mode) +
-      radio('ปรับพอร์ตหลายช่วง (Glide Path)', ['preRetirementPortfolio', 'mode'], 'glide', portfolio.mode) +
-      '</div>' +
-      (portfolio.mode === 'flat'
-        ? field('อัตราผลตอบแทนก่อนเกษียณ', ['preRetirementPortfolio', 'flatReturn'], portfolio.flatReturn, { type: 'percent', suffix: '%/ปี' })
-        : '<div class="tier-table">' + segHtml + '<button class="btn btn-add-row btn-sm" type="button" data-action="addSegment">+ เพิ่มช่วงอายุ</button></div>');
   }
 
   function renderPersonal(a) {
@@ -1167,8 +1192,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       (p.spendingMethod === 'replacement'
         ? field('อัตราทดแทนรายได้ (Replacement Ratio)', ['personal', 'replacementRate'], p.replacementRate, { type: 'percent', suffix: '% ของเงินเดือนเดือนสุดท้าย' })
         : field('ค่าใช้จ่ายที่ต้องการต่อเดือน (ราคาวันนี้)', ['personal', 'customMonthlyExpense'], p.customMonthlyExpense, { type: 'money', suffix: 'บาท/เดือน' })) +
-      '</div>' +
-      '<div class="subblock">' + renderPortfolio(p, a.preRetirementPortfolio) + '</div>';
+      '</div>';
   }
 
   function renderNeedSummary(a, r) {
@@ -1391,6 +1415,23 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function renderSavingsCalc(a, r) {
+    var portfolio = a.preRetirementPortfolio;
+    var segHtml = portfolio.segments.map(function (s, i) {
+      return '<div class="tier-row">' +
+        field('อายุตั้งแต่', ['preRetirementPortfolio', 'segments', i, 'fromAge'], s.fromAge, {}) +
+        field('ถึงอายุ (ไม่รวม)', ['preRetirementPortfolio', 'segments', i, 'toAge'], s.toAge, {}) +
+        field('ผลตอบแทนช่วงนี้', ['preRetirementPortfolio', 'segments', i, 'returnRate'], s.returnRate, { type: 'percent' }) +
+        '<button class="btn-icon" type="button" data-action="delSegment" data-index="' + i + '">×</button></div>';
+    }).join('');
+    var portfolioBlock = '<div class="subblock"><div class="subblock-title">พอร์ตการลงทุนก่อนเกษียณ (ใช้เปรียบเทียบ "ถ้าย้ายไปพอร์ตตามแผน" ด้านล่าง และเงินก้อนที่เข้ามาก่อนเกษียณ)</div>' +
+      '<div class="radio-row">' +
+      radio('อัตราเดียวตลอดจนเกษียณ', ['preRetirementPortfolio', 'mode'], 'flat', portfolio.mode) +
+      radio('ปรับพอร์ตหลายช่วง (Glide Path)', ['preRetirementPortfolio', 'mode'], 'glide', portfolio.mode) +
+      '</div>' +
+      (portfolio.mode === 'flat'
+        ? field('อัตราผลตอบแทนก่อนเกษียณ', ['preRetirementPortfolio', 'flatReturn'], portfolio.flatReturn, { type: 'percent', suffix: '%/ปี' })
+        : '<div class="tier-table">' + segHtml + '<button class="btn btn-add-row btn-sm" type="button" data-action="addSegment">+ เพิ่มช่วงอายุ</button></div>') +
+      '</div>';
     var itemCols = [
       { label: 'รายการ', render: function (row) { return esc(row.name); } },
       { label: 'จำนวนเงินวันนี้', render: function (row) { return fmt(row.amount); } },
@@ -1425,7 +1466,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       return '<div class="formula-box">รายการออม' + (it.frequency === 'monthly' ? 'รายเดือน' : 'รายปี') + ' ' + fmt(it.amount) + ' บาท (' + dueLabel + ') — วิธีคิด (สูตร FV เงินออมสม่ำเสมอ/Annuity): เงินสมทบปีละ ' + fmt(it.annualAmt) + ' บาท ที่ผลตอบแทน ' + (it.returnRate * 100).toFixed(2) + '%/ปี เป็นเวลา ' + r.yearsToRetire + ' ปี = <strong>' + fmt(it.fv) + ' บาท</strong></div>' +
         detailTable(it.path, regPathCols, 'regitem' + it.id);
     }).join('');
-    return '<div class="subblock"><div class="subblock-title">เงินออม/เงินลงทุนปัจจุบัน</div>' +
+    return portfolioBlock +
+      '<div class="subblock"><div class="subblock-title">เงินออม/เงินลงทุนปัจจุบัน</div>' +
       '<div class="grid-2">' +
       metricCard('รวมมูลค่า ณ วันเกษียณ (คงพอร์ตเดิมแต่ละตัว)', fmt(r.currentSavingsFV_asis) + ' บาท', 'navy') +
       metricCard('ถ้าย้ายทั้งหมดไปพอร์ตตามแผน (ข้อ 1)', fmt(r.currentSavingsFV_ifPlanned) + ' บาท', 'green', 'ใช้อัตราผลตอบแทนพอร์ตก่อนเกษียณที่ตั้งค่าไว้') +
@@ -1705,6 +1747,30 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     }).join('') + '</div>';
   }
 
+  function renderPlanHealth(a, r) {
+    var p = a.personal;
+    var gapRatio = r.netRequiredCorpus > 0 ? r.gap / r.netRequiredCorpus : 0;
+    var status, statusLabel, statusIcon;
+    if (gapRatio <= 0) { status = 'green'; statusLabel = 'แผนของคุณ: เพียงพอแล้ว'; statusIcon = '✓'; }
+    else if (gapRatio <= 0.15) { status = 'yellow'; statusLabel = 'แผนของคุณ: ใกล้เพียงพอ ต้องปรับอีกนิด'; statusIcon = '!'; }
+    else { status = 'red'; statusLabel = 'แผนของคุณ: ต้องปรับปรุง'; statusIcon = '✕'; }
+
+    var advice;
+    if (status === 'red' && r.yearsToRetire > 15) {
+      advice = 'ยังมีเวลาอีก ' + r.yearsToRetire + ' ปีก่อนเกษียณ ลองพิจารณาปรับสัดส่วนความเสี่ยง/ผลตอบแทนของพอร์ตการลงทุนดูก่อน อาจไม่ต้องออมเพิ่มมากขนาดนั้นก็ได้';
+    } else if (status === 'red') {
+      advice = 'เวลาที่เหลือก่อนเกษียณค่อนข้างจำกัด (' + r.yearsToRetire + ' ปี) ควรพิจารณาทั้งการออมเพิ่มและความเป็นไปได้ในการเลื่อนอายุเกษียณควบคู่กัน';
+    } else if (status === 'yellow') {
+      advice = 'ใกล้จะถึงเป้าหมายแล้ว ลองปรับเพิ่มเงินออมเล็กน้อยเดือนละประมาณ ' + fmt(r.extraMonthlySaving) + ' บาท ก็จะครบตามแผนที่วางไว้';
+    } else {
+      advice = 'แผนของคุณดูมั่นคงดี ลองพิจารณาเป้าหมายทางการเงินอื่นเพิ่มเติม หรือทบทวนแผนนี้อีกครั้งทุกปีเพื่อให้ยังคงเพียงพอตามสถานการณ์จริง';
+    }
+    return '<div class="plan-health plan-health-' + status + '">' +
+      '<div class="plan-health-badge">' + statusIcon + '</div>' +
+      '<div class="plan-health-text"><div class="plan-health-label">' + esc(statusLabel) + '</div><div class="plan-health-advice">' + esc(advice) + '</div></div>' +
+      '</div>';
+  }
+
   function renderStorySummary(a, r) {
     var p = a.personal;
     var beRetire = p.currentYearAD + 543 + (p.retireAge - p.currentAge);
@@ -1811,6 +1877,22 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     }).join('') + '</div>';
   }
 
+  function renderFeatureChecklist(a) {
+    var items = [
+      { path: ['sso', 'enabled'], val: a.sso.enabled, label: 'ประกันสังคม' },
+      { path: ['pvd', 'enabled'], val: a.pvd.enabled, label: 'กองทุนสำรองเลี้ยงชีพ / กบข.' },
+      { path: ['severance', 'enabled'], val: a.severance.enabled, label: 'เงินชดเชยตามกฎหมายแรงงาน' },
+      { path: ['healthInsuranceEnabled'], val: a.healthInsuranceEnabled, label: 'เตรียมเบี้ยประกันสุขภาพ' },
+      { path: ['goalsEnabled'], val: a.goalsEnabled, label: 'มีเป้าหมายการเงิน' },
+      { path: ['windfallsEnabled'], val: a.windfallsEnabled, label: 'มีเงินก้อน/เงินได้ระหว่างทาง' }
+    ];
+    return '<div class="checklist-box"><div class="checklist-title">แผนนี้เกี่ยวข้องกับอะไรบ้าง? <span class="checklist-hint">(ติ๊กแล้วหัวข้อนั้นจะโผล่ให้กรอกด้านล่าง)</span></div>' +
+      '<div class="checklist-grid">' + items.map(function (it) {
+        var pa = pathAttr(it.path);
+        return '<label class="checklist-item' + (it.val ? ' checked' : '') + '"><input type="checkbox" data-path=\'' + pa + '\' data-type="checkbox"' + (it.val ? ' checked' : '') + '> ' + esc(it.label) + '</label>';
+      }).join('') + '</div></div>';
+  }
+
   function renderMain(a, r) {
     var filled1 = !!(a.personal.clientName && a.personal.clientName.trim() !== '');
     var filled2 = !!(a.pvd.enabled || a.sso.enabled);
@@ -1819,31 +1901,38 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var filled5 = a.windfalls.length > 0;
     var filled6 = a.healthInsurance.bands.length > 0;
     var clientSections = [
-      [1, 'ข้อมูลผู้รับการวางแผน + พอร์ตก่อนเกษียณ', '', 'navy', renderPersonal(a), filled1],
-      [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPensionInput(a, r), filled2],
-      [3, 'เป้าหมายระยะสั้น/กลาง/ยาว', '', 'navy', renderGoals(a), filled3],
-      [4, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r), filled4],
-      [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a), filled5],
-      [6, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsuranceInput(a, r), filled6]
-    ];
+      [1, 'ข้อมูลผู้รับการวางแผน', '', 'navy', renderPersonal(a), filled1, true],
+      [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPensionInput(a, r), filled2, a.pvd.enabled || a.sso.enabled],
+      [3, 'เป้าหมายระยะสั้น/กลาง/ยาว', '', 'navy', renderGoals(a), filled3, a.goalsEnabled],
+      [4, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r), filled4, true],
+      [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a), filled5, a.windfallsEnabled],
+      [6, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsuranceInput(a, r), filled6, a.healthInsuranceEnabled]
+    ].filter(function (s) { return s[6]; });
     var calcSections = [
-      [7, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(a, r)],
-      [8, 'ผลการคำนวณ: กองทุนสำรอง/กบข. และประกันสังคม', '', 'green', renderPensionCalc(a, r)],
-      [9, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'green', renderSeverance(r)],
-      [10, 'ผลการคำนวณ: เงินออมและเงินลงทุน', '', 'green', renderSavingsCalc(a, r)],
-      [11, 'ผลการคำนวณ: เบี้ยประกันสุขภาพ', '', 'green', renderHealthInsuranceCalc(a, r)],
-      [12, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด', '', 'green', renderGap(a, r)],
-      [13, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r)],
-      [14, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r)]
-    ];
+      [7, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(a, r), false, true],
+      [8, 'ผลการคำนวณ: กองทุนสำรอง/กบข. และประกันสังคม', '', 'green', renderPensionCalc(a, r), false, a.pvd.enabled || a.sso.enabled],
+      [9, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'green', renderSeverance(r), false, a.severance.enabled],
+      [10, 'ผลการคำนวณ: พอร์ตก่อนเกษียณ, เงินออมและเงินลงทุน', '', 'green', renderSavingsCalc(a, r), false, true],
+      [11, 'ผลการคำนวณ: เบี้ยประกันสุขภาพ', '', 'green', renderHealthInsuranceCalc(a, r), false, a.healthInsuranceEnabled],
+      [12, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด', '', 'green', renderGap(a, r), false, true],
+      [13, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r), false, true],
+      [14, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r), false, true]
+    ].filter(function (s) { return s[6]; });
     function sectionsHtml(list) { return '<div class="sections">' + list.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4], s[5]); }).join('') + '</div>'; }
     var dashHtml = '<div class="dashboard">' +
+      renderPlanHealth(a, r) +
       renderStorySummary(a, r) +
       renderSummaryBar(r) + renderCharts(r) +
       '<div class="dash-block"><div class="dash-title">ไทม์ไลน์เหตุการณ์สำคัญ</div>' + renderTimeline(r, a.personal) + '</div>' +
       renderComparison(a, r) +
       '</div>';
-    var body = TAB === 'client' ? sectionsHtml(clientSections) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml);
+    var visibleClientSections = clientSections;
+    var filledCount = visibleClientSections.filter(function (s) { return s[5]; }).length;
+    var totalCount = visibleClientSections.length;
+    var progressPct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
+    var progressHtml = '<div class="progress-box"><div class="progress-box-text">กรอกข้อมูลไปแล้ว <strong>' + filledCount + '/' + totalCount + '</strong> หัวข้อ</div>' +
+      '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div></div>';
+    var body = TAB === 'client' ? (renderFeatureChecklist(a) + progressHtml + sectionsHtml(clientSections)) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml);
     return '<main class="main">' +
       '<div class="header no-print">' +
       '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
