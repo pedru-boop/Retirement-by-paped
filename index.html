@@ -297,6 +297,7 @@ function simulatePVD(opts) {
   let salary = startSalaryMonthly;
   const path = [];
   for (let y = 1; y <= yearsToRetire; y++) {
+    const startBalance = balance;
     const annualSalary = salary * 12;
     const serviceYears = (serviceYearsSoFar || 0) + y;
     let employerRate = employerFlatRate;
@@ -307,8 +308,9 @@ function simulatePVD(opts) {
     }
     const employeeContrib = annualSalary * employeeRate;
     const employerContrib = annualSalary * employerRate;
+    const interestEarned = startBalance * fundReturn;
     balance = balance * (1 + fundReturn) + employeeContrib + employerContrib;
-    path.push({ year: y, age: currentAge + y, salaryAnnual: annualSalary, employeeContrib, employerContrib, employerRate, balance });
+    path.push({ year: y, age: currentAge + y, salaryAnnual: annualSalary, employeeContrib, employerContrib, employerRate, startBalance, interestEarned, balance });
     salary = salary * (1 + salaryGrowth);
   }
   return { finalBalance: balance, path };
@@ -544,7 +546,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         currentSavings: { items: [] },
         regularSavings: { items: [] },
         windfalls: [],
-        healthInsurance: { returnRate: 0.04, bands: [] },
+        healthInsurance: { bands: [] },
         extraSavingMode: 'flat', extraSavingReturn: 0.05,
         buckets: defaultBuckets(25),
         stressTestDelta: -0.01
@@ -573,7 +575,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       ] },
       regularSavings: { items: [{ id: uid(), frequency: 'monthly', amount: 5000, timing: 'end', returnRate: 0.05 }] },
       windfalls: [{ id: uid(), description: 'เงินก้อนตัวอย่าง (แก้ไข/ลบได้)', flowType: 'lumpsum', amount: 100000, ageReceived: 60, frequency: 'annual', amountPerPeriod: 10000, startAge: 61, endAge: 65 }],
-      healthInsurance: { returnRate: 0.04, bands: [{ id: uid(), fromAge: 61, toAge: 70, annualPremiumToday: 30000 }] },
+      healthInsurance: { bands: [{ id: uid(), fromAge: 61, toAge: 70, annualPremiumToday: 30000 }] },
       extraSavingMode: 'flat', extraSavingReturn: 0.05,
       buckets: defaultBuckets(25),
       stressTestDelta: -0.01
@@ -798,6 +800,27 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var portfolio = a.preRetirementPortfolio;
     var segs = portfolio.mode === 'glide' ? portfolio.segments : null;
 
+    /* lightweight bucket age-map (mirrors computeBucketPlan's last-bucket auto-years correction),
+       computed early so any section can look up "which bucket/rate covers age X" without
+       needing the full sizing/oneOffs machinery yet. */
+    var bucketAgeMap = (function () {
+      var list = clone(a.buckets.list);
+      if (list.length) {
+        var sumOthers = list.slice(0, -1).reduce(function (s, b) { return s + b.years; }, 0);
+        list[list.length - 1].years = Math.max(1, yearsRetired - sumOthers);
+      }
+      var cum = 0;
+      return list.map(function (b) {
+        var entry = { startAge: p.retireAge + cum, endAge: p.retireAge + cum + b.years - 1, drawdownReturn: b.drawdownReturn, label: b.label || 'บัคเก็ต' };
+        cum += b.years;
+        return entry;
+      });
+    })();
+    function bucketForAge(age) {
+      for (var i = 0; i < bucketAgeMap.length; i++) { if (age >= bucketAgeMap[i].startAge && age <= bucketAgeMap[i].endAge) return bucketAgeMap[i]; }
+      return bucketAgeMap.length ? bucketAgeMap[0] : null;
+    }
+
     var salaryAtRetire = p.currentSalary * Math.pow(1 + p.salaryGrowth, yearsToRetire);
     var firstYearMonthlyNeed = p.spendingMethod === 'replacement'
       ? salaryAtRetire * p.replacementRate
@@ -895,46 +918,29 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) + w.amount;
     });
 
-    /* health insurance premiums: flat nominal amount per band (no inflation — the number entered IS the amount actually paid each year in that band) */
-    var hi = a.healthInsurance || { returnRate: 0.04, bands: [] };
+    /* health insurance premiums: flat nominal amount per band (no inflation — the number entered IS the amount actually paid each year in that band).
+       Each band's payment phase uses the actual retirement bucket's own return rate for whatever period it falls in —
+       no separate/independent interest rate for this section, so it always matches the real retirement plan. */
+    var hi = a.healthInsurance || { bands: [] };
     var healthBandsCalc = (hi.bands || []).map(function (b) {
+      var bucket = bucketForAge(b.fromAge);
+      var bandRate = bucket ? bucket.drawdownReturn : 0.04;
       var yearsFromNow = Math.max(0, b.fromAge - p.currentAge);
       var bandYears = Math.max(1, b.toAge - b.fromAge + 1);
-      var pvAtStart = C.growingAnnuityPV(b.annualPremiumToday, hi.returnRate, 0, bandYears, true);
-      var pvToday = pvAtStart / Math.pow(1 + hi.returnRate, yearsFromNow);
-      return { id: b.id, fromAge: b.fromAge, toAge: b.toAge, annualPremiumToday: b.annualPremiumToday, premiumAtStart: b.annualPremiumToday, pvToday: pvToday };
+      var pvAtStart = C.growingAnnuityPV(b.annualPremiumToday, bandRate, 0, bandYears, true);
+      var pvToday = pvAtStart / Math.pow(1 + bandRate, yearsFromNow);
+      return { id: b.id, fromAge: b.fromAge, toAge: b.toAge, annualPremiumToday: b.annualPremiumToday, bandRate: bandRate, bucketLabel: bucket ? bucket.label : '-', pvToday: pvToday };
     });
     var healthRequiredToday = healthBandsCalc.reduce(function (s, b) { return s + b.pvToday; }, 0);
-    var healthMonthsToFirstBand = hi.bands.length ? Math.max(1, (Math.min.apply(null, hi.bands.map(function (b) { return b.fromAge; })) - p.currentAge) * 12) : 12;
-    /* target the FV needed at the point savings are first used (start of earliest band), not the present-value figure */
-    var healthFvNeededAtFirstBand = healthBandsCalc.reduce(function (s, b) { return s + b.pvToday * Math.pow(1 + hi.returnRate, healthMonthsToFirstBand / 12); }, 0);
-    var healthMonthlySaving = healthFvNeededAtFirstBand > 0 ? C.pmtFromFV(healthFvNeededAtFirstBand, hi.returnRate, healthMonthsToFirstBand / 12, false) / 12 : 0;
     var healthYearTable = [];
-    var firstBandAge = hi.bands.length ? Math.min.apply(null, hi.bands.map(function (b) { return b.fromAge; })) : null;
-    var hiBal = 0;
     for (var hy = 0; hy <= (p.lifeExpectancy - p.currentAge); hy++) {
       var age = p.currentAge + hy;
       var band = (hi.bands || []).find(function (b) { return age >= b.fromAge && age <= b.toAge; });
-      var startBal = hiBal;
-      var contribution = 0, premiumDue = 0, interestEarned = 0;
-      if (firstBandAge !== null && age < firstBandAge) {
-        contribution = healthMonthlySaving * 12;
-        interestEarned = hiBal * hi.returnRate;
-        hiBal = hiBal * (1 + hi.returnRate) + contribution;
-      } else if (band) {
-        premiumDue = band.annualPremiumToday;
-        hiBal = Math.max(0, hiBal - premiumDue) * (1 + hi.returnRate);
-        interestEarned = hiBal - Math.max(0, startBal - premiumDue);
-      } else {
-        interestEarned = hiBal * hi.returnRate;
-        hiBal = hiBal * (1 + hi.returnRate);
-      }
-      var rateUsed = hi.returnRate;
-      var phaseLabel = (firstBandAge !== null && age < firstBandAge) ? 'สะสม' : (band ? 'จ่ายเบี้ย' : (firstBandAge !== null ? 'สะสมเสร็จแล้ว' : '-'));
+      var bucketAtAge = age >= p.retireAge ? bucketForAge(age) : null;
+      var phaseLabel = band ? ('จ่ายเบี้ย (' + (bucketAtAge ? bucketAtAge.label : '-') + ')') : (age < p.retireAge ? 'ก่อนเกษียณ' : 'ไม่มีเบี้ยช่วงนี้');
       healthYearTable.push({
         year: hy, beYear: p.currentYearAD + 543 + hy, age: age, phase: phaseLabel,
-        startBalance: startBal, contribution: contribution, interest: interestEarned,
-        premiumDue: premiumDue, rateUsed: rateUsed, endBalance: hiBal
+        premiumDue: band ? band.annualPremiumToday : 0, rateUsed: band && bucketAtAge ? bucketAtAge.drawdownReturn : null
       });
     }
     (hi.bands || []).forEach(function (b) {
@@ -1100,7 +1106,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       depletionAgeStressed: depletionAgeStressed, sustainableMonthlyStressed: sustainableMonthlyStressed,
       accumPath: accumPath, drawdownPath: drawdownPath, events: events,
       pensionAnnualAtYear: pensionAnnualAtYear, drawdownTable: drawdownTable,
-      healthBandsCalc: healthBandsCalc, healthRequiredToday: healthRequiredToday, healthMonthlySaving: healthMonthlySaving, healthYearTable: healthYearTable,
+      healthBandsCalc: healthBandsCalc, healthRequiredToday: healthRequiredToday, healthYearTable: healthYearTable,
       multiPlan: multiPlan, singlePlan: singlePlan, blendedRate: blendedRate,
       multiExtraSaving: multiExtraSaving, singleExtraSaving: singleExtraSaving, singleGap: singleGap
     };
@@ -1227,16 +1233,18 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var html = '';
     if (pvd.enabled) {
       html += '<div class="subblock"><div class="subblock-title">กองทุนสำรองเลี้ยงชีพ / กบข.</div>' +
-        '<div class="formula-box">วิธีคิด: ทุกปีนำ "เงินเดือนปีนั้น × (% ลูกจ้าง + % นายจ้าง)" มาบวกเข้ากองทุน แล้วให้ทั้งกองทุนโตด้วยผลตอบแทน ' + (pvd.fundReturn * 100).toFixed(2) + '%/ปี ทบต้นไปเรื่อยๆ จนถึงปีที่เกษียณ = <strong>' + fmt(r.pvdResult.finalBalance) + ' บาท</strong></div>' +
+        '<div class="formula-box">วิธีคิด: เริ่มจากยอดยกมา ' + fmt(pvd.startingBalance) + ' บาท ทุกปีนำ "เงินเดือนปีนั้น × (% ลูกจ้าง + % นายจ้าง)" มาบวกเข้ากองทุน แล้วให้ทั้งกองทุนโตด้วยผลตอบแทน ' + (pvd.fundReturn * 100).toFixed(2) + '%/ปี ทบต้นไปเรื่อยๆ จนถึงปีที่เกษียณ = <strong>' + fmt(r.pvdResult.finalBalance) + ' บาท</strong></div>' +
         metricCard('ยอดสะสมกองทุนโดยประมาณ ณ วันเกษียณ', fmt(r.pvdResult.finalBalance) + ' บาท', 'green') +
         detailTable(r.pvdResult.path, [
           { label: 'ปีที่', render: function (row) { return row.year; } },
           { label: 'อายุ', render: function (row) { return row.age; } },
+          { label: 'ยอดยกมา (ต้นปี)', render: function (row) { return fmt(row.startBalance); } },
           { label: 'เงินเดือน/ปี', render: function (row) { return fmt(row.salaryAnnual); } },
           { label: '% นายจ้าง', render: function (row) { return (row.employerRate * 100).toFixed(2) + '%'; } },
           { label: 'สมทบลูกจ้าง', render: function (row) { return fmt(row.employeeContrib); } },
           { label: 'สมทบนายจ้าง', render: function (row) { return fmt(row.employerContrib); } },
           { label: 'อัตราผลตอบแทนที่ใช้', render: function () { return (pvd.fundReturn * 100).toFixed(2) + '%'; } },
+          { label: 'ดอกเบี้ยที่ได้ปีนั้น', render: function (row) { return fmt(row.interestEarned); } },
           { label: 'ยอดสะสมปลายปี', render: function (row) { return fmt(row.balance); } }
         ], 'pvd') + '</div>';
     }
@@ -1499,32 +1507,32 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       addAction: 'addHealthBand', addLabel: 'เพิ่มช่วงอายุ/เบี้ยประกัน', delAction: 'delHealthBand',
       emptyMsg: 'เช่น อายุ 61-65 จ่ายเบี้ยปีละ 30,000 บาท (คงที่ทุกปีในช่วงนี้), อายุ 66-70 จ่ายปีละ 45,000 บาท'
     });
-    return '<div class="entry-note" style="padding:0 0 4px">ระบุช่วงอายุและ "จำนวนเบี้ยที่ต้องจ่ายจริง" ในแต่ละช่วง (ไม่ต้องปรับเงินเฟ้อเอง ใส่ตัวเลขที่จะจ่ายจริงในปีนั้นๆ ได้เลย) เพิ่มช่วงใหม่จะต่อจากช่วงล่าสุดให้อัตโนมัติ แก้ไขเองได้ — ผลการคำนวณดูได้ในแท็บ "การคำนวณ"</div>' +
-      bandsTable +
-      field('อัตราผลตอบแทนของเงินสำรองนี้', ['healthInsurance', 'returnRate'], hi.returnRate, { type: 'percent', suffix: '%/ปี' });
+    return '<div class="entry-note" style="padding:0 0 4px">ระบุช่วงอายุและ "จำนวนเบี้ยที่ต้องจ่ายจริง" ในแต่ละช่วง (ไม่ต้องปรับเงินเฟ้อเอง ใส่ตัวเลขที่จะจ่ายจริงในปีนั้นๆ ได้เลย) เพิ่มช่วงใหม่จะต่อจากช่วงล่าสุดให้อัตโนมัติ แก้ไขเองได้ — คำนวณโดยใช้อัตราผลตอบแทนของบัคเก็ตที่ดูแลช่วงอายุนั้นๆ โดยอัตโนมัติ (ตั้งค่าบัคเก็ตได้ในแท็บ "การคำนวณ" หัวข้อ 13) ผลการคำนวณดูได้ในแท็บ "การคำนวณ"</div>' +
+      bandsTable;
   }
 
   function renderHealthInsuranceCalc(a, r) {
+    var bandCols = [
+      { label: 'ช่วงอายุ', render: function (row) { return row.fromAge + '-' + row.toAge + ' ปี'; } },
+      { label: 'เบี้ย/ปี', render: function (row) { return fmt(row.annualPremiumToday) + ' บาท'; } },
+      { label: 'ดูแลโดยบัคเก็ต', render: function (row) { return esc(row.bucketLabel); } },
+      { label: 'อัตราที่ใช้ (ของบัคเก็ตนั้น)', render: function (row) { return (row.bandRate * 100).toFixed(2) + '%'; } },
+      { label: 'มูลค่า ณ วันนี้ (PV)', render: function (row) { return fmt(row.pvToday) + ' บาท'; } }
+    ];
     var yearCols = [
       { label: 'ปีที่', render: function (row) { return row.year; } },
       { label: 'พ.ศ.', render: function (row) { return row.beYear; } },
       { label: 'อายุ', render: function (row) { return row.age; } },
       { label: 'ช่วง', render: function (row) { return row.phase; } },
-      { label: 'อัตราที่ใช้', render: function (row) { return (row.rateUsed * 100).toFixed(2) + '%'; } },
-      { label: 'ยอดต้นปี', render: function (row) { return fmt(row.startBalance); } },
-      { label: 'สะสมเพิ่ม/ปี', render: function (row) { return row.contribution > 0 ? fmt(row.contribution) : '-'; } },
-      { label: 'ดอกเบี้ยที่ได้', render: function (row) { return fmt(row.interest); } },
-      { label: 'จ่ายเบี้ยปีนั้น', render: function (row) { return row.premiumDue > 0 ? fmt(row.premiumDue) : '-'; } },
-      { label: 'ยอดปลายปี', render: function (row) { return fmt(row.endBalance); } }
+      { label: 'อัตราที่ใช้', render: function (row) { return row.rateUsed != null ? (row.rateUsed * 100).toFixed(2) + '%' : '-'; } },
+      { label: 'เบี้ยที่ต้องจ่ายปีนั้น', render: function (row) { return row.premiumDue > 0 ? fmt(row.premiumDue) : '-'; } }
     ];
     if (!a.healthInsurance.bands.length) return '<div class="note">ยังไม่ได้ระบุช่วงอายุ/เบี้ยประกันสุขภาพ ในแท็บ "ข้อมูลลูกค้า" หัวข้อ 6</div>';
-    return '<div class="entry-note" style="padding:0 0 10px">วิธีคิด: สะสมเดือนละ <strong>' + fmt(r.healthMonthlySaving) + ' บาท</strong> (ปีละ ' + fmt(r.healthMonthlySaving * 12) + ' บาท) ตั้งแต่วันนี้ ด้วยผลตอบแทน ' + (a.healthInsurance.returnRate * 100).toFixed(2) + '%/ปี จนถึงอายุที่เริ่มจ่ายเบี้ย จากนั้นหักเบี้ยออกทุกปีตามช่วงที่ระบุ (เงินที่เหลือยังได้ดอกเบี้ยต่อไปเรื่อยๆ) จนกองทุนนี้เหลือ 0 บาทพอดีเมื่อจบช่วงสุดท้าย</div>' +
-      '<div class="grid-2">' +
-      metricCard('เงินที่ต้องเตรียมไว้วันนี้ (ทุกช่วงรวมกัน)', fmt(r.healthRequiredToday) + ' บาท', 'navy') +
-      metricCard('ควรออมเดือนละ (จนถึงช่วงแรก)', fmt(r.healthMonthlySaving) + ' บาท/เดือน', 'green') +
-      '</div>' +
+    return '<div class="entry-note" style="padding:0 0 10px">วิธีคิด: ไม่มีอัตราดอกเบี้ยแยกต่างหากสำหรับเบี้ยประกันสุขภาพ — แต่ละช่วงอายุจะอ้างอิงอัตราผลตอบแทนของ "บัคเก็ต" ที่ดูแลช่วงอายุนั้นในแผนการบริหารเงินหลังเกษียณ (หัวข้อ 13) โดยตรง เพื่อให้ตัวเลขตรงกับแผนจริงเสมอ ถ้าใช้พอร์ตเดียวตลอดก็จะใช้อัตราของพอร์ตนั้นทั้งหมด ถ้าแบ่งบัคเก็ตก็จะสลับอัตราไปตามช่วงที่เบี้ยตกอยู่</div>' +
+      metricCard('มูลค่ารวมของภาระเบี้ยทั้งหมด (PV ณ วันนี้)', fmt(r.healthRequiredToday) + ' บาท', 'navy', 'ยอดนี้ถูกรวมอยู่ในกองทุนที่ต้องมี (ข้อ 12) แล้ว ไม่ต้องเตรียมแยกอีกก้อน') +
+      detailTable(r.healthBandsCalc, bandCols, 'healthbands') +
       detailTable(r.healthYearTable, yearCols, 'health') +
-      '<div class="entry-note"><strong>หมายเหตุ:</strong> การหักเบี้ยคำนวณแบบ "ต้นงวด" คือหักเบี้ยออกก่อนตอนต้นปี แล้วเงินที่เหลือค่อยได้ดอกเบี้ยของปีนั้นต่อ — เบี้ยในช่วงหลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) โดยอัตโนมัติแล้วเช่นกัน (ไม่ได้นับซ้ำกับตารางนี้ ตารางนี้เป็นกองทุนสำรองแยกต่างหากสำหรับเบี้ยประกันโดยเฉพาะ)</div>';
+      '<div class="entry-note"><strong>หมายเหตุ:</strong> คำนวณแบบ "ต้นงวด" คือหักเบี้ยตอนต้นปีของแต่ละช่วง — เบี้ยในช่วงหลังเกษียณถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) โดยอัตโนมัติแล้ว ตารางนี้เป็นการแจกแจงรายละเอียดเพื่อความโปร่งใส ไม่ใช่กองทุนแยกต่างหาก</div>';
   }
 
   function renderGap(a, r) {
