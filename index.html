@@ -224,6 +224,18 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .tacct-row span:last-child { font-weight: 600; white-space: nowrap; }
 .tacct-cat-header { font-weight: 800; font-size: 13px; color: var(--blue-bright); text-transform: uppercase; letter-spacing: 0.3px; margin-top: 8px; padding: 4px 0; }
 .tacct-cat-header:first-child { margin-top: 0; }
+.va-tag { font-size: 11px; color: var(--ink-soft); background: var(--blue-100); padding: 1px 6px; border-radius: 8px; }
+.va-pct { color: var(--blue-bright); font-weight: 700; }
+.ratio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.ratio-card { border-radius: 12px; padding: 14px 16px; border: 1.5px solid var(--line); }
+.ratio-green { background: var(--green-100); border-color: var(--green-500); }
+.ratio-yellow { background: #FEF6E7; border-color: var(--amber-500); }
+.ratio-red { background: var(--red-100); border-color: var(--red-500); }
+.ratio-label { font-weight: 700; font-size: 14px; color: var(--navy-900); margin-bottom: 4px; }
+.ratio-value { font-size: 26px; font-weight: 800; color: var(--navy-900); }
+.ratio-standard { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.ratio-advice { font-size: 13px; color: var(--ink); margin-top: 8px; line-height: 1.6; }
+.ratio-advice-ok { color: var(--green-700); font-weight: 700; }
 .tacct-networth-row { background: var(--blue-100); margin: 4px -16px; padding: 8px 16px; font-weight: 700; }
 .tacct-total { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--navy-700); font-weight: 800; font-size: 15px; color: var(--navy-900); }
 @media (max-width: 700px) {
@@ -1148,6 +1160,65 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     if (mainCategory === 'investment') return invBlendReturn;
     return 0; /* personal-use / other assets: no assumed investment growth */
   }
+  function computeFinancialHealthCheck(a, fr) {
+    var nw = fr.netWorthCalc, cf = fr.cashFlowCalc;
+
+    /* vertical analysis: balance sheet (base = total assets) */
+    var assetVertical = a.finance.assets.items.map(function (it) {
+      return { name: it.name, mainCategory: categoryLabel(ASSET_MAIN_CATEGORIES, it.mainCategory), value: it.value, pct: nw.totalAssets > 0 ? it.value / nw.totalAssets : 0 };
+    });
+    var liabVertical = a.finance.liabilities.items.map(function (it) {
+      return { name: it.name, mainCategory: categoryLabel(LIABILITY_MAIN_CATEGORIES, it.mainCategory), value: it.balance, pct: nw.totalAssets > 0 ? it.balance / nw.totalAssets : 0 };
+    });
+    var netWorthPct = nw.totalAssets > 0 ? nw.netWorth / nw.totalAssets : 0;
+
+    /* vertical analysis: cash flow (base = total income) */
+    var incomeVertical = a.finance.income.items.map(function (it) {
+      var m = incomeMonthlyEquiv(it);
+      return { name: it.category, value: m, pct: cf.totalIncome > 0 ? m / cf.totalIncome : 0 };
+    });
+    var expenseVertical = a.finance.expenses.regular.items.map(function (it) {
+      var m = C.toMonthly(it.amount, it.frequency);
+      return { name: it.category, value: m, pct: cf.totalIncome > 0 ? m / cf.totalIncome : 0 };
+    });
+    var debtPaymentPct = cf.totalIncome > 0 ? cf.totalDebtPayment / cf.totalIncome : 0;
+    var totalExpensePct = cf.totalIncome > 0 ? (cf.totalExpenses + cf.totalDebtPayment) / cf.totalIncome : 0;
+    var netCashFlowPct = cf.totalIncome > 0 ? cf.netCashFlow / cf.totalIncome : 0;
+
+    /* CFP standard ratios */
+    var investmentAssetValue = a.finance.assets.items.filter(function (it) { return it.mainCategory === 'investment'; }).reduce(function (s, it) { return s + it.value; }, 0);
+    var ratios = [];
+    var liquidityMonths = cf.totalExpenses > 0 ? fr.liquidAssets / cf.totalExpenses : 0;
+    ratios.push({ key: 'liquidity', label: 'อัตราส่วนสภาพคล่อง', value: liquidityMonths, display: liquidityMonths.toFixed(1) + ' เดือน', standard: '3-6 เดือน',
+      status: liquidityMonths >= 3 ? 'green' : (liquidityMonths >= 1.5 ? 'yellow' : 'red'),
+      advice: liquidityMonths < 3 ? ('มีเงินสำรองสภาพคล่องอยู่ ' + liquidityMonths.toFixed(1) + ' เดือน ต่ำกว่ามาตรฐาน 3 เดือน ควรเก็บเงินสดหรือสินทรัพย์สภาพคล่องเพิ่มอีกประมาณ ' + fmt(Math.max(0, 3 * cf.totalExpenses - fr.liquidAssets)) + ' บาท เพื่อรองรับเหตุฉุกเฉิน') : null });
+
+    var debtToAsset = nw.totalAssets > 0 ? nw.totalLiabilities / nw.totalAssets : 0;
+    ratios.push({ key: 'debtAsset', label: 'อัตราส่วนหนี้สินต่อสินทรัพย์', value: debtToAsset, display: (debtToAsset * 100).toFixed(1) + '%', standard: 'ไม่เกิน 50%',
+      status: debtToAsset <= 0.5 ? 'green' : (debtToAsset <= 0.7 ? 'yellow' : 'red'),
+      advice: debtToAsset > 0.5 ? ('หนี้สินคิดเป็น ' + (debtToAsset * 100).toFixed(1) + '% ของสินทรัพย์รวม สูงกว่ามาตรฐาน 50% ควรเร่งลดหนี้หรือเพิ่มสินทรัพย์ ประมาณ ' + fmt(Math.max(0, nw.totalLiabilities - 0.5 * nw.totalAssets)) + ' บาท เพื่อให้อัตราส่วนกลับสู่เกณฑ์ปลอดภัย') : null });
+
+    ratios.push({ key: 'dti', label: 'ภาระหนี้ต่อรายได้ (DTI)', value: cf.dti, display: (cf.dti * 100).toFixed(1) + '%', standard: 'ไม่เกิน 36%',
+      status: cf.dti <= 0.36 ? 'green' : (cf.dti <= 0.5 ? 'yellow' : 'red'),
+      advice: cf.dti > 0.36 ? ('DTI อยู่ที่ ' + (cf.dti * 100).toFixed(1) + '% สูงกว่ามาตรฐาน 36% ควรลดค่างวดหนี้ต่อเดือนลงประมาณ ' + fmt(Math.max(0, cf.totalDebtPayment - 0.36 * cf.totalIncome)) + ' บาท หรือเพิ่มรายได้ ก่อนก่อหนี้เพิ่ม') : null });
+
+    var savingsRate = cf.totalIncome > 0 ? cf.netCashFlow / cf.totalIncome : 0;
+    ratios.push({ key: 'savingsRate', label: 'อัตราการออม', value: savingsRate, display: (savingsRate * 100).toFixed(1) + '%', standard: 'อย่างน้อย 10-20%',
+      status: savingsRate >= 0.2 ? 'green' : (savingsRate >= 0.1 ? 'yellow' : 'red'),
+      advice: savingsRate < 0.2 ? ('อัตราการออมอยู่ที่ ' + (savingsRate * 100).toFixed(1) + '% ต่ำกว่ามาตรฐาน 20% ควรลดค่าใช้จ่ายหรือเพิ่มรายได้ เพื่อออมเพิ่มอีกประมาณ ' + fmt(Math.max(0, 0.2 * cf.totalIncome - cf.netCashFlow)) + ' บาท/เดือน') : null });
+
+    var investRatio = nw.netWorth > 0 ? investmentAssetValue / nw.netWorth : 0;
+    ratios.push({ key: 'investRatio', label: 'สัดส่วนสินทรัพย์ลงทุนต่อมูลค่าสุทธิ', value: investRatio, display: (investRatio * 100).toFixed(1) + '%', standard: 'ควรมากกว่า 50%',
+      status: investRatio >= 0.5 ? 'green' : (investRatio >= 0.25 ? 'yellow' : 'red'),
+      advice: investRatio < 0.5 ? ('สินทรัพย์เพื่อการลงทุนคิดเป็นเพียง ' + (investRatio * 100).toFixed(1) + '% ของมูลค่าสุทธิ ต่ำกว่ามาตรฐาน 50% ความมั่งคั่งส่วนใหญ่ผูกอยู่กับสินทรัพย์ที่ไม่สร้างผลตอบแทน ควรพิจารณาจัดสรรเงินไปลงทุนเพิ่มเติมเพื่อให้เงินทำงาน') : null });
+
+    return {
+      assetVertical: assetVertical, liabVertical: liabVertical, netWorthPct: netWorthPct,
+      incomeVertical: incomeVertical, expenseVertical: expenseVertical, debtPaymentPct: debtPaymentPct, totalExpensePct: totalExpensePct, netCashFlowPct: netCashFlowPct,
+      ratios: ratios
+    };
+  }
+
   function computeFinance(a) {
     var f = a.finance;
     var currentAge = a.personal.currentAge;
@@ -1883,6 +1954,46 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var found = list.filter(function (o) { return o.value === value; })[0];
     return found ? found.label : value;
   }
+  function renderFinancialHealthCheckBox(a, fr) {
+    var hc = computeFinancialHealthCheck(a, fr);
+    function bsRows(list) {
+      if (!list.length) return '<div class="entry-note" style="padding:6px 0">ยังไม่มีรายการ</div>';
+      return list.map(function (row) {
+        return '<div class="tacct-row"><span>' + esc(row.name) + ' <span class="va-tag">' + esc(row.mainCategory) + '</span></span><span>' + fmt(row.value) + ' บาท <span class="va-pct">(' + (row.pct * 100).toFixed(1) + '%)</span></span></div>';
+      }).join('');
+    }
+    var bsHtml = '<div class="tacct-wrap">' +
+      '<div class="tacct-col tacct-left"><div class="tacct-head">สินทรัพย์</div>' + bsRows(hc.assetVertical) + '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalAssets) + ' บาท (100%)</div></div>' +
+      '<div class="tacct-col tacct-right"><div class="tacct-head">หนี้สิน + ส่วนของทุน</div>' + bsRows(hc.liabVertical) +
+      '<div class="tacct-row tacct-networth-row"><span>ส่วนของทุน (Net Worth)</span><span>' + fmt(fr.netWorthCalc.netWorth) + ' บาท (' + (hc.netWorthPct * 100).toFixed(1) + '%)</span></div>' +
+      '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalLiabilities + fr.netWorthCalc.netWorth) + ' บาท (100%)</div></div>' +
+      '</div>';
+
+    function cfRows(list) {
+      if (!list.length) return '<div class="entry-note" style="padding:6px 0">ยังไม่มีรายการ</div>';
+      return list.map(function (row) {
+        return '<div class="tacct-row"><span>' + esc(row.name) + '</span><span>' + fmt(row.value) + ' บาท/ด. (' + (row.pct * 100).toFixed(1) + '%)</span></div>';
+      }).join('');
+    }
+    var cfHtml = '<div class="tacct-wrap">' +
+      '<div class="tacct-col tacct-left"><div class="tacct-head">รายได้</div>' + cfRows(hc.incomeVertical) + '<div class="tacct-total">รวมรายได้: ' + fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน (100%)</div></div>' +
+      '<div class="tacct-col tacct-right"><div class="tacct-head">ค่าใช้จ่าย + หนี้</div>' + cfRows(hc.expenseVertical) +
+      '<div class="tacct-row"><span>ค่างวดหนี้ทั้งหมด</span><span>' + fmt(fr.cashFlowCalc.totalDebtPayment) + ' บาท/เดือน (' + (hc.debtPaymentPct * 100).toFixed(1) + '%)</span></div>' +
+      '<div class="tacct-total">รวมรายจ่าย+หนี้: ' + fmt(fr.cashFlowCalc.totalExpenses + fr.cashFlowCalc.totalDebtPayment) + ' บาท (' + (hc.totalExpensePct * 100).toFixed(1) + '% ของรายได้รวม)</div></div>' +
+      '</div>' +
+      '<div class="note" style="text-align:center;margin-top:10px">เงินคงเหลือสุทธิ: ' + fmt(fr.cashFlowCalc.netCashFlow) + ' บาท/เดือน (' + (hc.netCashFlowPct * 100).toFixed(1) + '% ของรายได้รวม)</div>';
+
+    var ratioCards = hc.ratios.map(function (rr) {
+      return '<div class="ratio-card ratio-' + rr.status + '"><div class="ratio-label">' + esc(rr.label) + '</div><div class="ratio-value">' + rr.display + '</div><div class="ratio-standard">มาตรฐาน: ' + esc(rr.standard) + '</div>' +
+        (rr.advice ? '<div class="ratio-advice">' + esc(rr.advice) + '</div>' : '<div class="ratio-advice ratio-advice-ok">✓ อยู่ในเกณฑ์มาตรฐาน</div>') +
+        '</div>';
+    }).join('');
+
+    return '<div class="subblock" style="margin-top:0"><div class="subblock-title">งบดุล + วิเคราะห์แนวตั้ง (สัดส่วนต่อสินทรัพย์รวม)</div>' + bsHtml + '</div>' +
+      '<div class="subblock"><div class="subblock-title">งบกระแสเงินสด + วิเคราะห์แนวตั้ง (สัดส่วนต่อรายได้รวม)</div>' + cfHtml + '</div>' +
+      '<div class="subblock"><div class="subblock-title">วิเคราะห์อัตราส่วนทางการเงินตามหลัก CFP</div><div class="ratio-grid">' + ratioCards + '</div></div>';
+  }
+
   function renderNetWorthSummary(a, fr, r) {
     var nw = fr.netWorthCalc;
     var pvdBalanceToday = (a.pvd.enabled ? (a.pvd.startingBalance || 0) : 0);
@@ -1970,16 +2081,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       field('อายุที่คาดว่าจะเกษียณ', ['personal', 'retireAge'], p.retireAge, { suffix: 'ปี', hint: 'จะครบเกษียณปี พ.ศ. ' + beRetire }) +
       field('อายุขัย (คาดการณ์)', ['personal', 'lifeExpectancy'], p.lifeExpectancy, { suffix: 'ปี', hint: 'สิ้นสุดแผนปี พ.ศ. ' + beLife }) +
       '</div>' +
-      '<div class="entry-note" style="margin-top:10px">รายได้ปัจจุบัน (' + fmt(totalMonthlyIncome) + ' บาท/เดือน) และอัตราเติบโตของรายได้ ดึงมาจากหัวข้อ "รายได้" ในงบกระแสเงินสดโดยอัตโนมัติ ไม่ต้องกรอกซ้ำที่นี่ — ถ้าต้องการแก้ไข ไปที่หัวข้อรายได้ได้เลย</div>' +
-      '<div class="subblock"><div class="subblock-title">ต้องการใช้เงินหลังเกษียณแบบไหน</div>' +
-      '<div class="radio-row">' +
-      radio('Replacement Ratio จากเงินเดือนเดือนสุดท้าย', ['personal', 'spendingMethod'], 'replacement', p.spendingMethod) +
-      radio('กำหนดเอง (มูลค่าเงินวันนี้)', ['personal', 'spendingMethod'], 'custom', p.spendingMethod) +
-      '</div>' +
-      (p.spendingMethod === 'replacement'
-        ? field('อัตราทดแทนรายได้ (Replacement Ratio)', ['personal', 'replacementRate'], p.replacementRate, { type: 'percent', suffix: '% ของเงินเดือนเดือนสุดท้าย' })
-        : field('ค่าใช้จ่ายที่ต้องการต่อเดือน (ราคาวันนี้)', ['personal', 'customMonthlyExpense'], p.customMonthlyExpense, { type: 'money', suffix: 'บาท/เดือน' })) +
-      '</div>';
+      '<div class="entry-note" style="margin-top:10px">รายได้ปัจจุบัน (' + fmt(totalMonthlyIncome) + ' บาท/เดือน) และอัตราเติบโตของรายได้ ดึงมาจากหัวข้อ "รายได้" ในงบกระแสเงินสดโดยอัตโนมัติ ไม่ต้องกรอกซ้ำที่นี่ — ถ้าต้องการแก้ไข ไปที่หัวข้อรายได้ได้เลย</div>';
   }
 
   function renderNeedSummary(a, r) {
@@ -2129,6 +2231,16 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
   function renderGoals(a) {
     var p = a.personal;
+    var spendingBlock = '<div class="subblock" style="margin-top:0"><div class="subblock-title">ต้องการใช้เงินหลังเกษียณแบบไหน</div>' +
+      '<div class="radio-row">' +
+      radio('Replacement Ratio จากเงินเดือนเดือนสุดท้าย', ['personal', 'spendingMethod'], 'replacement', p.spendingMethod) +
+      radio('กำหนดเอง (มูลค่าเงินวันนี้)', ['personal', 'spendingMethod'], 'custom', p.spendingMethod) +
+      '</div>' +
+      (p.spendingMethod === 'replacement'
+        ? field('อัตราทดแทนรายได้ (Replacement Ratio)', ['personal', 'replacementRate'], p.replacementRate, { type: 'percent', suffix: '% ของเงินเดือนเดือนสุดท้าย' })
+        : field('ค่าใช้จ่ายที่ต้องการต่อเดือน (ราคาวันนี้)', ['personal', 'customMonthlyExpense'], p.customMonthlyExpense, { type: 'money', suffix: 'บาท/เดือน' })) +
+      '</div>' +
+      '<div class="subblock-title">เป้าหมายเกษียณ (รายการที่กระทบกองทุนเกษียณโดยตรง)</div>';
     var table = entryTable({
       headers: ['ชื่อเป้าหมาย', 'อายุเริ่ม', 'อายุสิ้นสุด', 'ช่วง', 'จำนวนเงิน/ปี (วันนี้)', 'ผลตอบแทน/ปี (ถ้าก่อนเกษียณ)', 'มูลค่าปรับเงินเฟ้อรวม', 'ควรออมเพิ่ม/ด. (ถ้าก่อนเกษียณ)'],
       colTemplate: '1.2fr 0.7fr 0.7fr 0.9fr 1fr 1fr 1fr 1.1fr',
@@ -2155,7 +2267,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       addAction: 'addGoalLumpsum', addLabel: 'เพิ่มเป้าหมาย', delAction: 'delGoal',
       emptyMsg: 'เช่น "ซื้อบ้านตอนอายุ 40 มูลค่าวันนี้ 1,000,000 บาท" (อายุเริ่ม=สิ้นสุด=40) หรือค่าใช้จ่ายต่อเนื่องหลายปี — กด + เพิ่มเป้าหมาย ด้านล่าง'
     });
-    return '<div class="entry-note" style="padding:0 0 4px">ถ้าเป็นเป้าหมายครั้งเดียว ใส่อายุเริ่ม=อายุสิ้นสุดเท่ากัน (เช่น 40=40) — ถ้าเป็นค่าใช้จ่ายต่อเนื่องหลายปี ใส่ช่วงอายุ และ "จำนวนเงิน" จะถือเป็นยอดต่อปี ระบบจะแยกก่อน/หลังเกษียณให้อัตโนมัติจากอายุที่ใส่ เป้าหมายส่วนที่อยู่หลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) ให้อัตโนมัติ</div>' + table;
+    return spendingBlock + '<div class="entry-note" style="padding:0 0 4px">ถ้าเป็นเป้าหมายครั้งเดียว ใส่อายุเริ่ม=อายุสิ้นสุดเท่ากัน (เช่น 40=40) — ถ้าเป็นค่าใช้จ่ายต่อเนื่องหลายปี ใส่ช่วงอายุ และ "จำนวนเงิน" จะถือเป็นยอดต่อปี ระบบจะแยกก่อน/หลังเกษียณให้อัตโนมัติจากอายุที่ใส่ เป้าหมายส่วนที่อยู่หลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) ให้อัตโนมัติ</div>' + table;
   }
 
 
@@ -2617,7 +2729,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function renderTabs() {
-    var tabs = [['client', 'ข้อมูลลูกค้า'], ['calc', 'การคำนวณ'], ['dashboard', 'แดชบอร์ด']];
+    var tabs = [['client', 'ตรวจสุขภาพทางการเงิน'], ['goals', 'เป้าหมาย'], ['calc', 'การคำนวณ'], ['dashboard', 'แดชบอร์ด']];
     return '<div class="tabs no-print">' + tabs.map(function (tb) {
       return '<button class="tab-btn' + (TAB === tb[0] ? ' active' : '') + '" type="button" data-action="setTab" data-tab="' + tb[0] + '">' + tb[1] + '</button>';
     }).join('') + '</div>';
@@ -2679,6 +2791,9 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       [105, 'หนี้สิน', fmt(fr.netWorthCalc.totalLiabilities) + ' บาท', 'navy', renderLiabilities(a), a.finance.liabilities.items.length > 0, true],
       [102, 'รายได้', fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน', 'navy', renderIncome(a), a.finance.income.items.length > 0, true],
       [103, 'ค่าใช้จ่าย', fmt(fr.cashFlowCalc.totalExpenses) + ' บาท/เดือน', 'navy', renderExpenses(a), a.finance.expenses.regular.items.length > 0, true],
+      [120, 'สุขภาพทางการเงิน (งบดุล/กระแสเงินสด/อัตราส่วน CFP)', '', 'green', renderFinancialHealthCheckBox(a, fr), null, true]
+    ].filter(function (s) { return s[6]; });
+    var goalsSections = [
       [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPensionInput(a, r), filled2, a.pvd.enabled || a.sso.enabled],
       [3, 'เป้าหมายเกษียณ (กระทบกองทุนเกษียณโดยตรง)', '', 'navy', renderGoals(a), filled3, a.goalsEnabled],
       [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a), filled5, a.windfallsEnabled],
@@ -2690,9 +2805,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       [113, 'ประกันและการบริหารความเสี่ยง', '', 'navy', renderInsurance(a, fr), (a.finance.insurance.life.existingCoverage > 0 || a.finance.insurance.otherPolicies.items.length > 0), true]
     ].filter(function (s) { return s[6]; });
     var calcSections = [
-      [106, 'งบดุลส่วนบุคคล (Balance Sheet)', '', 'green', renderNetWorthSummary(a, fr, r), false, true],
-      [107, 'งบกระแสเงินสด (Cash Flow)', '', 'green', renderCashFlowSummary(a, fr), false, true],
-      [108, 'เงินสำรองฉุกเฉิน', '', 'green', renderEmergencyFund(a, fr), false, true],
       [7, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(a, r), false, true],
       [8, 'ผลการคำนวณ: กองทุนสำรอง/กบข. และประกันสังคม', '', 'green', renderPensionCalc(a, r), false, a.pvd.enabled || a.sso.enabled],
       [9, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'green', renderSeverance(r), false, a.severance.enabled],
@@ -2711,13 +2823,13 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="dash-block"><div class="dash-title">ไทม์ไลน์เหตุการณ์สำคัญ</div>' + renderTimeline(r, a.personal) + '</div>' +
       renderComparison(a, r) +
       '</div>';
-    var visibleClientSections = clientSections;
-    var filledCount = visibleClientSections.filter(function (s) { return s[5]; }).length;
-    var totalCount = visibleClientSections.length;
+    var progressEligible = clientSections.filter(function (s) { return s[5] !== null; });
+    var filledCount = progressEligible.filter(function (s) { return s[5]; }).length;
+    var totalCount = progressEligible.length;
     var progressPct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
     var progressHtml = '<div class="progress-box"><div class="progress-box-text">กรอกข้อมูลไปแล้ว <strong>' + filledCount + '/' + totalCount + '</strong> หัวข้อ</div>' +
       '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div></div>';
-    var body = TAB === 'client' ? (renderFeatureChecklist(a) + progressHtml + sectionsHtml(clientSections)) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml);
+    var body = TAB === 'client' ? (progressHtml + sectionsHtml(clientSections)) : (TAB === 'goals' ? (renderFeatureChecklist(a) + sectionsHtml(goalsSections)) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml));
     return '<main class="main">' +
       '<div class="header no-print">' +
       '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
