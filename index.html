@@ -216,6 +216,18 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .score-row-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
 .priority-list { margin: 8px 0 0; padding-left: 20px; }
 .priority-list li { font-size: 14.5px; color: var(--ink); margin-bottom: 6px; line-height: 1.6; }
+.tacct-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 2px solid var(--navy-700); border-radius: 10px; overflow: hidden; }
+.tacct-col { padding: 14px 16px; }
+.tacct-left { border-right: 2px solid var(--navy-700); }
+.tacct-head { font-weight: 800; font-size: 15px; color: var(--navy-900); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1.5px solid var(--line); }
+.tacct-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+.tacct-row span:last-child { font-weight: 600; white-space: nowrap; }
+.tacct-networth-row { background: var(--blue-100); margin: 4px -16px; padding: 8px 16px; font-weight: 700; }
+.tacct-total { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--navy-700); font-weight: 800; font-size: 15px; color: var(--navy-900); }
+@media (max-width: 700px) {
+  .tacct-wrap { grid-template-columns: 1fr; }
+  .tacct-left { border-right: none; border-bottom: 2px solid var(--navy-700); }
+}
 .timeline-label { font-size: 17px; color: var(--ink); font-weight: 600; }
 
 .story-block { background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); border: none; }
@@ -620,6 +632,15 @@ function loanPayment(principal, annualRate, termYears) {
 Object.assign(RPCalc, { loanPayment: loanPayment });
 if (typeof module !== 'undefined') { module.exports = RPCalc; }
 
+var ASSET_CLASS_ASSUMPTIONS = { cash: { return: 0.015, vol: 0.02 }, bonds: { return: 0.035, vol: 0.05 }, stocks: { return: 0.08, vol: 0.18 }, alternatives: { return: 0.06, vol: 0.12 } };
+function blendAllocation(alloc) {
+  var r = 0, v = 0;
+  Object.keys(ASSET_CLASS_ASSUMPTIONS).forEach(function (k) { r += (alloc[k] || 0) * ASSET_CLASS_ASSUMPTIONS[k].return; v += (alloc[k] || 0) * ASSET_CLASS_ASSUMPTIONS[k].vol; });
+  return { blendedReturn: r, blendedVol: v };
+}
+Object.assign(RPCalc, { ASSET_CLASS_ASSUMPTIONS: ASSET_CLASS_ASSUMPTIONS, blendAllocation: blendAllocation });
+if (typeof module !== 'undefined') { module.exports = RPCalc; }
+
 </script>
 <script>
 /* ============================================================
@@ -658,7 +679,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
           clientName: '', currentAge: 35, retireAge: 60, lifeExpectancy: 85,
           currentYearAD: thisYear, currentSalary: 0, salaryGrowth: 0.03,
           spendingMethod: 'replacement', replacementRate: 0.7, customMonthlyExpense: 0,
-          inflation: 0.03
+          inflation: 0.03,
+          gender: '', maritalStatus: '', numChildren: 0, occupation: '', province: ''
         },
         preRetirementPortfolio: { mode: 'flat', flatReturn: 0.05, segments: [] },
         pvd: { enabled: false, employeeRate: 0.03, employerMode: 'flat', employerFlatRate: 0.03, employerTiers: [], fundReturn: 0.04, startingBalance: 0, serviceYearsSoFar: 0 },
@@ -674,7 +696,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         buckets: defaultBuckets(25),
         stressTestDelta: -0.01,
         finance: {
-          personal: { gender: '', maritalStatus: '', numChildren: 0, occupation: '', province: '' },
           income: { items: [] },
           expenses: { regular: { items: [] }, irregular: { items: [] } },
           assets: { items: [] },
@@ -698,7 +719,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         clientName: '', currentAge: 35, retireAge: 60, lifeExpectancy: 85,
         currentYearAD: thisYear, currentSalary: 30000, salaryGrowth: 0.03,
         spendingMethod: 'replacement', replacementRate: 0.7, customMonthlyExpense: 25000,
-        inflation: 0.03
+        inflation: 0.03,
+        gender: '', maritalStatus: '', numChildren: 0, occupation: '', province: ''
       },
       preRetirementPortfolio: { mode: 'flat', flatReturn: 0.05, segments: [{ id: uid(), fromAge: 35, toAge: 51, returnRate: 0.07 }, { id: uid(), fromAge: 51, toAge: 60, returnRate: 0.03 }] },
       pvd: {
@@ -721,7 +743,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       buckets: defaultBuckets(25),
       stressTestDelta: -0.01,
       finance: {
-        personal: { gender: '', maritalStatus: '', numChildren: 0, occupation: '', province: '' },
         income: { items: [{ id: uid(), category: 'เงินเดือน (ตัวอย่าง)', monthlyAmount: 30000, growthRate: 0.03 }] },
         expenses: {
           regular: { items: [{ id: uid(), category: 'ค่าใช้จ่ายทั่วไป (ตัวอย่าง)', monthlyAmount: 15000, inflationRate: 0.03 }] },
@@ -764,6 +785,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       base.id = loaded.id || base.id;
       base.name = loaded.name || base.name;
       base.personal = mergeObj(base.personal, loaded.personal);
+      /* migrate old finance.personal (gender/maritalStatus/numChildren/occupation/province) into the merged personal object */
+      if (loaded.finance && loaded.finance.personal) base.personal = mergeObj(base.personal, loaded.finance.personal);
       if (loaded.preRetirementPortfolio && Array.isArray(loaded.preRetirementPortfolio.segments)) base.preRetirementPortfolio = loaded.preRetirementPortfolio;
       base.pvd = mergeObj(base.pvd, loaded.pvd);
       if (loaded.pvd && Array.isArray(loaded.pvd.employerTiers) && loaded.pvd.employerTiers.length) base.pvd.employerTiers = loaded.pvd.employerTiers;
@@ -822,8 +845,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       if (loaded.buckets && Array.isArray(loaded.buckets.list) && loaded.buckets.list.length) base.buckets = loaded.buckets;
       if (typeof loaded.stressTestDelta === 'number') base.stressTestDelta = loaded.stressTestDelta;
       if (loaded.finance) {
-        base.finance = base.finance || { personal: {}, income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] }, investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }, insurance: { life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 }, otherPolicies: { items: [] } } };
-        if (loaded.finance.personal) base.finance.personal = mergeObj(base.finance.personal, loaded.finance.personal);
+        base.finance = base.finance || { income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] }, investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }, insurance: { life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 }, otherPolicies: { items: [] } } };
+        if (loaded.finance.personal) {} /* migrated above into base.personal directly */
         if (loaded.finance.income && Array.isArray(loaded.finance.income.items)) base.finance.income = { items: loaded.finance.income.items };
         if (loaded.finance.expenses) {
           if (loaded.finance.expenses.regular && Array.isArray(loaded.finance.expenses.regular.items)) base.finance.expenses.regular = { items: loaded.finance.expenses.regular.items };
@@ -863,7 +886,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
   var OPEN = {};
   var TAB = 'client'; /* 'client' | 'calc' | 'dashboard' */
-  var MODULE = 'finance'; /* 'finance' | 'retirement' */
   var COMPARE_ID = null;
 
   function activeCase() { return STORE.cases[STORE.activeId]; }
@@ -1019,9 +1041,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       advice: dti > 0.36 ? 'ภาระหนี้ต่อรายได้ค่อนข้างสูง (' + (dti * 100).toFixed(0) + '%) — ควรพิจารณาปิดหนี้ดอกเบี้ยสูงก่อน' : null
     });
 
-    /* การออม (10) — regular savings + investment monthly / income */
-    var regularSavingsMonthly = (a.regularSavings.items || []).reduce(function (s, it) { return s + (it.frequency === 'monthly' ? it.amount : it.amount / 12); }, 0);
-    var totalMonthlySaving = regularSavingsMonthly + (f.investment.monthlyAmount || 0);
+    /* การออม (10) — regular investment contribution / income (single source: Investment section) */
+    var totalMonthlySaving = f.investment.monthlyAmount || 0;
     var savingsRatioIncome = fr.cashFlowCalc.totalIncome > 0 ? totalMonthlySaving / fr.cashFlowCalc.totalIncome : 0;
     cats.push({
       key: 'savings', label: 'การออม', max: 10,
@@ -1124,12 +1145,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     });
 
     /* investment: asset-allocation based projection + risk-scenario comparison */
-    var ASSET_CLASS_ASSUMPTIONS = { cash: { return: 0.015, vol: 0.02 }, bonds: { return: 0.035, vol: 0.05 }, stocks: { return: 0.08, vol: 0.18 }, alternatives: { return: 0.06, vol: 0.12 } };
-    function blendAllocation(alloc) {
-      var r = 0, v = 0;
-      Object.keys(ASSET_CLASS_ASSUMPTIONS).forEach(function (k) { r += (alloc[k] || 0) * ASSET_CLASS_ASSUMPTIONS[k].return; v += (alloc[k] || 0) * ASSET_CLASS_ASSUMPTIONS[k].vol; });
-      return { blendedReturn: r, blendedVol: v };
-    }
+    var ASSET_CLASS_ASSUMPTIONS = C.ASSET_CLASS_ASSUMPTIONS;
+    var blendAllocation = C.blendAllocation;
     var inv = f.investment;
     var allocSum = Object.keys(inv.allocation).reduce(function (s, k) { return s + (inv.allocation[k] || 0); }, 0);
     var customBlend = blendAllocation(inv.allocation);
@@ -1164,7 +1181,14 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   function computeAll(a) {
-    var p = a.personal;
+    var p = Object.assign({}, a.personal);
+    /* single source of truth: current salary & its growth rate are derived from the Income section, not entered twice */
+    var totalMonthlyIncomeForSalary = C.sumBy(a.finance.income.items, 'monthlyAmount');
+    if (totalMonthlyIncomeForSalary > 0) {
+      p.currentSalary = totalMonthlyIncomeForSalary;
+      var weightedGrowthSum = a.finance.income.items.reduce(function (s, it) { return s + it.monthlyAmount * (it.growthRate || 0); }, 0);
+      p.salaryGrowth = weightedGrowthSum / totalMonthlyIncomeForSalary;
+    }
     var yearsToRetire = p.retireAge - p.currentAge;
     var yearsRetired = p.lifeExpectancy - p.retireAge;
     var portfolio = a.preRetirementPortfolio;
@@ -1247,29 +1271,32 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     function pensionAnnualAtYear(yearIdx) { return pensionAnnualAtAge(p.retireAge + yearIdx); }
     function needAnnualAtYear(yearIdx) { return firstYearAnnualNeed * Math.pow(1 + p.inflation, yearIdx - 1); }
 
-    /* current savings: each item grows at its own rate ("as-is") */
-    var currentItems = (a.currentSavings.items || []).map(function (it) {
+    /* current savings/investments: single source of truth is the Balance Sheet's Assets list — no separate entry here */
+    var currentItems = (a.finance.assets.items || []).map(function (it) {
       var path = [];
       for (var yy1 = 0; yy1 <= yearsToRetire; yy1++) {
-        path.push({ year: yy1, age: p.currentAge + yy1, beYear: p.currentYearAD + 543 + yy1, balance: C.fv(it.amount, it.returnRate, yy1) });
+        path.push({ year: yy1, age: p.currentAge + yy1, beYear: p.currentYearAD + 543 + yy1, balance: C.fv(it.value, it.expectedReturn, yy1) });
       }
-      return { id: it.id, name: it.name, amount: it.amount, returnRate: it.returnRate, fv: C.fv(it.amount, it.returnRate, yearsToRetire), path: path };
+      return { id: it.id, name: it.name, amount: it.value, returnRate: it.expectedReturn, fv: C.fv(it.value, it.expectedReturn, yearsToRetire), path: path };
     });
     var currentTotalAmount = currentItems.reduce(function (s, it) { return s + it.amount; }, 0);
     var currentSavingsFV_asis = currentItems.reduce(function (s, it) { return s + it.fv; }, 0);
     var currentSavingsFV_ifPlanned = C.fvAlongGlide(currentTotalAmount, p.currentAge, p.retireAge, segs, portfolio.flatReturn);
 
-    /* regular (recurring) savings: each item uses its own return rate */
-    var regularItems = (a.regularSavings.items || []).map(function (it) {
-      var annualAmt = it.frequency === 'monthly' ? it.amount * 12 : it.amount;
-      var due = it.timing === 'begin';
-      var fv = C.annuityFV(annualAmt, it.returnRate, yearsToRetire, due);
-      var path = [];
+    /* regular (recurring) savings: single source of truth is the Investment section's monthly contribution,
+       compounding at its own asset-allocation blended return */
+    var invBlendForRetirement = C.blendAllocation(a.finance.investment.allocation);
+    var regularItems = [];
+    if (a.finance.investment.monthlyAmount > 0) {
+      var annualAmt = a.finance.investment.monthlyAmount * 12;
+      var due = false;
+      var fv = C.annuityFV(annualAmt, invBlendForRetirement.blendedReturn, yearsToRetire, due);
+      var regPath = [];
       for (var yy2 = 0; yy2 <= yearsToRetire; yy2++) {
-        path.push({ year: yy2, age: p.currentAge + yy2, beYear: p.currentYearAD + 543 + yy2, contribution: yy2 === 0 ? 0 : annualAmt, balance: C.annuityFV(annualAmt, it.returnRate, yy2, due) });
+        regPath.push({ year: yy2, age: p.currentAge + yy2, beYear: p.currentYearAD + 543 + yy2, contribution: yy2 === 0 ? 0 : annualAmt, balance: C.annuityFV(annualAmt, invBlendForRetirement.blendedReturn, yy2, due) });
       }
-      return { id: it.id, frequency: it.frequency, amount: it.amount, timing: it.timing, returnRate: it.returnRate, annualAmt: annualAmt, fv: fv, path: path };
-    });
+      regularItems.push({ id: 'investment-monthly', frequency: 'monthly', amount: a.finance.investment.monthlyAmount, timing: 'end', returnRate: invBlendForRetirement.blendedReturn, annualAmt: annualAmt, fv: fv, path: regPath });
+    }
     var savingsRegularFV = regularItems.reduce(function (s, it) { return s + it.fv; }, 0);
 
     var availableAtRetirement = pvdResult.finalBalance + (severance ? severance.amount : 0) + savingsRegularFV + currentSavingsFV_asis + windfallsFV;
@@ -1499,16 +1526,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   /* ================= FINANCE MODULE (Phase 1) ================= */
-  function renderFinancePersonal(a) {
-    var fp = a.finance.personal;
-    return '<div class="grid-2">' +
-      field('เพศ', ['finance', 'personal', 'gender'], fp.gender, { type: 'select', options: [{ value: '', label: '- เลือก -' }, { value: 'male', label: 'ชาย' }, { value: 'female', label: 'หญิง' }, { value: 'other', label: 'ไม่ระบุ' }] }) +
-      field('สถานภาพสมรส', ['finance', 'personal', 'maritalStatus'], fp.maritalStatus, { type: 'select', options: [{ value: '', label: '- เลือก -' }, { value: 'single', label: 'โสด' }, { value: 'married', label: 'สมรส' }, { value: 'divorced', label: 'หย่าร้าง' }, { value: 'widowed', label: 'หม้าย' }] }) +
-      field('จำนวนบุตร/ผู้ที่ต้องดูแล', ['finance', 'personal', 'numChildren'], fp.numChildren, {}) +
-      field('อาชีพ', ['finance', 'personal', 'occupation'], fp.occupation, { type: 'text' }) +
-      field('จังหวัด/ประเทศที่ใช้ชีวิต', ['finance', 'personal', 'province'], fp.province, { type: 'text' }) +
-      '</div>';
-  }
 
   function renderIncome(a) {
     var items = a.finance.income.items;
@@ -1814,8 +1831,20 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="entry-note">เทียบค่างวดกับ "เงินคงเหลือสุทธิ/เดือน" ในหัวข้อกระแสเงินสด (107) — ถ้าค่างวดมากกว่าเงินคงเหลือ แปลว่ายังรับภาระนี้ไม่ไหวตามกระแสเงินสดปัจจุบัน</div>';
   }
 
-  function renderNetWorthSummary(a, fr) {
+  function renderNetWorthSummary(a, fr, r) {
     var nw = fr.netWorthCalc;
+    var pvdBalanceToday = (a.pvd.enabled ? (a.pvd.startingBalance || 0) : 0);
+    var assetRows = a.finance.assets.items.map(function (it) { return { label: (it.category ? it.category + ': ' : '') + it.name, amount: it.value }; });
+    if (pvdBalanceToday > 0) assetRows.push({ label: 'กองทุนสำรองเลี้ยงชีพ/กบข. (จากแผนเกษียณ)', amount: pvdBalanceToday });
+    var liabRows = a.finance.liabilities.items.map(function (it) { return { label: (it.category ? it.category + ': ' : '') + it.name, amount: it.balance }; });
+    var totalAssetsWithPvd = nw.totalAssets + pvdBalanceToday;
+    var netWorthWithPvd = totalAssetsWithPvd - nw.totalLiabilities;
+
+    function tRows(rows) {
+      if (!rows.length) return '<div class="entry-note" style="padding:8px 0">ยังไม่มีรายการ</div>';
+      return rows.map(function (row) { return '<div class="tacct-row"><span>' + esc(row.label) + '</span><span>' + fmt(row.amount) + ' บาท</span></div>'; }).join('');
+    }
+
     var projCols = [
       { label: 'อีก (ปี)', render: function (row) { return row.years; } },
       { label: 'สินทรัพย์โต', render: function (row) { return fmt(row.assetTotal) + ' บาท'; } },
@@ -1823,11 +1852,19 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       { label: 'เงินออมสะสมจากกระแสเงินสดส่วนเกิน', render: function (row) { return fmt(row.surplusFV) + ' บาท'; } },
       { label: 'มูลค่าสุทธิโดยประมาณ', render: function (row) { return fmt(row.netWorth) + ' บาท'; } }
     ];
-    return '<div class="grid-2">' +
-      metricCard('สินทรัพย์รวม', fmt(nw.totalAssets) + ' บาท', 'navy') +
-      metricCard('หนี้สินรวม', fmt(nw.totalLiabilities) + ' บาท', 'navy') +
+    return '<div class="tacct-wrap">' +
+      '<div class="tacct-col tacct-left"><div class="tacct-head">สินทรัพย์ (Assets)</div>' +
+      tRows(assetRows) +
+      '<div class="tacct-total">รวมสินทรัพย์: ' + fmt(totalAssetsWithPvd) + ' บาท</div>' +
       '</div>' +
-      metricCard('มูลค่าสุทธิ (Net Worth)', fmt(nw.netWorth) + ' บาท', nw.netWorth >= 0 ? 'green' : 'red') +
+      '<div class="tacct-col tacct-right"><div class="tacct-head">หนี้สิน + ส่วนของทุน (Liabilities + Net Worth)</div>' +
+      tRows(liabRows) +
+      '<div class="tacct-row tacct-networth-row"><span>ส่วนของทุน (มูลค่าสุทธิ)</span><span>' + fmt(netWorthWithPvd) + ' บาท</span></div>' +
+      '<div class="tacct-total">รวมหนี้สิน+ทุน: ' + fmt(nw.totalLiabilities + netWorthWithPvd) + ' บาท</div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="note" style="text-align:center;margin-top:10px">✓ สินทรัพย์รวม = หนี้สินรวม + ส่วนของทุน (ยอดสองด้านเท่ากันตามหลักบัญชี)</div>' +
+      (pvdBalanceToday > 0 ? '<div class="entry-note">ยอดกองทุนสำรองฯ ดึงจาก "ยอดสะสมปัจจุบัน" ที่กรอกไว้ในแผนเกษียณ ไม่ต้องกรอกซ้ำที่นี่</div>' : '') +
       '<div class="note" style="margin-top:14px"><strong>คาดการณ์มูลค่าสุทธิในอนาคต:</strong></div>' +
       detailTable(fr.projections, projCols, 'networthproj') +
       '<div class="entry-note">สมมติฐาน: สินทรัพย์แต่ละตัวโตด้วยผลตอบแทนคาดหวังของตัวเอง, หนี้สินลดลงตามค่างวดที่จ่าย, เงินคงเหลือจากกระแสเงินสด (ถ้าเป็นบวก) ถูกออมและลงทุนต่อที่ผลตอบแทน ' + (a.finance.cashFlowSurplusReturn * 100).toFixed(2) + '%/ปี</div>';
@@ -1847,16 +1884,21 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     var p = a.personal;
     var beRetire = p.currentYearAD + 543 + (p.retireAge - p.currentAge);
     var beLife = p.currentYearAD + 543 + (p.lifeExpectancy - p.currentAge);
+    var totalMonthlyIncome = C.sumBy(a.finance.income.items, 'monthlyAmount');
     return '<div class="grid-2">' +
       field('ชื่อลูกค้า', ['personal', 'clientName'], p.clientName, { type: 'text' }) +
       field('ปี พ.ศ. ปัจจุบัน', ['personal', 'currentYearADasBE'], p.currentYearAD + 543, {}) +
       field('อายุปัจจุบัน', ['personal', 'currentAge'], p.currentAge, { suffix: 'ปี' }) +
+      field('เพศ', ['personal', 'gender'], p.gender, { type: 'select', options: [{ value: '', label: '- เลือก -' }, { value: 'male', label: 'ชาย' }, { value: 'female', label: 'หญิง' }, { value: 'other', label: 'ไม่ระบุ' }] }) +
+      field('สถานภาพสมรส', ['personal', 'maritalStatus'], p.maritalStatus, { type: 'select', options: [{ value: '', label: '- เลือก -' }, { value: 'single', label: 'โสด' }, { value: 'married', label: 'สมรส' }, { value: 'divorced', label: 'หย่าร้าง' }, { value: 'widowed', label: 'หม้าย' }] }) +
+      field('จำนวนบุตร/ผู้ที่ต้องดูแล', ['personal', 'numChildren'], p.numChildren, {}) +
+      field('อาชีพ', ['personal', 'occupation'], p.occupation, { type: 'text' }) +
+      field('จังหวัด/ประเทศที่ใช้ชีวิต', ['personal', 'province'], p.province, { type: 'text' }) +
       field('อายุที่คาดว่าจะเกษียณ', ['personal', 'retireAge'], p.retireAge, { suffix: 'ปี', hint: 'จะครบเกษียณปี พ.ศ. ' + beRetire }) +
       field('อายุขัย (คาดการณ์)', ['personal', 'lifeExpectancy'], p.lifeExpectancy, { suffix: 'ปี', hint: 'สิ้นสุดแผนปี พ.ศ. ' + beLife }) +
-      field('เงินเดือนปัจจุบัน', ['personal', 'currentSalary'], p.currentSalary, { type: 'money', suffix: 'บาท/เดือน' }) +
-      field('อัตราการขึ้นเงินเดือนเฉลี่ย', ['personal', 'salaryGrowth'], p.salaryGrowth, { type: 'percent', suffix: '%/ปี' }) +
       field('อัตราเงินเฟ้อที่ใช้วางแผน', ['personal', 'inflation'], p.inflation, { type: 'percent', suffix: '%/ปี' }) +
       '</div>' +
+      '<div class="entry-note" style="margin-top:10px">รายได้ปัจจุบัน (' + fmt(totalMonthlyIncome) + ' บาท/เดือน) และอัตราเติบโตของรายได้ ดึงมาจากหัวข้อ "รายได้" ในงบกระแสเงินสดโดยอัตโนมัติ ไม่ต้องกรอกซ้ำที่นี่ — ถ้าต้องการแก้ไข ไปที่หัวข้อรายได้ได้เลย</div>' +
       '<div class="subblock"><div class="subblock-title">ต้องการใช้เงินหลังเกษียณแบบไหน</div>' +
       '<div class="radio-row">' +
       radio('Replacement Ratio จากเงินเดือนเดือนสุดท้าย', ['personal', 'spendingMethod'], 'replacement', p.spendingMethod) +
@@ -2043,49 +2085,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     return '<div class="entry-note" style="padding:0 0 4px">ถ้าเป็นเป้าหมายครั้งเดียว ใส่อายุเริ่ม=อายุสิ้นสุดเท่ากัน (เช่น 40=40) — ถ้าเป็นค่าใช้จ่ายต่อเนื่องหลายปี ใส่ช่วงอายุ และ "จำนวนเงิน" จะถือเป็นยอดต่อปี ระบบจะแยกก่อน/หลังเกษียณให้อัตโนมัติจากอายุที่ใส่ เป้าหมายส่วนที่อยู่หลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) ให้อัตโนมัติ</div>' + table;
   }
 
-  function renderSavings(a, r) {
-    var items = a.currentSavings.items;
-    var itemsTable = entryTable({
-      headers: ['ประเภทเงินลงทุน', 'จำนวนเงินวันนี้', 'ผลตอบแทน/ปี', 'มูลค่า ณ วันเกษียณ'],
-      colTemplate: '1.4fr 1fr 0.9fr 1.1fr',
-      rows: items.map(function (it, i) { return { it: it, idx: i }; }),
-      minRows: 1,
-      rowCells: function (row) {
-        var it = row.it, i = row.idx;
-        var fv = (r.currentItems[i] ? r.currentItems[i].fv : 0);
-        return [
-          rawInput(['currentSavings', 'items', i, 'name'], it.name, { type: 'text' }),
-          rawInput(['currentSavings', 'items', i, 'amount'], it.amount, { type: 'money' }),
-          rawInput(['currentSavings', 'items', i, 'returnRate'], it.returnRate, { type: 'percent' }),
-          '<span class="entry-note">' + fmt(fv) + ' บาท</span>'
-        ];
-      },
-      addAction: 'addSavingsItem', addLabel: 'เพิ่มรายการลงทุน', delAction: 'delSavingsItem',
-      emptyMsg: 'เช่น กองทุนรวม, หุ้น, เงินฝากประจำ, สลากออมทรัพย์ — ระบุได้หลายรายการ'
-    });
-    var regularItems = a.regularSavings.items;
-    var regularTable = entryTable({
-      headers: ['ความถี่การออม', 'จำนวนเงิน/งวด', 'ต้นงวด/ปลายงวด', 'ผลตอบแทน/ปี', 'มูลค่า ณ วันเกษียณ'],
-      colTemplate: '1fr 1fr 1fr 0.9fr 1.1fr',
-      rows: regularItems.map(function (it, i) { return { it: it, idx: i }; }),
-      minRows: 1,
-      rowCells: function (row) {
-        var it = row.it, i = row.idx;
-        var fv = (r.regularItems[i] ? r.regularItems[i].fv : 0);
-        return [
-          rawInput(['regularSavings', 'items', i, 'frequency'], it.frequency, { type: 'select', options: [{ value: 'monthly', label: 'รายเดือน' }, { value: 'annual', label: 'รายปี' }] }),
-          rawInput(['regularSavings', 'items', i, 'amount'], it.amount, { type: 'money' }),
-          rawInput(['regularSavings', 'items', i, 'timing'], it.timing, { type: 'select', options: [{ value: 'end', label: 'ปลายงวด' }, { value: 'begin', label: 'ต้นงวด' }] }),
-          rawInput(['regularSavings', 'items', i, 'returnRate'], it.returnRate, { type: 'percent' }),
-          '<span class="entry-note">' + fmt(fv) + ' บาท</span>'
-        ];
-      },
-      addAction: 'addRegularItem', addLabel: 'เพิ่มรายการออมประจำ', delAction: 'delRegularItem',
-      emptyMsg: 'เช่น ออมกองทุน SSF/RMF รายเดือน — ระบุได้หลายรายการ'
-    });
-    return '<div class="subblock"><div class="subblock-title">เงินออม/เงินลงทุนปัจจุบัน (ระบุได้หลายรายการ)</div>' + itemsTable + '</div>' +
-      '<div class="subblock"><div class="subblock-title">เงินออมประจำ (ระบุได้หลายรายการ)</div>' + regularTable + '</div>';
-  }
 
   function renderSavingsCalc(a, r) {
     var portfolio = a.preRetirementPortfolio;
@@ -2567,13 +2566,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       }).join('') + '</div></div>';
   }
 
-  function renderModuleSwitcher() {
-    return '<div class="module-switch no-print">' +
-      '<button class="module-btn' + (MODULE === 'finance' ? ' active' : '') + '" type="button" data-action="setModule" data-module="finance">💼 ภาพรวมการเงิน</button>' +
-      '<button class="module-btn' + (MODULE === 'retirement' ? ' active' : '') + '" type="button" data-action="setModule" data-module="retirement">🏖 แผนเกษียณ</button>' +
-      '</div>';
-  }
-
   function renderFinancialHealthScore(a, fr, r) {
     var hs = computeFinancialHealthScore(a, fr, r);
     var pct = hs.maxScore > 0 ? hs.totalScore / hs.maxScore : 0;
@@ -2601,63 +2593,45 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '</div>';
   }
 
-  function renderFinanceMain(a) {
-    var fr = computeFinance(a);
-    var r = computeAll(a);
-    var sections = [
-      [101, 'ข้อมูลส่วนตัวเพิ่มเติม', '', 'navy', renderFinancePersonal(a)],
-      [102, 'รายได้', fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน', 'navy', renderIncome(a)],
-      [103, 'ค่าใช้จ่าย', fmt(fr.cashFlowCalc.totalExpenses) + ' บาท/เดือน', 'navy', renderExpenses(a)],
-      [104, 'สินทรัพย์', fmt(fr.netWorthCalc.totalAssets) + ' บาท', 'navy', renderAssets(a)],
-      [112, 'การลงทุน (Asset Allocation & Risk)', '', 'navy', renderInvestment(a, fr)],
-      [105, 'หนี้สิน', fmt(fr.netWorthCalc.totalLiabilities) + ' บาท', 'navy', renderLiabilities(a)],
-      [106, 'มูลค่าสุทธิ (Net Worth) — สินทรัพย์หักหนี้สิน', '', 'green', renderNetWorthSummary(a, fr)],
-      [107, 'กระแสเงินสด (รายได้ - ค่าใช้จ่าย - หนี้)', '', 'green', renderCashFlowSummary(a, fr)],
-      [108, 'เงินสำรองฉุกเฉิน', '', 'green', renderEmergencyFund(a, fr)],
-      [109, 'เป้าหมายทางการเงิน', '', 'green', renderFinanceGoals(a, fr)],
-      [110, 'การศึกษาบุตร', '', 'green', renderFinanceEducation(a, fr)],
-      [111, 'แผนซื้อบ้าน/รถ', '', 'green', renderMajorPurchases(a, fr)],
-      [113, 'ประกันและการบริหารความเสี่ยง', '', 'green', renderInsurance(a, fr)]
-    ];
-    var body = '<div class="sections">' + sections.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4], false); }).join('') + '</div>';
-    return '<main class="main">' +
-      renderModuleSwitcher() +
-      '<div class="header no-print">' +
-      '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
-      '</div>' +
-      renderFinancialHealthScore(a, fr, r) +
-      body +
-      '</main>';
-  }
-
   function renderMain(a, r) {
-    if (MODULE === 'finance') return renderFinanceMain(a);
+    var fr = computeFinance(a);
     var filled1 = !!(a.personal.clientName && a.personal.clientName.trim() !== '');
     var filled2 = !!(a.pvd.enabled || a.sso.enabled);
     var filled3 = a.goals.length > 0;
-    var filled4 = a.currentSavings.items.length > 0 || a.regularSavings.items.length > 0;
     var filled5 = a.windfalls.length > 0;
     var filled6 = a.healthInsurance.bands.length > 0;
     var clientSections = [
-      [1, 'ข้อมูลผู้รับการวางแผน', '', 'navy', renderPersonal(a), filled1, true],
+      [1, 'ข้อมูลลูกค้า', '', 'navy', renderPersonal(a), filled1, true],
+      [104, 'สินทรัพย์', fmt(fr.netWorthCalc.totalAssets) + ' บาท', 'navy', renderAssets(a), a.finance.assets.items.length > 0, true],
+      [105, 'หนี้สิน', fmt(fr.netWorthCalc.totalLiabilities) + ' บาท', 'navy', renderLiabilities(a), a.finance.liabilities.items.length > 0, true],
+      [102, 'รายได้', fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน', 'navy', renderIncome(a), a.finance.income.items.length > 0, true],
+      [103, 'ค่าใช้จ่าย', fmt(fr.cashFlowCalc.totalExpenses) + ' บาท/เดือน', 'navy', renderExpenses(a), a.finance.expenses.regular.items.length > 0, true],
       [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPensionInput(a, r), filled2, a.pvd.enabled || a.sso.enabled],
-      [3, 'เป้าหมายระยะสั้น/กลาง/ยาว', '', 'navy', renderGoals(a), filled3, a.goalsEnabled],
-      [4, 'เงินออมปัจจุบัน และเงินออมประจำ', '', 'navy', renderSavings(a, r), filled4, true],
+      [3, 'เป้าหมายเกษียณ (กระทบกองทุนเกษียณโดยตรง)', '', 'navy', renderGoals(a), filled3, a.goalsEnabled],
       [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a), filled5, a.windfallsEnabled],
-      [6, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsuranceInput(a, r), filled6, a.healthInsuranceEnabled]
+      [6, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsuranceInput(a, r), filled6, a.healthInsuranceEnabled],
+      [109, 'เป้าหมายทางการเงินทั่วไป', '', 'navy', renderFinanceGoals(a, fr), a.finance.goals.items.length > 0, true],
+      [110, 'การศึกษาบุตร', '', 'navy', renderFinanceEducation(a, fr), a.finance.education.items.length > 0, true],
+      [111, 'แผนซื้อบ้าน/รถ', '', 'navy', renderMajorPurchases(a, fr), a.finance.majorPurchases.items.length > 0, true],
+      [112, 'การลงทุน (Asset Allocation & Risk)', '', 'navy', renderInvestment(a, fr), false, true],
+      [113, 'ประกันและการบริหารความเสี่ยง', '', 'navy', renderInsurance(a, fr), false, true]
     ].filter(function (s) { return s[6]; });
     var calcSections = [
+      [106, 'งบดุลส่วนบุคคล (Balance Sheet)', '', 'green', renderNetWorthSummary(a, fr, r), false, true],
+      [107, 'งบกระแสเงินสด (Cash Flow)', '', 'green', renderCashFlowSummary(a, fr), false, true],
+      [108, 'เงินสำรองฉุกเฉิน', '', 'green', renderEmergencyFund(a, fr), false, true],
       [7, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(a, r), false, true],
       [8, 'ผลการคำนวณ: กองทุนสำรอง/กบข. และประกันสังคม', '', 'green', renderPensionCalc(a, r), false, a.pvd.enabled || a.sso.enabled],
       [9, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'green', renderSeverance(r), false, a.severance.enabled],
       [10, 'ผลการคำนวณ: พอร์ตก่อนเกษียณ, เงินออมและเงินลงทุน', '', 'green', renderSavingsCalc(a, r), false, true],
       [11, 'ผลการคำนวณ: เบี้ยประกันสุขภาพ', '', 'green', renderHealthInsuranceCalc(a, r), false, a.healthInsuranceEnabled],
-      [12, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด', '', 'green', renderGap(a, r), false, true],
+      [12, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด (แผนเกษียณ)', '', 'green', renderGap(a, r), false, true],
       [13, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r), false, true],
       [14, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r), false, true]
     ].filter(function (s) { return s[6]; });
     function sectionsHtml(list) { return '<div class="sections">' + list.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4], s[5]); }).join('') + '</div>'; }
     var dashHtml = '<div class="dashboard">' +
+      renderFinancialHealthScore(a, fr, r) +
       renderPlanHealth(a, r) +
       renderStorySummary(a, r) +
       renderSummaryBar(r) + renderCharts(r) +
@@ -2672,7 +2646,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div></div>';
     var body = TAB === 'client' ? (renderFeatureChecklist(a) + progressHtml + sectionsHtml(clientSections)) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml);
     return '<main class="main">' +
-      renderModuleSwitcher() +
       '<div class="header no-print">' +
       '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
       '<button class="btn btn-primary" type="button" data-action="printPdf">ส่งออก PDF</button>' +
@@ -2826,10 +2799,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       saveStore(); render();
     }
     else if (action === 'delHealthBand') { a.healthInsurance.bands.splice(+t.dataset.index, 1); saveStore(); render(); }
-    else if (action === 'addSavingsItem') { a.currentSavings.items.push({ id: uid(), name: 'รายการลงทุนใหม่', amount: 50000, returnRate: 0.05 }); saveStore(); render(); }
-    else if (action === 'delSavingsItem') { if (a.currentSavings.items.length > 1) { a.currentSavings.items.splice(+t.dataset.index, 1); saveStore(); render(); } }
-    else if (action === 'addRegularItem') { a.regularSavings.items.push({ id: uid(), frequency: 'monthly', amount: 3000, timing: 'end', returnRate: 0.05 }); saveStore(); render(); }
-    else if (action === 'delRegularItem') { if (a.regularSavings.items.length > 1) { a.regularSavings.items.splice(+t.dataset.index, 1); saveStore(); render(); } }
     else if (action === 'addBucket') {
       var lastB = a.buckets.list[a.buckets.list.length - 1];
       var half = lastB ? Math.max(1, Math.round(lastB.years / 2)) : 10;
@@ -2838,7 +2807,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       saveStore(); render();
     }
     else if (action === 'delBucket') { if (a.buckets.list.length > 1) { a.buckets.list.splice(+t.dataset.index, 1); saveStore(); render(); } }
-    else if (action === 'setModule') { MODULE = t.dataset.module; render(); }
     else if (action === 'addIncomeItem') { a.finance.income.items.push({ id: uid(), category: 'รายได้ใหม่', monthlyAmount: 0, growthRate: 0.03 }); saveStore(); render(); }
     else if (action === 'delIncomeItem') { a.finance.income.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addExpenseRegular') { a.finance.expenses.regular.items.push({ id: uid(), category: 'ค่าใช้จ่ายใหม่', monthlyAmount: 0, inflationRate: 0.03 }); saveStore(); render(); }
