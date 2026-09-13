@@ -662,7 +662,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
           cashFlowSurplusReturn: 0.02,
           goals: { items: [] },
           education: { items: [] },
-          majorPurchases: { items: [] }
+          majorPurchases: { items: [] },
+          investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }
         }
       };
     }
@@ -707,7 +708,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         cashFlowSurplusReturn: 0.02,
         goals: { items: [{ id: uid(), name: 'ซื้อรถใหม่ (ตัวอย่าง)', category: 'รถ', targetAmountToday: 800000, targetAge: 40, currentSavings: 50000, expectedReturn: 0.04, inflationRate: 0.03 }] },
         education: { items: [] },
-        majorPurchases: { items: [{ id: uid(), name: 'บ้านหลังแรก (ตัวอย่าง)', price: 3000000, downPaymentPercent: 0.1, interestRate: 0.055, loanTermYears: 30, extraCosts: 50000 }] }
+        majorPurchases: { items: [{ id: uid(), name: 'บ้านหลังแรก (ตัวอย่าง)', price: 3000000, downPaymentPercent: 0.1, interestRate: 0.055, loanTermYears: 30, extraCosts: 50000 }] },
+        investment: { currentAmount: 200000, monthlyAmount: 5000, years: 15, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }
       }
     };
   }
@@ -788,7 +790,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       if (loaded.buckets && Array.isArray(loaded.buckets.list) && loaded.buckets.list.length) base.buckets = loaded.buckets;
       if (typeof loaded.stressTestDelta === 'number') base.stressTestDelta = loaded.stressTestDelta;
       if (loaded.finance) {
-        base.finance = base.finance || { personal: {}, income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] } };
+        base.finance = base.finance || { personal: {}, income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] }, investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } } };
         if (loaded.finance.personal) base.finance.personal = mergeObj(base.finance.personal, loaded.finance.personal);
         if (loaded.finance.income && Array.isArray(loaded.finance.income.items)) base.finance.income = { items: loaded.finance.income.items };
         if (loaded.finance.expenses) {
@@ -802,6 +804,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         if (loaded.finance.goals && Array.isArray(loaded.finance.goals.items)) base.finance.goals = { items: loaded.finance.goals.items };
         if (loaded.finance.education && Array.isArray(loaded.finance.education.items)) base.finance.education = { items: loaded.finance.education.items };
         if (loaded.finance.majorPurchases && Array.isArray(loaded.finance.majorPurchases.items)) base.finance.majorPurchases = { items: loaded.finance.majorPurchases.items };
+        if (loaded.finance.investment) base.finance.investment = mergeObj(base.finance.investment, loaded.finance.investment);
       }
       return base;
     } catch (e) {
@@ -987,7 +990,29 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       return { id: mp.id, name: mp.name, downPayment: downPayment, loanAmount: loanAmount, monthlyPayment: monthlyPayment, totalUpfront: totalUpfront, affordable: affordable };
     });
 
-    return { netWorthCalc: netWorthCalc, cashFlowCalc: cashFlowCalc, liquidAssets: liquidAssets, emergencyCalc: emergencyCalc, projections: projections, goalsCalc: goalsCalc, educationCalc: educationCalc, purchasesCalc: purchasesCalc };
+    /* investment: asset-allocation based projection + risk-scenario comparison */
+    var ASSET_CLASS_ASSUMPTIONS = { cash: { return: 0.015, vol: 0.02 }, bonds: { return: 0.035, vol: 0.05 }, stocks: { return: 0.08, vol: 0.18 }, alternatives: { return: 0.06, vol: 0.12 } };
+    function blendAllocation(alloc) {
+      var r = 0, v = 0;
+      Object.keys(ASSET_CLASS_ASSUMPTIONS).forEach(function (k) { r += (alloc[k] || 0) * ASSET_CLASS_ASSUMPTIONS[k].return; v += (alloc[k] || 0) * ASSET_CLASS_ASSUMPTIONS[k].vol; });
+      return { blendedReturn: r, blendedVol: v };
+    }
+    var inv = f.investment;
+    var allocSum = Object.keys(inv.allocation).reduce(function (s, k) { return s + (inv.allocation[k] || 0); }, 0);
+    var customBlend = blendAllocation(inv.allocation);
+    var customFV = C.fv(inv.currentAmount, customBlend.blendedReturn, inv.years) + C.annuityFV(inv.monthlyAmount * 12, customBlend.blendedReturn, inv.years, false);
+    var RISK_PRESETS = [
+      { key: 'conservative', label: 'Conservative (เน้นความมั่นคง)', allocation: { cash: 0.4, bonds: 0.4, stocks: 0.15, alternatives: 0.05 } },
+      { key: 'moderate', label: 'Moderate (สมดุล)', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
+      { key: 'aggressive', label: 'Aggressive (เน้นการเติบโต)', allocation: { cash: 0.05, bonds: 0.15, stocks: 0.65, alternatives: 0.15 } }
+    ];
+    var scenarioCalc = RISK_PRESETS.map(function (preset) {
+      var b = blendAllocation(preset.allocation);
+      var fvAmt = C.fv(inv.currentAmount, b.blendedReturn, inv.years) + C.annuityFV(inv.monthlyAmount * 12, b.blendedReturn, inv.years, false);
+      return { key: preset.key, label: preset.label, allocation: preset.allocation, blendedReturn: b.blendedReturn, blendedVol: b.blendedVol, futureValue: fvAmt };
+    });
+
+    return { netWorthCalc: netWorthCalc, cashFlowCalc: cashFlowCalc, liquidAssets: liquidAssets, emergencyCalc: emergencyCalc, projections: projections, goalsCalc: goalsCalc, educationCalc: educationCalc, purchasesCalc: purchasesCalc, assetClassAssumptions: ASSET_CLASS_ASSUMPTIONS, allocSum: allocSum, customBlend: customBlend, customFV: customFV, scenarioCalc: scenarioCalc };
   }
 
   function computeAll(a) {
@@ -1394,6 +1419,46 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="subblock"><div class="subblock-title">ค่าใช้จ่ายไม่ประจำ</div>' + irrTable + '</div>';
   }
 
+  function renderInvestment(a, fr) {
+    var inv = a.finance.investment;
+    var classLabels = { cash: 'เงินสด/เทียบเท่าเงินสด', bonds: 'ตราสารหนี้', stocks: 'หุ้น', alternatives: 'สินทรัพย์ทางเลือก' };
+    var allocRows = Object.keys(classLabels).map(function (k) {
+      return field(classLabels[k] + ' (สมมติผลตอบแทน ' + (fr.assetClassAssumptions[k].return * 100).toFixed(1) + '%/ปี)', ['finance', 'investment', 'allocation', k], inv.allocation[k], { type: 'percent' });
+    }).join('');
+    var sumWarning = Math.abs(fr.allocSum - 1) > 0.001
+      ? '<div class="note" style="color:#A8382E">สัดส่วนรวมตอนนี้ ' + (fr.allocSum * 100).toFixed(1) + '% — ควรปรับให้รวมกันครบ 100%</div>' : '';
+    var presetBtns = fr.scenarioCalc.map(function (s) {
+      return '<button class="btn btn-add-row btn-sm" type="button" data-action="setRiskPreset" data-key="' + s.key + '">ใช้ ' + esc(s.label) + '</button>';
+    }).join(' ');
+    var scenarioCols = [
+      { label: 'รูปแบบ', render: function (row) { return esc(row.label); } },
+      { label: 'เงินสด', render: function (row) { return (row.allocation.cash * 100).toFixed(0) + '%'; } },
+      { label: 'ตราสารหนี้', render: function (row) { return (row.allocation.bonds * 100).toFixed(0) + '%'; } },
+      { label: 'หุ้น', render: function (row) { return (row.allocation.stocks * 100).toFixed(0) + '%'; } },
+      { label: 'ทางเลือก', render: function (row) { return (row.allocation.alternatives * 100).toFixed(0) + '%'; } },
+      { label: 'ผลตอบแทนคาดหวัง', render: function (row) { return (row.blendedReturn * 100).toFixed(2) + '%/ปี'; } },
+      { label: 'ความผันผวนโดยประมาณ', render: function (row) { return (row.blendedVol * 100).toFixed(2) + '%'; } },
+      { label: 'มูลค่าคาดการณ์ในอนาคต', render: function (row) { return fmt(row.futureValue) + ' บาท'; } }
+    ];
+    return '<div class="grid-3">' +
+      field('เงินลงทุนปัจจุบัน', ['finance', 'investment', 'currentAmount'], inv.currentAmount, { type: 'money', suffix: 'บาท' }) +
+      field('เงินลงทุนเพิ่ม', ['finance', 'investment', 'monthlyAmount'], inv.monthlyAmount, { type: 'money', suffix: 'บาท/เดือน' }) +
+      field('ระยะเวลาลงทุน', ['finance', 'investment', 'years'], inv.years, { suffix: 'ปี' }) +
+      '</div>' +
+      '<div class="subblock"><div class="subblock-title">สัดส่วนการลงทุน (Asset Allocation) ของคุณ</div>' +
+      '<div class="note" style="margin-bottom:10px">' + presetBtns + '</div>' +
+      '<div class="grid-2">' + allocRows + '</div>' + sumWarning +
+      '<div class="grid-2" style="margin-top:14px">' +
+      metricCard('ผลตอบแทนคาดหวังของพอร์ตนี้', (fr.customBlend.blendedReturn * 100).toFixed(2) + '%/ปี', 'navy') +
+      metricCard('ความผันผวนโดยประมาณ', (fr.customBlend.blendedVol * 100).toFixed(2) + '%', 'navy', 'ประมาณแบบง่าย ไม่รวมผลของสหสัมพันธ์ระหว่างสินทรัพย์') +
+      '</div>' +
+      metricCard('มูลค่าคาดการณ์ในอีก ' + inv.years + ' ปี', fmt(fr.customFV) + ' บาท', 'green') +
+      '</div>' +
+      '<div class="subblock"><div class="subblock-title">เปรียบเทียบ 3 ระดับความเสี่ยง (ใช้เงินลงทุน/ระยะเวลาเดียวกัน)</div>' +
+      detailTable(fr.scenarioCalc, scenarioCols, 'investscenario') +
+      '<div class="entry-note">ตัวเลขผลตอบแทน/ความผันผวนของแต่ละสินทรัพย์เป็นสมมติฐานอ้างอิงทั่วไป ควรปรับตามมุมมองการลงทุนจริงของแต่ละคน</div></div>';
+  }
+
   function renderAssets(a) {
     var items = a.finance.assets.items;
     var table = entryTable({
@@ -1545,8 +1610,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="entry-note">เทียบค่างวดกับ "เงินคงเหลือสุทธิ/เดือน" ในหัวข้อกระแสเงินสด (107) — ถ้าค่างวดมากกว่าเงินคงเหลือ แปลว่ายังรับภาระนี้ไม่ไหวตามกระแสเงินสดปัจจุบัน</div>';
   }
 
-  function renderCashFlowNetWorth(a, fr) {
-    var cf = fr.cashFlowCalc, nw = fr.netWorthCalc;
+  function renderNetWorthSummary(a, fr) {
+    var nw = fr.netWorthCalc;
     var projCols = [
       { label: 'อีก (ปี)', render: function (row) { return row.years; } },
       { label: 'สินทรัพย์โต', render: function (row) { return fmt(row.assetTotal) + ' บาท'; } },
@@ -1555,12 +1620,6 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       { label: 'มูลค่าสุทธิโดยประมาณ', render: function (row) { return fmt(row.netWorth) + ' บาท'; } }
     ];
     return '<div class="grid-2">' +
-      metricCard('รายได้รวม/เดือน', fmt(cf.totalIncome) + ' บาท', 'navy') +
-      metricCard('ค่าใช้จ่ายรวม/เดือน', fmt(cf.totalExpenses) + ' บาท', 'navy') +
-      metricCard('ค่างวดหนี้รวม/เดือน', fmt(cf.totalDebtPayment) + ' บาท', 'navy', 'สัดส่วนหนี้ต่อรายได้ (DTI): ' + (cf.dti * 100).toFixed(1) + '%') +
-      metricCard(cf.netCashFlow >= 0 ? 'เงินคงเหลือสุทธิ/เดือน' : 'ขาดสภาพคล่อง/เดือน', fmt(Math.abs(cf.netCashFlow)) + ' บาท', cf.netCashFlow >= 0 ? 'green' : 'red') +
-      '</div>' +
-      '<div class="grid-2" style="margin-top:14px">' +
       metricCard('สินทรัพย์รวม', fmt(nw.totalAssets) + ' บาท', 'navy') +
       metricCard('หนี้สินรวม', fmt(nw.totalLiabilities) + ' บาท', 'navy') +
       '</div>' +
@@ -1568,6 +1627,16 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="note" style="margin-top:14px"><strong>คาดการณ์มูลค่าสุทธิในอนาคต:</strong></div>' +
       detailTable(fr.projections, projCols, 'networthproj') +
       '<div class="entry-note">สมมติฐาน: สินทรัพย์แต่ละตัวโตด้วยผลตอบแทนคาดหวังของตัวเอง, หนี้สินลดลงตามค่างวดที่จ่าย, เงินคงเหลือจากกระแสเงินสด (ถ้าเป็นบวก) ถูกออมและลงทุนต่อที่ผลตอบแทน ' + (a.finance.cashFlowSurplusReturn * 100).toFixed(2) + '%/ปี</div>';
+  }
+
+  function renderCashFlowSummary(a, fr) {
+    var cf = fr.cashFlowCalc;
+    return '<div class="grid-2">' +
+      metricCard('รายได้รวม/เดือน', fmt(cf.totalIncome) + ' บาท', 'navy') +
+      metricCard('ค่าใช้จ่ายรวม/เดือน', fmt(cf.totalExpenses) + ' บาท', 'navy') +
+      metricCard('ค่างวดหนี้รวม/เดือน', fmt(cf.totalDebtPayment) + ' บาท', 'navy', 'สัดส่วนหนี้ต่อรายได้ (DTI): ' + (cf.dti * 100).toFixed(1) + '%') +
+      metricCard(cf.netCashFlow >= 0 ? 'เงินคงเหลือสุทธิ/เดือน' : 'ขาดสภาพคล่อง/เดือน', fmt(Math.abs(cf.netCashFlow)) + ' บาท', cf.netCashFlow >= 0 ? 'green' : 'red') +
+      '</div>';
   }
 
   function renderPersonal(a) {
@@ -2308,12 +2377,14 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       [102, 'รายได้', fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน', 'navy', renderIncome(a)],
       [103, 'ค่าใช้จ่าย', fmt(fr.cashFlowCalc.totalExpenses) + ' บาท/เดือน', 'navy', renderExpenses(a)],
       [104, 'สินทรัพย์', fmt(fr.netWorthCalc.totalAssets) + ' บาท', 'navy', renderAssets(a)],
+      [112, 'การลงทุน (Asset Allocation & Risk)', '', 'navy', renderInvestment(a, fr)],
       [105, 'หนี้สิน', fmt(fr.netWorthCalc.totalLiabilities) + ' บาท', 'navy', renderLiabilities(a)],
-      [106, 'เงินสำรองฉุกเฉิน', '', 'green', renderEmergencyFund(a, fr)],
-      [108, 'เป้าหมายทางการเงิน', '', 'green', renderFinanceGoals(a, fr)],
-      [109, 'การศึกษาบุตร', '', 'green', renderFinanceEducation(a, fr)],
-      [110, 'แผนซื้อบ้าน/รถ', '', 'green', renderMajorPurchases(a, fr)],
-      [107, 'กระแสเงินสด และมูลค่าสุทธิ (Net Worth)', '', 'green', renderCashFlowNetWorth(a, fr)]
+      [106, 'มูลค่าสุทธิ (Net Worth) — สินทรัพย์หักหนี้สิน', '', 'green', renderNetWorthSummary(a, fr)],
+      [107, 'กระแสเงินสด (รายได้ - ค่าใช้จ่าย - หนี้)', '', 'green', renderCashFlowSummary(a, fr)],
+      [108, 'เงินสำรองฉุกเฉิน', '', 'green', renderEmergencyFund(a, fr)],
+      [109, 'เป้าหมายทางการเงิน', '', 'green', renderFinanceGoals(a, fr)],
+      [110, 'การศึกษาบุตร', '', 'green', renderFinanceEducation(a, fr)],
+      [111, 'แผนซื้อบ้าน/รถ', '', 'green', renderMajorPurchases(a, fr)]
     ];
     var body = '<div class="sections">' + sections.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4], false); }).join('') + '</div>';
     return '<main class="main">' +
@@ -2550,6 +2621,12 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     else if (action === 'delEducation') { a.finance.education.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addMajorPurchase') { a.finance.majorPurchases.items.push({ id: uid(), name: 'รายการใหม่', price: 1000000, downPaymentPercent: 0.1, interestRate: 0.05, loanTermYears: 20, extraCosts: 20000 }); saveStore(); render(); }
     else if (action === 'delMajorPurchase') { a.finance.majorPurchases.items.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'setRiskPreset') {
+      var presets = { conservative: { cash: 0.4, bonds: 0.4, stocks: 0.15, alternatives: 0.05 }, moderate: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 }, aggressive: { cash: 0.05, bonds: 0.15, stocks: 0.65, alternatives: 0.15 } };
+      a.finance.investment.allocation = Object.assign({}, presets[t.dataset.key]);
+      a.finance.investment.riskLevel = t.dataset.key;
+      saveStore(); render();
+    }
     else if (action === 'clearCurrentCase') {
       if (window.confirm('ล้างข้อมูลเฉพาะเคส "' + a.name + '" เคสเดียว? เคสลูกค้ารายอื่นจะไม่ถูกแตะต้อง การกระทำนี้ไม่สามารถย้อนกลับได้')) {
         var blankCase = newCase(a.name, true);
