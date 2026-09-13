@@ -195,6 +195,27 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .progress-box-text strong { color: var(--navy-900); }
 .progress-bar-track { flex: 1; height: 8px; background: var(--blue-200); border-radius: 5px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue-bright), var(--green-500)); border-radius: 5px; transition: width 0.3s; }
+.health-score-block { border-radius: var(--radius); padding: 20px 22px; margin-bottom: 18px; box-shadow: 0 3px 14px rgba(11,37,69,0.1); }
+.health-score-green { background: linear-gradient(135deg, var(--green-100), var(--white)); border: 1.5px solid var(--green-500); }
+.health-score-yellow { background: linear-gradient(135deg, #FEF6E7, var(--white)); border: 1.5px solid var(--amber-500); }
+.health-score-red { background: linear-gradient(135deg, var(--red-100), var(--white)); border: 1.5px solid var(--red-500); }
+.health-score-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.health-score-ring { width: 78px; height: 78px; border-radius: 50%; background: var(--white); box-shadow: 0 0 0 5px rgba(23,195,224,0.15); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: var(--navy-900); flex-shrink: 0; }
+.health-score-ring-max { font-size: 14px; font-weight: 600; color: var(--ink-soft); }
+.health-score-title { font-size: 15px; color: var(--ink-soft); font-weight: 600; }
+.health-score-status { font-size: 20px; font-weight: 800; color: var(--navy-900); }
+.score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.score-row { background: rgba(255,255,255,0.6); border-radius: 10px; padding: 10px 12px; }
+.score-row-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.score-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.score-dot-green { background: var(--green-500); }
+.score-dot-yellow { background: var(--amber-500); }
+.score-dot-red { background: var(--red-500); }
+.score-row-label { font-weight: 700; font-size: 14.5px; color: var(--navy-900); flex: 1; }
+.score-row-pts { font-weight: 700; font-size: 13px; color: var(--ink-soft); }
+.score-row-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
+.priority-list { margin: 8px 0 0; padding-left: 20px; }
+.priority-list li { font-size: 14.5px; color: var(--ink); margin-bottom: 6px; line-height: 1.6; }
 .timeline-label { font-size: 17px; color: var(--ink); font-weight: 600; }
 
 .story-block { background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); border: none; }
@@ -663,7 +684,11 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
           goals: { items: [] },
           education: { items: [] },
           majorPurchases: { items: [] },
-          investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }
+          investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
+          insurance: {
+            life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 },
+            otherPolicies: { items: [] }
+          }
         }
       };
     }
@@ -709,7 +734,14 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         goals: { items: [{ id: uid(), name: 'ซื้อรถใหม่ (ตัวอย่าง)', category: 'รถ', targetAmountToday: 800000, targetAge: 40, currentSavings: 50000, expectedReturn: 0.04, inflationRate: 0.03 }] },
         education: { items: [] },
         majorPurchases: { items: [{ id: uid(), name: 'บ้านหลังแรก (ตัวอย่าง)', price: 3000000, downPaymentPercent: 0.1, interestRate: 0.055, loanTermYears: 30, extraCosts: 50000 }] },
-        investment: { currentAmount: 200000, monthlyAmount: 5000, years: 15, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }
+        investment: { currentAmount: 200000, monthlyAmount: 5000, years: 15, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
+        insurance: {
+          life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 180000, finalExpenses: 100000, legacyAmount: 500000, existingCoverage: 1000000 },
+          otherPolicies: { items: [
+            { id: uid(), type: 'ประกันสุขภาพ (ตัวอย่าง)', currentCoverage: 500000, recommendedCoverage: 1000000 },
+            { id: uid(), type: 'ประกันอุบัติเหตุ (ตัวอย่าง)', currentCoverage: 200000, recommendedCoverage: 500000 }
+          ] }
+        }
       }
     };
   }
@@ -790,7 +822,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       if (loaded.buckets && Array.isArray(loaded.buckets.list) && loaded.buckets.list.length) base.buckets = loaded.buckets;
       if (typeof loaded.stressTestDelta === 'number') base.stressTestDelta = loaded.stressTestDelta;
       if (loaded.finance) {
-        base.finance = base.finance || { personal: {}, income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] }, investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } } };
+        base.finance = base.finance || { personal: {}, income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] }, investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }, insurance: { life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 }, otherPolicies: { items: [] } } };
         if (loaded.finance.personal) base.finance.personal = mergeObj(base.finance.personal, loaded.finance.personal);
         if (loaded.finance.income && Array.isArray(loaded.finance.income.items)) base.finance.income = { items: loaded.finance.income.items };
         if (loaded.finance.expenses) {
@@ -805,6 +837,11 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
         if (loaded.finance.education && Array.isArray(loaded.finance.education.items)) base.finance.education = { items: loaded.finance.education.items };
         if (loaded.finance.majorPurchases && Array.isArray(loaded.finance.majorPurchases.items)) base.finance.majorPurchases = { items: loaded.finance.majorPurchases.items };
         if (loaded.finance.investment) base.finance.investment = mergeObj(base.finance.investment, loaded.finance.investment);
+        if (loaded.finance.insurance) {
+          base.finance.insurance = base.finance.insurance || { life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 }, otherPolicies: { items: [] } };
+          if (loaded.finance.insurance.life) base.finance.insurance.life = mergeObj(base.finance.insurance.life, loaded.finance.insurance.life);
+          if (loaded.finance.insurance.otherPolicies && Array.isArray(loaded.finance.insurance.otherPolicies.items)) base.finance.insurance.otherPolicies = { items: loaded.finance.insurance.otherPolicies.items };
+        }
       }
       return base;
     } catch (e) {
@@ -947,6 +984,102 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   /* ================= COMPUTE ================= */
+  function computeFinancialHealthScore(a, fr, r) {
+    var f = a.finance;
+    function tier(value, thresholds, points) {
+      for (var i = 0; i < thresholds.length; i++) { if (value >= thresholds[i]) return points[i]; }
+      return points[points.length - 1];
+    }
+    var cats = [];
+
+    /* กระแสเงินสด (15) — savings rate = net cash flow / income */
+    var savingsRateCF = fr.cashFlowCalc.totalIncome > 0 ? fr.cashFlowCalc.netCashFlow / fr.cashFlowCalc.totalIncome : 0;
+    cats.push({
+      key: 'cashflow', label: 'กระแสเงินสด', max: 15,
+      score: savingsRateCF < 0 ? 0 : tier(savingsRateCF, [0.2, 0.1, 0], [15, 10, 5]),
+      note: 'เงินคงเหลือสุทธิคิดเป็น ' + (savingsRateCF * 100).toFixed(1) + '% ของรายได้',
+      advice: savingsRateCF < 0.1 ? 'กระแสเงินสดเหลือน้อยหรือติดลบ — ลองทบทวนค่าใช้จ่ายที่ไม่จำเป็น หรือหารายได้เสริม' : null
+    });
+
+    /* เงินสำรองฉุกเฉิน (10) */
+    var efRatio = f.emergencyFund.targetMonths > 0 ? fr.emergencyCalc.monthsCovered / f.emergencyFund.targetMonths : 1;
+    cats.push({
+      key: 'emergency', label: 'เงินสำรองฉุกเฉิน', max: 10,
+      score: Math.max(0, Math.min(10, Math.round(efRatio * 10))),
+      note: 'มีเงินสำรองพอใช้ได้ ' + fr.emergencyCalc.monthsCovered.toFixed(1) + ' จากเป้าหมาย ' + f.emergencyFund.targetMonths + ' เดือน',
+      advice: efRatio < 1 ? 'เงินสำรองฉุกเฉินยังไม่ถึงเป้าหมาย — ลองกันเงินเพิ่มอีกประมาณ ' + fmt(fr.emergencyCalc.gap) + ' บาท' : null
+    });
+
+    /* หนี้สิน (15) — DTI */
+    var dti = fr.cashFlowCalc.dti;
+    cats.push({
+      key: 'debt', label: 'หนี้สิน', max: 15,
+      score: tier(dti, [0.5, 0.36, 0.2, -1], [0, 5, 10, 15]),
+      note: 'สัดส่วนหนี้ต่อรายได้ (DTI) ' + (dti * 100).toFixed(1) + '%',
+      advice: dti > 0.36 ? 'ภาระหนี้ต่อรายได้ค่อนข้างสูง (' + (dti * 100).toFixed(0) + '%) — ควรพิจารณาปิดหนี้ดอกเบี้ยสูงก่อน' : null
+    });
+
+    /* การออม (10) — regular savings + investment monthly / income */
+    var regularSavingsMonthly = (a.regularSavings.items || []).reduce(function (s, it) { return s + (it.frequency === 'monthly' ? it.amount : it.amount / 12); }, 0);
+    var totalMonthlySaving = regularSavingsMonthly + (f.investment.monthlyAmount || 0);
+    var savingsRatioIncome = fr.cashFlowCalc.totalIncome > 0 ? totalMonthlySaving / fr.cashFlowCalc.totalIncome : 0;
+    cats.push({
+      key: 'savings', label: 'การออม', max: 10,
+      score: tier(savingsRatioIncome, [0.15, 0.1, 0.05, 0], [10, 7, 4, 2]),
+      note: 'ออม/ลงทุนสม่ำเสมอรวม ' + fmt(totalMonthlySaving) + ' บาท/เดือน (' + (savingsRatioIncome * 100).toFixed(1) + '% ของรายได้)',
+      advice: savingsRatioIncome < 0.1 ? 'อัตราการออมยังค่อนข้างต่ำ — ลองตั้งเป้าออมอย่างน้อย 10% ของรายได้' : null
+    });
+
+    /* การลงทุน (15) — has a plan with allocation + ongoing contribution */
+    var hasInvestPlan = f.investment.currentAmount > 0 || f.investment.monthlyAmount > 0;
+    var investScore = !hasInvestPlan ? 0 : (f.investment.currentAmount > 0 && f.investment.monthlyAmount > 0 ? 15 : 8);
+    cats.push({
+      key: 'investment', label: 'การลงทุน', max: 15,
+      score: investScore,
+      note: hasInvestPlan ? 'มีเงินลงทุน ' + fmt(f.investment.currentAmount) + ' บาท และลงทุนเพิ่ม ' + fmt(f.investment.monthlyAmount) + ' บาท/เดือน' : 'ยังไม่ได้เริ่มลงทุนอย่างสม่ำเสมอ',
+      advice: !hasInvestPlan ? 'ยังไม่มีแผนการลงทุนระยะยาว — ลองเริ่มลงทุนสม่ำเสมอแม้จำนวนไม่มาก' : null
+    });
+
+    /* ประกัน/ความคุ้มครอง (10) — life insurance coverage ratio */
+    var lc = fr.lifeInsuranceCalc;
+    var coverRatio = lc.totalNeed > 0 ? lc.existingCoverage / lc.totalNeed : 1;
+    cats.push({
+      key: 'insurance', label: 'ประกัน/ความคุ้มครอง', max: 10,
+      score: tier(coverRatio, [1, 0.75, 0.5, 0.25], [10, 7, 4, 2]),
+      note: 'มีทุนประกันชีวิต ' + (coverRatio * 100).toFixed(0) + '% ของความต้องการที่ควรมี',
+      advice: coverRatio < 0.75 ? 'ความคุ้มครองชีวิตยังไม่พอ — ขาดอยู่ประมาณ ' + fmt(lc.gap) + ' บาท' : null
+    });
+
+    /* เกษียณ (15) — reuse retirement gap ratio */
+    var gapRatio = r.netRequiredCorpus > 0 ? r.gap / r.netRequiredCorpus : 0;
+    cats.push({
+      key: 'retirement', label: 'แผนเกษียณ', max: 15,
+      score: gapRatio <= 0 ? 15 : tier(gapRatio, [0.35, 0.15, 0], [0, 5, 10]),
+      note: r.gap > 0 ? 'ยังขาดเงินเกษียณอยู่ประมาณ ' + fmt(r.gap) + ' บาท' : 'มีเงินเกษียณเพียงพอตามแผนแล้ว',
+      advice: gapRatio > 0.15 ? 'แผนเกษียณยังขาดอยู่มาก — ดูรายละเอียดที่แท็บ "แผนเกษียณ" เพื่อปรับแผนการออม' : null
+    });
+
+    /* เป้าหมายการเงิน (10) — average funding ratio across goals */
+    var goalsList = fr.goalsCalc;
+    var goalsScore;
+    if (!goalsList.length) { goalsScore = 5; }
+    else {
+      var avgFundedRatio = goalsList.reduce(function (s, g) { return s + (g.futureValueNeeded > 0 ? Math.min(1, g.futureValueOfSavings / g.futureValueNeeded) : 1); }, 0) / goalsList.length;
+      goalsScore = Math.round(avgFundedRatio * 10);
+    }
+    cats.push({
+      key: 'goals', label: 'เป้าหมายการเงิน', max: 10,
+      score: goalsScore,
+      note: goalsList.length ? 'มีเป้าหมายทางการเงิน ' + goalsList.length + ' รายการ' : 'ยังไม่ได้ตั้งเป้าหมายทางการเงิน',
+      advice: !goalsList.length ? 'ลองตั้งเป้าหมายทางการเงินที่ชัดเจน จะได้วางแผนออมได้ตรงจุด' : null
+    });
+
+    var totalScore = cats.reduce(function (s, c) { return s + c.score; }, 0);
+    var maxScore = cats.reduce(function (s, c) { return s + c.max; }, 0);
+    var priorities = cats.filter(function (c) { return c.advice; }).sort(function (x, y) { return (x.score / x.max) - (y.score / y.max); }).slice(0, 4);
+    return { categories: cats, totalScore: totalScore, maxScore: maxScore, priorities: priorities };
+  }
+
   function computeFinance(a) {
     var f = a.finance;
     var currentAge = a.personal.currentAge;
@@ -1012,7 +1145,22 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       return { key: preset.key, label: preset.label, allocation: preset.allocation, blendedReturn: b.blendedReturn, blendedVol: b.blendedVol, futureValue: fvAmt };
     });
 
-    return { netWorthCalc: netWorthCalc, cashFlowCalc: cashFlowCalc, liquidAssets: liquidAssets, emergencyCalc: emergencyCalc, projections: projections, goalsCalc: goalsCalc, educationCalc: educationCalc, purchasesCalc: purchasesCalc, assetClassAssumptions: ASSET_CLASS_ASSUMPTIONS, allocSum: allocSum, customBlend: customBlend, customFV: customFV, scenarioCalc: scenarioCalc };
+    /* life insurance needs analysis (needs-based method: debt + income replacement + education + final expenses + legacy) */
+    var ins = f.insurance;
+    var totalEducationNeed = educationCalc.reduce(function (s, e) { return s + e.totalNeededAtStart; }, 0);
+    var incomeReplacementNeed = ins.life.familyLivingExpenseAnnual * ins.life.yearsOfSupport;
+    var lifeInsuranceTotalNeed = netWorthCalc.totalLiabilities + incomeReplacementNeed + totalEducationNeed + ins.life.finalExpenses + ins.life.legacyAmount;
+    var lifeInsuranceGap = Math.max(0, lifeInsuranceTotalNeed - ins.life.existingCoverage);
+    var lifeInsuranceCalc = {
+      totalDebt: netWorthCalc.totalLiabilities, incomeReplacementNeed: incomeReplacementNeed, totalEducationNeed: totalEducationNeed,
+      finalExpenses: ins.life.finalExpenses, legacyAmount: ins.life.legacyAmount, totalNeed: lifeInsuranceTotalNeed,
+      existingCoverage: ins.life.existingCoverage, gap: lifeInsuranceGap
+    };
+    var otherPoliciesCalc = (ins.otherPolicies.items || []).map(function (p) {
+      return { id: p.id, type: p.type, currentCoverage: p.currentCoverage, recommendedCoverage: p.recommendedCoverage, gap: Math.max(0, p.recommendedCoverage - p.currentCoverage) };
+    });
+
+    return { netWorthCalc: netWorthCalc, cashFlowCalc: cashFlowCalc, liquidAssets: liquidAssets, emergencyCalc: emergencyCalc, projections: projections, goalsCalc: goalsCalc, educationCalc: educationCalc, purchasesCalc: purchasesCalc, assetClassAssumptions: ASSET_CLASS_ASSUMPTIONS, allocSum: allocSum, customBlend: customBlend, customFV: customFV, scenarioCalc: scenarioCalc, lifeInsuranceCalc: lifeInsuranceCalc, otherPoliciesCalc: otherPoliciesCalc };
   }
 
   function computeAll(a) {
@@ -1417,6 +1565,62 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     });
     return '<div class="subblock" style="margin-top:0"><div class="subblock-title">ค่าใช้จ่ายประจำ</div>' + regTable + '</div>' +
       '<div class="subblock"><div class="subblock-title">ค่าใช้จ่ายไม่ประจำ</div>' + irrTable + '</div>';
+  }
+
+  function renderInsurance(a, fr) {
+    var life = a.finance.insurance.life;
+    var lc = fr.lifeInsuranceCalc;
+    var needCols = [
+      { label: 'รายการ', render: function (row) { return row.label; } },
+      { label: 'จำนวนเงิน', render: function (row) { return fmt(row.amount) + ' บาท'; } }
+    ];
+    var needRows = [
+      { label: 'หนี้สินที่ต้องปิด', amount: lc.totalDebt },
+      { label: 'เงินเลี้ยงดูครอบครัว (' + life.yearsOfSupport + ' ปี)', amount: lc.incomeReplacementNeed },
+      { label: 'ค่าเล่าเรียนบุตรที่ยังขาด', amount: lc.totalEducationNeed },
+      { label: 'ค่าใช้จ่ายสุดท้าย (งานศพ ฯลฯ)', amount: lc.finalExpenses },
+      { label: 'เงินมรดกที่ต้องการทิ้งไว้', amount: lc.legacyAmount }
+    ];
+    var lifeSection = '<div class="subblock" style="margin-top:0"><div class="subblock-title">ทุนประกันชีวิตที่ควรมี (Needs-based Analysis)</div>' +
+      '<div class="grid-2">' +
+      field('ปีที่ต้องการเลี้ยงดูครอบครัว', ['finance', 'insurance', 'life', 'yearsOfSupport'], life.yearsOfSupport, { suffix: 'ปี' }) +
+      field('ค่าใช้จ่ายครอบครัวต่อปี (ถ้าขาดคุณไป)', ['finance', 'insurance', 'life', 'familyLivingExpenseAnnual'], life.familyLivingExpenseAnnual, { type: 'money', suffix: 'บาท/ปี' }) +
+      field('ค่าใช้จ่ายสุดท้าย (งานศพ ฯลฯ)', ['finance', 'insurance', 'life', 'finalExpenses'], life.finalExpenses, { type: 'money', suffix: 'บาท' }) +
+      field('เงินมรดกที่ต้องการทิ้งไว้เพิ่มเติม', ['finance', 'insurance', 'life', 'legacyAmount'], life.legacyAmount, { type: 'money', suffix: 'บาท' }) +
+      field('ทุนประกันชีวิตที่มีอยู่แล้ว', ['finance', 'insurance', 'life', 'existingCoverage'], life.existingCoverage, { type: 'money', suffix: 'บาท' }) +
+      '</div>' +
+      detailTable(needRows, needCols, 'lifeinsneed') +
+      '<div class="grid-2" style="margin-top:14px">' +
+      metricCard('ทุนประกันชีวิตที่ควรมีทั้งหมด', fmt(lc.totalNeed) + ' บาท', 'navy') +
+      metricCard(lc.gap > 0 ? 'ยังขาดความคุ้มครองอยู่' : 'มีความคุ้มครองเพียงพอแล้ว', fmt(lc.gap) + ' บาท', lc.gap > 0 ? 'red' : 'green', 'มีอยู่แล้ว ' + fmt(lc.existingCoverage) + ' บาท') +
+      '</div></div>';
+
+    var items = a.finance.insurance.otherPolicies.items;
+    var otherTable = entryTable({
+      headers: ['ประเภทประกัน', 'ความคุ้มครองปัจจุบัน (บาท)', 'ความคุ้มครองที่แนะนำ (บาท)'],
+      colTemplate: '1.3fr 1fr 1fr',
+      rows: items.map(function (it, i) { return { it: it, idx: i }; }),
+      rowCells: function (row) {
+        var it = row.it, i = row.idx;
+        return [
+          rawInput(['finance', 'insurance', 'otherPolicies', 'items', i, 'type'], it.type, { type: 'text' }),
+          rawInput(['finance', 'insurance', 'otherPolicies', 'items', i, 'currentCoverage'], it.currentCoverage, { type: 'money' }),
+          rawInput(['finance', 'insurance', 'otherPolicies', 'items', i, 'recommendedCoverage'], it.recommendedCoverage, { type: 'money' })
+        ];
+      },
+      addAction: 'addOtherPolicy', addLabel: 'เพิ่มกรมธรรม์', delAction: 'delOtherPolicy',
+      emptyMsg: 'เช่น ประกันสุขภาพ, โรคร้ายแรง, อุบัติเหตุ, ทุพพลภาพ, บ้าน/ทรัพย์สิน, ธุรกิจ'
+    });
+    var otherCols = [
+      { label: 'ประเภท', render: function (row) { return esc(row.type); } },
+      { label: 'มีอยู่แล้ว', render: function (row) { return fmt(row.currentCoverage) + ' บาท'; } },
+      { label: 'ที่แนะนำ', render: function (row) { return fmt(row.recommendedCoverage) + ' บาท'; } },
+      { label: 'ส่วนที่ขาด', render: function (row) { return row.gap > 0 ? fmt(row.gap) + ' บาท' : 'เพียงพอแล้ว'; } }
+    ];
+    var otherSection = '<div class="subblock"><div class="subblock-title">ประกันสุขภาพและความคุ้มครองอื่นๆ</div>' +
+      otherTable + (fr.otherPoliciesCalc.length ? detailTable(fr.otherPoliciesCalc, otherCols, 'otherinsurance') : '') + '</div>';
+
+    return lifeSection + otherSection;
   }
 
   function renderInvestment(a, fr) {
@@ -2370,8 +2574,36 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '</div>';
   }
 
+  function renderFinancialHealthScore(a, fr, r) {
+    var hs = computeFinancialHealthScore(a, fr, r);
+    var pct = hs.maxScore > 0 ? hs.totalScore / hs.maxScore : 0;
+    var status = pct >= 0.75 ? 'green' : (pct >= 0.5 ? 'yellow' : 'red');
+    var statusLabel = status === 'green' ? 'สุขภาพการเงินดี' : (status === 'yellow' ? 'พอใช้ได้ ควรปรับปรุงบางจุด' : 'ควรปรับปรุงหลายจุด');
+    var catRows = hs.categories.map(function (c) {
+      var cpct = c.max > 0 ? c.score / c.max : 0;
+      var cstatus = cpct >= 0.75 ? 'green' : (cpct >= 0.5 ? 'yellow' : 'red');
+      return '<div class="score-row">' +
+        '<div class="score-row-head"><span class="score-dot score-dot-' + cstatus + '"></span><span class="score-row-label">' + esc(c.label) + '</span><span class="score-row-pts">' + c.score + '/' + c.max + '</span></div>' +
+        '<div class="progress-bar-track" style="height:6px"><div class="progress-bar-fill" style="width:' + (cpct * 100) + '%"></div></div>' +
+        '<div class="score-row-note">' + esc(c.note) + '</div>' +
+        '</div>';
+    }).join('');
+    var priorityHtml = hs.priorities.length
+      ? '<ol class="priority-list">' + hs.priorities.map(function (c) { return '<li>' + esc(c.advice) + '</li>'; }).join('') + '</ol>'
+      : '<div class="note">ไม่มีจุดที่ต้องปรับปรุงเร่งด่วน สุขภาพการเงินโดยรวมอยู่ในเกณฑ์ดี</div>';
+    return '<div class="health-score-block health-score-' + status + '">' +
+      '<div class="health-score-top">' +
+      '<div class="health-score-ring">' + hs.totalScore + '<span class="health-score-ring-max">/' + hs.maxScore + '</span></div>' +
+      '<div><div class="health-score-title">คะแนนสุขภาพการเงิน</div><div class="health-score-status">' + statusLabel + '</div></div>' +
+      '</div>' +
+      '<div class="score-grid">' + catRows + '</div>' +
+      '<div class="dash-title" style="margin-top:16px">🎯 ลำดับสิ่งที่ควรทำ</div>' + priorityHtml +
+      '</div>';
+  }
+
   function renderFinanceMain(a) {
     var fr = computeFinance(a);
+    var r = computeAll(a);
     var sections = [
       [101, 'ข้อมูลส่วนตัวเพิ่มเติม', '', 'navy', renderFinancePersonal(a)],
       [102, 'รายได้', fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน', 'navy', renderIncome(a)],
@@ -2384,7 +2616,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       [108, 'เงินสำรองฉุกเฉิน', '', 'green', renderEmergencyFund(a, fr)],
       [109, 'เป้าหมายทางการเงิน', '', 'green', renderFinanceGoals(a, fr)],
       [110, 'การศึกษาบุตร', '', 'green', renderFinanceEducation(a, fr)],
-      [111, 'แผนซื้อบ้าน/รถ', '', 'green', renderMajorPurchases(a, fr)]
+      [111, 'แผนซื้อบ้าน/รถ', '', 'green', renderMajorPurchases(a, fr)],
+      [113, 'ประกันและการบริหารความเสี่ยง', '', 'green', renderInsurance(a, fr)]
     ];
     var body = '<div class="sections">' + sections.map(function (s) { return sectionWrap(s[0], s[1], s[2], s[3], !!OPEN[s[0]], s[4], false); }).join('') + '</div>';
     return '<main class="main">' +
@@ -2392,6 +2625,7 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       '<div class="header no-print">' +
       '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
       '</div>' +
+      renderFinancialHealthScore(a, fr, r) +
       body +
       '</main>';
   }
@@ -2627,6 +2861,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       a.finance.investment.riskLevel = t.dataset.key;
       saveStore(); render();
     }
+    else if (action === 'addOtherPolicy') { a.finance.insurance.otherPolicies.items.push({ id: uid(), type: 'กรมธรรม์ใหม่', currentCoverage: 0, recommendedCoverage: 0 }); saveStore(); render(); }
+    else if (action === 'delOtherPolicy') { a.finance.insurance.otherPolicies.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'clearCurrentCase') {
       if (window.confirm('ล้างข้อมูลเฉพาะเคส "' + a.name + '" เคสเดียว? เคสลูกค้ารายอื่นจะไม่ถูกแตะต้อง การกระทำนี้ไม่สามารถย้อนกลับได้')) {
         var blankCase = newCase(a.name, true);
