@@ -236,6 +236,18 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .ratio-standard { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 .ratio-advice { font-size: 13px; color: var(--ink); margin-top: 8px; line-height: 1.6; }
 .ratio-advice-ok { color: var(--green-700); font-weight: 700; }
+.tacct-cat-block { margin-bottom: 10px; }
+.tacct-cat-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14.5px; font-weight: 800; color: var(--blue-bright); padding: 6px 0; border-bottom: 1.5px solid var(--blue-200); }
+.tacct-row-sub { padding-left: 12px; font-size: 13px; color: var(--ink-soft); }
+.ratio-formula { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; font-style: italic; }
+.ratio-workingout { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; font-family: monospace; }
+.ratio-bar-track { position: relative; height: 14px; background: var(--blue-200); border-radius: 7px; margin: 10px 0 4px; overflow: visible; }
+.ratio-bar-fill { height: 100%; border-radius: 7px; transition: width 0.3s; }
+.ratio-bar-green { background: var(--green-500); }
+.ratio-bar-yellow { background: var(--amber-500); }
+.ratio-bar-red { background: var(--red-500); }
+.ratio-bar-marker { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--navy-900); border-radius: 2px; }
+.ratio-bar-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-soft); }
 .tacct-networth-row { background: var(--blue-100); margin: 4px -16px; padding: 8px 16px; font-weight: 700; }
 .tacct-total { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--navy-700); font-weight: 800; font-size: 15px; color: var(--navy-900); }
 @media (max-width: 700px) {
@@ -1160,15 +1172,33 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     if (mainCategory === 'investment') return invBlendReturn;
     return 0; /* personal-use / other assets: no assumed investment growth */
   }
+  function groupByCategory(items, catList, catField, valueField) {
+    var groups = {};
+    catList.forEach(function (c) { groups[c.value] = { label: c.label, value: c.value, items: [], total: 0 }; });
+    items.forEach(function (it) {
+      var key = it[catField] || 'other';
+      if (!groups[key]) groups[key] = { label: key, value: key, items: [], total: 0 };
+      groups[key].items.push(it);
+      groups[key].total += (it[valueField] || 0);
+    });
+    return Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) { return g.items.length > 0; });
+  }
+
   function computeFinancialHealthCheck(a, fr) {
     var nw = fr.netWorthCalc, cf = fr.cashFlowCalc;
 
-    /* vertical analysis: balance sheet (base = total assets) */
-    var assetVertical = a.finance.assets.items.map(function (it) {
-      return { name: it.name, mainCategory: categoryLabel(ASSET_MAIN_CATEGORIES, it.mainCategory), value: it.value, pct: nw.totalAssets > 0 ? it.value / nw.totalAssets : 0 };
+    /* vertical analysis: balance sheet (base = total assets), grouped by main category first */
+    var assetGroups = groupByCategory(a.finance.assets.items, ASSET_MAIN_CATEGORIES, 'mainCategory', 'value').map(function (g) {
+      return {
+        label: g.label, total: g.total, pct: nw.totalAssets > 0 ? g.total / nw.totalAssets : 0,
+        items: g.items.map(function (it) { return { name: it.name, value: it.value, pct: nw.totalAssets > 0 ? it.value / nw.totalAssets : 0 }; })
+      };
     });
-    var liabVertical = a.finance.liabilities.items.map(function (it) {
-      return { name: it.name, mainCategory: categoryLabel(LIABILITY_MAIN_CATEGORIES, it.mainCategory), value: it.balance, pct: nw.totalAssets > 0 ? it.balance / nw.totalAssets : 0 };
+    var liabGroups = groupByCategory(a.finance.liabilities.items, LIABILITY_MAIN_CATEGORIES, 'mainCategory', 'balance').map(function (g) {
+      return {
+        label: g.label, total: g.total, pct: nw.totalAssets > 0 ? g.total / nw.totalAssets : 0,
+        items: g.items.map(function (it) { return { name: it.name, value: it.balance, pct: nw.totalAssets > 0 ? it.balance / nw.totalAssets : 0 }; })
+      };
     });
     var netWorthPct = nw.totalAssets > 0 ? nw.netWorth / nw.totalAssets : 0;
 
@@ -1177,44 +1207,57 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
       var m = incomeMonthlyEquiv(it);
       return { name: it.category, value: m, pct: cf.totalIncome > 0 ? m / cf.totalIncome : 0 };
     });
-    var expenseVertical = a.finance.expenses.regular.items.map(function (it) {
-      var m = C.toMonthly(it.amount, it.frequency);
-      return { name: it.category, value: m, pct: cf.totalIncome > 0 ? m / cf.totalIncome : 0 };
+    var EXPENSE_TYPE_CATEGORIES = [{ value: 'fixed', label: 'ค่าใช้จ่ายประจำ (คงที่)' }, { value: 'variable', label: 'ค่าใช้จ่ายผันแปร' }];
+    var expenseGroups = groupByCategory(a.finance.expenses.regular.items.map(function (it) { return { expenseType: it.expenseType, category: it.category, monthlyValue: C.toMonthly(it.amount, it.frequency) }; }), EXPENSE_TYPE_CATEGORIES, 'expenseType', 'monthlyValue').map(function (g) {
+      return {
+        label: g.label, total: g.total, pct: cf.totalIncome > 0 ? g.total / cf.totalIncome : 0,
+        items: g.items.map(function (it) { return { name: it.category, value: it.monthlyValue, pct: cf.totalIncome > 0 ? it.monthlyValue / cf.totalIncome : 0 }; })
+      };
     });
     var debtPaymentPct = cf.totalIncome > 0 ? cf.totalDebtPayment / cf.totalIncome : 0;
     var totalExpensePct = cf.totalIncome > 0 ? (cf.totalExpenses + cf.totalDebtPayment) / cf.totalIncome : 0;
     var netCashFlowPct = cf.totalIncome > 0 ? cf.netCashFlow / cf.totalIncome : 0;
 
-    /* CFP standard ratios */
+    /* CFP standard ratios — each with an explicit formula, the actual numbers substituted in, and a bar-chart scale for visual comparison against the standard */
     var investmentAssetValue = a.finance.assets.items.filter(function (it) { return it.mainCategory === 'investment'; }).reduce(function (s, it) { return s + it.value; }, 0);
     var ratios = [];
     var liquidityMonths = cf.totalExpenses > 0 ? fr.liquidAssets / cf.totalExpenses : 0;
-    ratios.push({ key: 'liquidity', label: 'อัตราส่วนสภาพคล่อง', value: liquidityMonths, display: liquidityMonths.toFixed(1) + ' เดือน', standard: '3-6 เดือน',
+    ratios.push({ key: 'liquidity', label: 'อัตราส่วนสภาพคล่อง (Liquidity Ratio)', value: liquidityMonths, display: liquidityMonths.toFixed(1) + ' เดือน', standard: '3-6 เดือน', standardMin: 3, standardMax: 6, visualMax: 8,
+      formula: 'สินทรัพย์สภาพคล่อง ÷ ค่าใช้จ่ายเฉลี่ยต่อเดือน',
+      workingOut: fmt(fr.liquidAssets) + ' ÷ ' + fmt(cf.totalExpenses) + ' = ' + liquidityMonths.toFixed(2) + ' เดือน',
       status: liquidityMonths >= 3 ? 'green' : (liquidityMonths >= 1.5 ? 'yellow' : 'red'),
       advice: liquidityMonths < 3 ? ('มีเงินสำรองสภาพคล่องอยู่ ' + liquidityMonths.toFixed(1) + ' เดือน ต่ำกว่ามาตรฐาน 3 เดือน ควรเก็บเงินสดหรือสินทรัพย์สภาพคล่องเพิ่มอีกประมาณ ' + fmt(Math.max(0, 3 * cf.totalExpenses - fr.liquidAssets)) + ' บาท เพื่อรองรับเหตุฉุกเฉิน') : null });
 
     var debtToAsset = nw.totalAssets > 0 ? nw.totalLiabilities / nw.totalAssets : 0;
-    ratios.push({ key: 'debtAsset', label: 'อัตราส่วนหนี้สินต่อสินทรัพย์', value: debtToAsset, display: (debtToAsset * 100).toFixed(1) + '%', standard: 'ไม่เกิน 50%',
+    ratios.push({ key: 'debtAsset', label: 'อัตราส่วนหนี้สินต่อสินทรัพย์ (Debt to Asset Ratio)', value: debtToAsset, display: (debtToAsset * 100).toFixed(1) + '%', standard: 'ไม่เกิน 50%', standardMax: 0.5, visualMax: 1,
+      formula: 'หนี้สินรวม ÷ สินทรัพย์รวม × 100',
+      workingOut: fmt(nw.totalLiabilities) + ' ÷ ' + fmt(nw.totalAssets) + ' × 100 = ' + (debtToAsset * 100).toFixed(2) + '%',
       status: debtToAsset <= 0.5 ? 'green' : (debtToAsset <= 0.7 ? 'yellow' : 'red'),
       advice: debtToAsset > 0.5 ? ('หนี้สินคิดเป็น ' + (debtToAsset * 100).toFixed(1) + '% ของสินทรัพย์รวม สูงกว่ามาตรฐาน 50% ควรเร่งลดหนี้หรือเพิ่มสินทรัพย์ ประมาณ ' + fmt(Math.max(0, nw.totalLiabilities - 0.5 * nw.totalAssets)) + ' บาท เพื่อให้อัตราส่วนกลับสู่เกณฑ์ปลอดภัย') : null });
 
-    ratios.push({ key: 'dti', label: 'ภาระหนี้ต่อรายได้ (DTI)', value: cf.dti, display: (cf.dti * 100).toFixed(1) + '%', standard: 'ไม่เกิน 36%',
+    ratios.push({ key: 'dti', label: 'ภาระหนี้ต่อรายได้ (Debt Service Ratio / DTI)', value: cf.dti, display: (cf.dti * 100).toFixed(1) + '%', standard: 'ไม่เกิน 36%', standardMax: 0.36, visualMax: 0.8,
+      formula: 'ค่างวดหนี้ทั้งหมดต่อเดือน ÷ รายได้รวมต่อเดือน × 100',
+      workingOut: fmt(cf.totalDebtPayment) + ' ÷ ' + fmt(cf.totalIncome) + ' × 100 = ' + (cf.dti * 100).toFixed(2) + '%',
       status: cf.dti <= 0.36 ? 'green' : (cf.dti <= 0.5 ? 'yellow' : 'red'),
       advice: cf.dti > 0.36 ? ('DTI อยู่ที่ ' + (cf.dti * 100).toFixed(1) + '% สูงกว่ามาตรฐาน 36% ควรลดค่างวดหนี้ต่อเดือนลงประมาณ ' + fmt(Math.max(0, cf.totalDebtPayment - 0.36 * cf.totalIncome)) + ' บาท หรือเพิ่มรายได้ ก่อนก่อหนี้เพิ่ม') : null });
 
     var savingsRate = cf.totalIncome > 0 ? cf.netCashFlow / cf.totalIncome : 0;
-    ratios.push({ key: 'savingsRate', label: 'อัตราการออม', value: savingsRate, display: (savingsRate * 100).toFixed(1) + '%', standard: 'อย่างน้อย 10-20%',
+    ratios.push({ key: 'savingsRate', label: 'อัตราการออม (Savings Ratio)', value: savingsRate, display: (savingsRate * 100).toFixed(1) + '%', standard: 'อย่างน้อย 10-20%', standardMin: 0.2, visualMax: 0.5,
+      formula: '(รายได้รวม − ค่าใช้จ่ายรวม − ค่างวดหนี้) ÷ รายได้รวม × 100',
+      workingOut: '(' + fmt(cf.totalIncome) + ' − ' + fmt(cf.totalExpenses) + ' − ' + fmt(cf.totalDebtPayment) + ') ÷ ' + fmt(cf.totalIncome) + ' × 100 = ' + (savingsRate * 100).toFixed(2) + '%',
       status: savingsRate >= 0.2 ? 'green' : (savingsRate >= 0.1 ? 'yellow' : 'red'),
       advice: savingsRate < 0.2 ? ('อัตราการออมอยู่ที่ ' + (savingsRate * 100).toFixed(1) + '% ต่ำกว่ามาตรฐาน 20% ควรลดค่าใช้จ่ายหรือเพิ่มรายได้ เพื่อออมเพิ่มอีกประมาณ ' + fmt(Math.max(0, 0.2 * cf.totalIncome - cf.netCashFlow)) + ' บาท/เดือน') : null });
 
     var investRatio = nw.netWorth > 0 ? investmentAssetValue / nw.netWorth : 0;
-    ratios.push({ key: 'investRatio', label: 'สัดส่วนสินทรัพย์ลงทุนต่อมูลค่าสุทธิ', value: investRatio, display: (investRatio * 100).toFixed(1) + '%', standard: 'ควรมากกว่า 50%',
+    ratios.push({ key: 'investRatio', label: 'สัดส่วนสินทรัพย์ลงทุนต่อมูลค่าสุทธิ (Investment Assets to Net Worth)', value: investRatio, display: (investRatio * 100).toFixed(1) + '%', standard: 'ควรมากกว่า 50%', standardMin: 0.5, visualMax: 1,
+      formula: 'สินทรัพย์เพื่อการลงทุน ÷ มูลค่าสุทธิ × 100',
+      workingOut: fmt(investmentAssetValue) + ' ÷ ' + fmt(nw.netWorth) + ' × 100 = ' + (investRatio * 100).toFixed(2) + '%',
       status: investRatio >= 0.5 ? 'green' : (investRatio >= 0.25 ? 'yellow' : 'red'),
       advice: investRatio < 0.5 ? ('สินทรัพย์เพื่อการลงทุนคิดเป็นเพียง ' + (investRatio * 100).toFixed(1) + '% ของมูลค่าสุทธิ ต่ำกว่ามาตรฐาน 50% ความมั่งคั่งส่วนใหญ่ผูกอยู่กับสินทรัพย์ที่ไม่สร้างผลตอบแทน ควรพิจารณาจัดสรรเงินไปลงทุนเพิ่มเติมเพื่อให้เงินทำงาน') : null });
 
     return {
-      assetVertical: assetVertical, liabVertical: liabVertical, netWorthPct: netWorthPct,
-      incomeVertical: incomeVertical, expenseVertical: expenseVertical, debtPaymentPct: debtPaymentPct, totalExpensePct: totalExpensePct, netCashFlowPct: netCashFlowPct,
+      assetGroups: assetGroups, liabGroups: liabGroups, netWorthPct: netWorthPct,
+      incomeVertical: incomeVertical, expenseGroups: expenseGroups, debtPaymentPct: debtPaymentPct, totalExpensePct: totalExpensePct, netCashFlowPct: netCashFlowPct,
       ratios: ratios
     };
   }
@@ -1635,7 +1678,8 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
 
   /* ================= SECTION RENDERERS ================= */
-  var SECTION_ICONS = { 1: '👤', 2: '🏦', 3: '🎯', 4: '💰', 5: '🎁', 6: '🏥', 7: '📊', 8: '🏦', 9: '📜', 10: '💹', 11: '🏥', 12: '🧮', 13: '🪣', 14: '⚡' };
+  var SECTION_ICONS = { 1: '👤', 2: '🏦', 3: '🎯', 4: '💰', 5: '🎁', 6: '🏥', 7: '📊', 8: '🏦', 9: '📜', 10: '💹', 11: '🏥', 12: '🧮', 13: '🪣', 14: '⚡',
+    102: '💵', 103: '🧾', 104: '💎', 105: '💳', 109: '🏆', 110: '🎓', 111: '🏠', 112: '📈', 113: '🛡️', 120: '🩺' };
   function sectionWrap(num, title, subtitle, tone, open, bodyHtml, filled) {
     return '<div class="section tone-' + tone + (open ? ' open' : '') + (filled ? ' filled' : '') + '">' +
       '<button class="section-head" type="button" data-action="toggleSection" data-num="' + num + '">' +
@@ -1956,15 +2000,18 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
   }
   function renderFinancialHealthCheckBox(a, fr) {
     var hc = computeFinancialHealthCheck(a, fr);
-    function bsRows(list) {
-      if (!list.length) return '<div class="entry-note" style="padding:6px 0">ยังไม่มีรายการ</div>';
-      return list.map(function (row) {
-        return '<div class="tacct-row"><span>' + esc(row.name) + ' <span class="va-tag">' + esc(row.mainCategory) + '</span></span><span>' + fmt(row.value) + ' บาท <span class="va-pct">(' + (row.pct * 100).toFixed(1) + '%)</span></span></div>';
+    function groupBlock(groups, unitSuffix) {
+      if (!groups.length) return '<div class="entry-note" style="padding:6px 0">ยังไม่มีรายการ</div>';
+      return groups.map(function (g) {
+        return '<div class="tacct-cat-block">' +
+          '<div class="tacct-cat-row"><span>' + esc(g.label) + '</span><span>' + fmt(g.total) + (unitSuffix || ' บาท') + ' <span class="va-pct">(' + (g.pct * 100).toFixed(1) + '%)</span></span></div>' +
+          g.items.map(function (it) { return '<div class="tacct-row tacct-row-sub"><span>' + esc(it.name) + '</span><span>' + fmt(it.value) + (unitSuffix || ' บาท') + ' <span class="va-pct">(' + (it.pct * 100).toFixed(1) + '%)</span></span></div>'; }).join('') +
+          '</div>';
       }).join('');
     }
     var bsHtml = '<div class="tacct-wrap">' +
-      '<div class="tacct-col tacct-left"><div class="tacct-head">สินทรัพย์</div>' + bsRows(hc.assetVertical) + '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalAssets) + ' บาท (100%)</div></div>' +
-      '<div class="tacct-col tacct-right"><div class="tacct-head">หนี้สิน + ส่วนของทุน</div>' + bsRows(hc.liabVertical) +
+      '<div class="tacct-col tacct-left"><div class="tacct-head">สินทรัพย์</div>' + groupBlock(hc.assetGroups) + '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalAssets) + ' บาท (100%)</div></div>' +
+      '<div class="tacct-col tacct-right"><div class="tacct-head">หนี้สิน + ส่วนของทุน</div>' + groupBlock(hc.liabGroups) +
       '<div class="tacct-row tacct-networth-row"><span>ส่วนของทุน (Net Worth)</span><span>' + fmt(fr.netWorthCalc.netWorth) + ' บาท (' + (hc.netWorthPct * 100).toFixed(1) + '%)</span></div>' +
       '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalLiabilities + fr.netWorthCalc.netWorth) + ' บาท (100%)</div></div>' +
       '</div>';
@@ -1977,19 +2024,36 @@ if (typeof module !== 'undefined') { module.exports = RPCalc; }
     }
     var cfHtml = '<div class="tacct-wrap">' +
       '<div class="tacct-col tacct-left"><div class="tacct-head">รายได้</div>' + cfRows(hc.incomeVertical) + '<div class="tacct-total">รวมรายได้: ' + fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน (100%)</div></div>' +
-      '<div class="tacct-col tacct-right"><div class="tacct-head">ค่าใช้จ่าย + หนี้</div>' + cfRows(hc.expenseVertical) +
+      '<div class="tacct-col tacct-right"><div class="tacct-head">ค่าใช้จ่าย + หนี้</div>' + groupBlock(hc.expenseGroups, ' บาท/ด.') +
       '<div class="tacct-row"><span>ค่างวดหนี้ทั้งหมด</span><span>' + fmt(fr.cashFlowCalc.totalDebtPayment) + ' บาท/เดือน (' + (hc.debtPaymentPct * 100).toFixed(1) + '%)</span></div>' +
       '<div class="tacct-total">รวมรายจ่าย+หนี้: ' + fmt(fr.cashFlowCalc.totalExpenses + fr.cashFlowCalc.totalDebtPayment) + ' บาท (' + (hc.totalExpensePct * 100).toFixed(1) + '% ของรายได้รวม)</div></div>' +
       '</div>' +
       '<div class="note" style="text-align:center;margin-top:10px">เงินคงเหลือสุทธิ: ' + fmt(fr.cashFlowCalc.netCashFlow) + ' บาท/เดือน (' + (hc.netCashFlowPct * 100).toFixed(1) + '% ของรายได้รวม)</div>';
 
+    function ratioBar(rr) {
+      var actualPct = Math.min(100, Math.max(0, (rr.value / rr.visualMax) * 100));
+      var markers = [];
+      if (rr.standardMin != null) markers.push(Math.min(100, (rr.standardMin / rr.visualMax) * 100));
+      if (rr.standardMax != null) markers.push(Math.min(100, (rr.standardMax / rr.visualMax) * 100));
+      var markerHtml = markers.map(function (m) { return '<div class="ratio-bar-marker" style="left:' + m + '%"></div>'; }).join('');
+      return '<div class="ratio-bar-track">' +
+        '<div class="ratio-bar-fill ratio-bar-' + rr.status + '" style="width:' + actualPct + '%"></div>' +
+        markerHtml +
+        '</div>' +
+        '<div class="ratio-bar-legend"><span>0</span><span>มาตรฐาน: ' + esc(rr.standard) + '</span></div>';
+    }
     var ratioCards = hc.ratios.map(function (rr) {
-      return '<div class="ratio-card ratio-' + rr.status + '"><div class="ratio-label">' + esc(rr.label) + '</div><div class="ratio-value">' + rr.display + '</div><div class="ratio-standard">มาตรฐาน: ' + esc(rr.standard) + '</div>' +
+      return '<div class="ratio-card ratio-' + rr.status + '">' +
+        '<div class="ratio-label">' + esc(rr.label) + '</div>' +
+        '<div class="ratio-formula">สูตร: ' + esc(rr.formula) + '</div>' +
+        '<div class="ratio-workingout">วิธีทำ: ' + esc(rr.workingOut) + '</div>' +
+        '<div class="ratio-value">' + rr.display + '</div>' +
+        ratioBar(rr) +
         (rr.advice ? '<div class="ratio-advice">' + esc(rr.advice) + '</div>' : '<div class="ratio-advice ratio-advice-ok">✓ อยู่ในเกณฑ์มาตรฐาน</div>') +
         '</div>';
     }).join('');
 
-    return '<div class="subblock" style="margin-top:0"><div class="subblock-title">งบดุล + วิเคราะห์แนวตั้ง (สัดส่วนต่อสินทรัพย์รวม)</div>' + bsHtml + '</div>' +
+    return '<div class="subblock" style="margin-top:0"><div class="subblock-title">งบดุล + วิเคราะห์แนวตั้ง (แยกหมวดหลักก่อน แล้วลงรายละเอียดรายการ)</div>' + bsHtml + '</div>' +
       '<div class="subblock"><div class="subblock-title">งบกระแสเงินสด + วิเคราะห์แนวตั้ง (สัดส่วนต่อรายได้รวม)</div>' + cfHtml + '</div>' +
       '<div class="subblock"><div class="subblock-title">วิเคราะห์อัตราส่วนทางการเงินตามหลัก CFP</div><div class="ratio-grid">' + ratioCards + '</div></div>';
   }
