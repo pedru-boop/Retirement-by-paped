@@ -11,6 +11,13 @@
   function fmt(n) { if (n === null || n === undefined || isNaN(n)) return '-'; return Math.round(n).toLocaleString('en-US'); }
   function incomeMonthlyEquiv(it) { return C.toMonthly(it.amount, it.frequency); }
   function incomeEffectiveGrowth(it) { return C.effectiveAnnualGrowth(it.growthRate || 0, it.adjustFrequencyYears || 1); }
+  function sumCurrentInvestments(inv) { return (inv.currentInvestments.items || []).reduce(function (s, it) { return s + (it.amount || 0); }, 0); }
+  function sumRecurringInvestmentsMonthly(inv) { return (inv.recurringInvestments.items || []).reduce(function (s, it) { return s + C.toMonthly(it.amount, it.frequency); }, 0); }
+  function weightedAvgReturn(items) {
+    var total = items.reduce(function (s, it) { return s + (it.amount || 0); }, 0);
+    if (total <= 0) return 0;
+    return items.reduce(function (s, it) { return s + (it.amount || 0) * (it.returnRate || 0); }, 0) / total;
+  }
   function fmtSigned(n) { if (!n) return '-'; return (n > 0 ? '+' : '') + fmt(n); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function esc(s) {
@@ -62,7 +69,7 @@
           goals: { items: [] },
           education: { items: [] },
           majorPurchases: { items: [] },
-          investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
+          investment: { currentInvestments: { items: [] }, recurringInvestments: { items: [] }, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
           insurance: {
             life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 },
             otherPolicies: { items: [] }
@@ -112,7 +119,7 @@
         goals: { items: [{ id: uid(), name: 'ซื้อรถใหม่ (ตัวอย่าง)', category: 'รถ', targetAmountToday: 800000, targetAge: 40, currentSavings: 50000, expectedReturn: 0.04, inflationRate: 0.03 }] },
         education: { items: [] },
         majorPurchases: { items: [{ id: uid(), name: 'บ้านหลังแรก (ตัวอย่าง)', price: 3000000, downPaymentPercent: 0.1, interestRate: 0.055, loanTermYears: 30, extraCosts: 50000 }] },
-        investment: { currentAmount: 200000, monthlyAmount: 5000, years: 15, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
+        investment: { currentInvestments: { items: [{ id: uid(), type: 'กองทุนรวมหุ้น (ตัวอย่าง)', amount: 200000, returnRate: 0.07 }] }, recurringInvestments: { items: [{ id: uid(), type: 'DCA กองทุนรวม (ตัวอย่าง)', frequency: 'monthly', amount: 5000, returnRate: 0.07 }] }, years: 15, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
         insurance: {
           life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 180000, finalExpenses: 100000, legacyAmount: 500000, existingCoverage: 1000000 },
           otherPolicies: { items: [
@@ -202,7 +209,7 @@
       if (loaded.buckets && Array.isArray(loaded.buckets.list) && loaded.buckets.list.length) base.buckets = loaded.buckets;
       if (typeof loaded.stressTestDelta === 'number') base.stressTestDelta = loaded.stressTestDelta;
       if (loaded.finance) {
-        base.finance = base.finance || { income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] }, investment: { currentAmount: 0, monthlyAmount: 0, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }, insurance: { life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 }, otherPolicies: { items: [] } } };
+        base.finance = base.finance || { income: { items: [] }, expenses: { regular: { items: [] }, irregular: { items: [] } }, assets: { items: [] }, liabilities: { items: [] }, emergencyFund: { targetMonths: 6 }, cashFlowSurplusReturn: 0.02, goals: { items: [] }, education: { items: [] }, majorPurchases: { items: [] }, investment: { currentInvestments: { items: [] }, recurringInvestments: { items: [] }, years: 10, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } }, insurance: { life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 }, otherPolicies: { items: [] } } };
         if (loaded.finance.personal) {} /* migrated above into base.personal directly */
         if (loaded.finance.income && Array.isArray(loaded.finance.income.items)) {
           base.finance.income = { items: loaded.finance.income.items.map(function (it) {
@@ -240,7 +247,16 @@
         if (loaded.finance.goals && Array.isArray(loaded.finance.goals.items)) base.finance.goals = { items: loaded.finance.goals.items };
         if (loaded.finance.education && Array.isArray(loaded.finance.education.items)) base.finance.education = { items: loaded.finance.education.items };
         if (loaded.finance.majorPurchases && Array.isArray(loaded.finance.majorPurchases.items)) base.finance.majorPurchases = { items: loaded.finance.majorPurchases.items };
-        if (loaded.finance.investment) base.finance.investment = mergeObj(base.finance.investment, loaded.finance.investment);
+        if (loaded.finance.investment) {
+          var li = loaded.finance.investment;
+          if (li.currentInvestments && Array.isArray(li.currentInvestments.items)) base.finance.investment.currentInvestments = { items: li.currentInvestments.items };
+          else if (typeof li.currentAmount === 'number' && li.currentAmount > 0) base.finance.investment.currentInvestments = { items: [{ id: uid(), type: 'เงินลงทุน (ย้ายจากข้อมูลเดิม)', amount: li.currentAmount, returnRate: 0.05 }] };
+          if (li.recurringInvestments && Array.isArray(li.recurringInvestments.items)) base.finance.investment.recurringInvestments = { items: li.recurringInvestments.items };
+          else if (typeof li.monthlyAmount === 'number' && li.monthlyAmount > 0) base.finance.investment.recurringInvestments = { items: [{ id: uid(), type: 'เงินลงทุนต่อเนื่อง (ย้ายจากข้อมูลเดิม)', frequency: 'monthly', amount: li.monthlyAmount, returnRate: 0.05 }] };
+          if (typeof li.years === 'number') base.finance.investment.years = li.years;
+          if (li.riskLevel) base.finance.investment.riskLevel = li.riskLevel;
+          if (li.allocation) base.finance.investment.allocation = mergeObj(base.finance.investment.allocation, li.allocation);
+        }
         if (loaded.finance.insurance) {
           base.finance.insurance = base.finance.insurance || { life: { yearsOfSupport: 10, familyLivingExpenseAnnual: 0, finalExpenses: 100000, legacyAmount: 0, existingCoverage: 0 }, otherPolicies: { items: [] } };
           if (loaded.finance.insurance.life) base.finance.insurance.life = mergeObj(base.finance.insurance.life, loaded.finance.insurance.life);
@@ -423,7 +439,7 @@
     });
 
     /* การออม (10) — regular investment contribution / income (single source: Investment section) */
-    var totalMonthlySaving = f.investment.monthlyAmount || 0;
+    var totalMonthlySaving = sumRecurringInvestmentsMonthly(f.investment);
     var savingsRatioIncome = fr.cashFlowCalc.totalIncome > 0 ? totalMonthlySaving / fr.cashFlowCalc.totalIncome : 0;
     cats.push({
       key: 'savings', label: 'การออม', max: 10,
@@ -433,12 +449,13 @@
     });
 
     /* การลงทุน (15) — has a plan with allocation + ongoing contribution */
-    var hasInvestPlan = f.investment.currentAmount > 0 || f.investment.monthlyAmount > 0;
-    var investScore = !hasInvestPlan ? 0 : (f.investment.currentAmount > 0 && f.investment.monthlyAmount > 0 ? 15 : 8);
+    var currentInvestAmt = sumCurrentInvestments(f.investment);
+    var hasInvestPlan = currentInvestAmt > 0 || totalMonthlySaving > 0;
+    var investScore = !hasInvestPlan ? 0 : (currentInvestAmt > 0 && totalMonthlySaving > 0 ? 15 : 8);
     cats.push({
       key: 'investment', label: 'การลงทุน', max: 15,
       score: investScore,
-      note: hasInvestPlan ? 'มีเงินลงทุน ' + fmt(f.investment.currentAmount) + ' บาท และลงทุนเพิ่ม ' + fmt(f.investment.monthlyAmount) + ' บาท/เดือน' : 'ยังไม่ได้เริ่มลงทุนอย่างสม่ำเสมอ',
+      note: hasInvestPlan ? 'มีเงินลงทุน ' + fmt(currentInvestAmt) + ' บาท และลงทุนเพิ่ม ' + fmt(totalMonthlySaving) + ' บาท/เดือน' : 'ยังไม่ได้เริ่มลงทุนอย่างสม่ำเสมอ',
       advice: !hasInvestPlan ? 'ยังไม่มีแผนการลงทุนระยะยาว — ลองเริ่มลงทุนสม่ำเสมอแม้จำนวนไม่มาก' : null
     });
 
@@ -655,9 +672,20 @@
     var ASSET_CLASS_ASSUMPTIONS = C.ASSET_CLASS_ASSUMPTIONS;
     var blendAllocation = C.blendAllocation;
     var inv = f.investment;
+    var invCurrentTotal = sumCurrentInvestments(inv);
+    var invRecurringMonthly = sumRecurringInvestmentsMonthly(inv);
+    var invCurrentWeightedReturn = weightedAvgReturn(inv.currentInvestments.items || []);
+    var invRecurringWeightedReturn = weightedAvgReturn(inv.recurringInvestments.items || []);
+    var currentInvestmentsCalc = (inv.currentInvestments.items || []).map(function (it) {
+      return { id: it.id, type: it.type, amount: it.amount, returnRate: it.returnRate, fv: C.fv(it.amount, it.returnRate, inv.years) };
+    });
+    var recurringInvestmentsCalc = (inv.recurringInvestments.items || []).map(function (it) {
+      var annualAmt = C.toMonthly(it.amount, it.frequency) * 12;
+      return { id: it.id, type: it.type, frequency: it.frequency, amount: it.amount, returnRate: it.returnRate, fv: C.annuityFV(annualAmt, it.returnRate, inv.years, false) };
+    });
     var allocSum = Object.keys(inv.allocation).reduce(function (s, k) { return s + (inv.allocation[k] || 0); }, 0);
     var customBlend = blendAllocation(inv.allocation);
-    var customFV = C.fv(inv.currentAmount, customBlend.blendedReturn, inv.years) + C.annuityFV(inv.monthlyAmount * 12, customBlend.blendedReturn, inv.years, false);
+    var customFV = C.fv(invCurrentTotal, customBlend.blendedReturn, inv.years) + C.annuityFV(invRecurringMonthly * 12, customBlend.blendedReturn, inv.years, false);
     var RISK_PRESETS = [
       { key: 'conservative', label: 'Conservative (เน้นความมั่นคง)', allocation: { cash: 0.4, bonds: 0.4, stocks: 0.15, alternatives: 0.05 } },
       { key: 'moderate', label: 'Moderate (สมดุล)', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
@@ -665,7 +693,7 @@
     ];
     var scenarioCalc = RISK_PRESETS.map(function (preset) {
       var b = blendAllocation(preset.allocation);
-      var fvAmt = C.fv(inv.currentAmount, b.blendedReturn, inv.years) + C.annuityFV(inv.monthlyAmount * 12, b.blendedReturn, inv.years, false);
+      var fvAmt = C.fv(invCurrentTotal, b.blendedReturn, inv.years) + C.annuityFV(invRecurringMonthly * 12, b.blendedReturn, inv.years, false);
       return { key: preset.key, label: preset.label, allocation: preset.allocation, blendedReturn: b.blendedReturn, blendedVol: b.blendedVol, futureValue: fvAmt };
     });
 
@@ -684,7 +712,7 @@
       return { id: p.id, type: p.type, currentCoverage: p.currentCoverage, recommendedCoverage: p.recommendedCoverage, gap: Math.max(0, p.recommendedCoverage - p.currentCoverage) };
     });
 
-    return { netWorthCalc: netWorthCalc, cashFlowCalc: cashFlowCalc, liquidAssets: liquidAssets, emergencyCalc: emergencyCalc, projections: projections, goalsCalc: goalsCalc, educationCalc: educationCalc, purchasesCalc: purchasesCalc, assetClassAssumptions: ASSET_CLASS_ASSUMPTIONS, allocSum: allocSum, customBlend: customBlend, customFV: customFV, scenarioCalc: scenarioCalc, lifeInsuranceCalc: lifeInsuranceCalc, otherPoliciesCalc: otherPoliciesCalc };
+    return { netWorthCalc: netWorthCalc, cashFlowCalc: cashFlowCalc, liquidAssets: liquidAssets, emergencyCalc: emergencyCalc, projections: projections, goalsCalc: goalsCalc, educationCalc: educationCalc, purchasesCalc: purchasesCalc, assetClassAssumptions: ASSET_CLASS_ASSUMPTIONS, allocSum: allocSum, customBlend: customBlend, customFV: customFV, scenarioCalc: scenarioCalc, lifeInsuranceCalc: lifeInsuranceCalc, otherPoliciesCalc: otherPoliciesCalc, currentInvestmentsCalc: currentInvestmentsCalc, recurringInvestmentsCalc: recurringInvestmentsCalc, invCurrentTotal: invCurrentTotal, invRecurringMonthly: invRecurringMonthly, invCurrentWeightedReturn: invCurrentWeightedReturn, invRecurringWeightedReturn: invRecurringWeightedReturn };
   }
 
   function computeAll(a) {
@@ -793,19 +821,20 @@
     var currentSavingsFV_asis = currentItems.reduce(function (s, it) { return s + it.fv; }, 0);
     var currentSavingsFV_ifPlanned = C.fvAlongGlide(currentTotalAmount, p.currentAge, p.retireAge, segs, portfolio.flatReturn);
 
-    /* regular (recurring) savings: single source of truth is the Investment section's monthly contribution,
+    /* regular (recurring) savings: single source of truth is the Investment section's recurring-investment table,
        compounding at its own asset-allocation blended return */
     var invBlendForRetirement = C.blendAllocation(a.finance.investment.allocation);
     var regularItems = [];
-    if (a.finance.investment.monthlyAmount > 0) {
-      var annualAmt = a.finance.investment.monthlyAmount * 12;
+    var recurringMonthlyTotal = sumRecurringInvestmentsMonthly(a.finance.investment);
+    if (recurringMonthlyTotal > 0) {
+      var annualAmt = recurringMonthlyTotal * 12;
       var due = false;
       var fv = C.annuityFV(annualAmt, invBlendForRetirement.blendedReturn, yearsToRetire, due);
       var regPath = [];
       for (var yy2 = 0; yy2 <= yearsToRetire; yy2++) {
         regPath.push({ year: yy2, age: p.currentAge + yy2, beYear: p.currentYearAD + 543 + yy2, contribution: yy2 === 0 ? 0 : annualAmt, balance: C.annuityFV(annualAmt, invBlendForRetirement.blendedReturn, yy2, due) });
       }
-      regularItems.push({ id: 'investment-monthly', frequency: 'monthly', amount: a.finance.investment.monthlyAmount, timing: 'end', returnRate: invBlendForRetirement.blendedReturn, annualAmt: annualAmt, fv: fv, path: regPath });
+      regularItems.push({ id: 'investment-monthly', frequency: 'monthly', amount: recurringMonthlyTotal, timing: 'end', returnRate: invBlendForRetirement.blendedReturn, annualAmt: annualAmt, fv: fv, path: regPath });
     }
     var savingsRegularFV = regularItems.reduce(function (s, it) { return s + it.fv; }, 0);
 
@@ -1158,10 +1187,45 @@
       { label: 'ความผันผวนโดยประมาณ', render: function (row) { return (row.blendedVol * 100).toFixed(2) + '%'; } },
       { label: 'มูลค่าคาดการณ์ในอนาคต', render: function (row) { return fmt(row.futureValue) + ' บาท'; } }
     ];
-    return '<div class="grid-3">' +
-      field('เงินลงทุนปัจจุบัน', ['finance', 'investment', 'currentAmount'], inv.currentAmount, { type: 'money', suffix: 'บาท' }) +
-      field('เงินลงทุนเพิ่ม', ['finance', 'investment', 'monthlyAmount'], inv.monthlyAmount, { type: 'money', suffix: 'บาท/เดือน' }) +
-      field('ระยะเวลาลงทุน', ['finance', 'investment', 'years'], inv.years, { suffix: 'ปี' }) +
+    var currentItems = inv.currentInvestments.items;
+    var currentTable = entryTable({
+      headers: ['ประเภทการลงทุน', 'จำนวนเงิน (บาท)', 'ผลตอบแทน (%/ปี)'],
+      colTemplate: '1.4fr 1fr 1fr',
+      rows: currentItems.map(function (it, i) { return { it: it, idx: i }; }),
+      rowCells: function (row) {
+        var it = row.it, i = row.idx;
+        return [
+          rawInput(['finance', 'investment', 'currentInvestments', 'items', i, 'type'], it.type, { type: 'text' }),
+          rawInput(['finance', 'investment', 'currentInvestments', 'items', i, 'amount'], it.amount, { type: 'money' }),
+          rawInput(['finance', 'investment', 'currentInvestments', 'items', i, 'returnRate'], it.returnRate, { type: 'percent' })
+        ];
+      },
+      addAction: 'addCurrentInvestment', addLabel: 'เพิ่มเงินลงทุนปัจจุบัน', delAction: 'delCurrentInvestment',
+      emptyMsg: 'เช่น กองทุนรวมหุ้น, หุ้นรายตัว, พันธบัตร, ทองคำ, คริปโต — ระบุได้หลายรายการ'
+    });
+    var recurringItems = inv.recurringInvestments.items;
+    var recurringTable = entryTable({
+      headers: ['ความถี่', 'ประเภทการลงทุน', 'จำนวนเงิน', 'ผลตอบแทน (%/ปี)'],
+      colTemplate: '1fr 1.3fr 1fr 1fr',
+      rows: recurringItems.map(function (it, i) { return { it: it, idx: i }; }),
+      rowCells: function (row) {
+        var it = row.it, i = row.idx;
+        return [
+          rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'frequency'], it.frequency, { type: 'select', options: [{ value: 'monthly', label: 'ทุกเดือน' }, { value: 'semiannual', label: 'ทุก 6 เดือน' }, { value: 'annual', label: 'ทุกปี' }] }),
+          rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'type'], it.type, { type: 'text' }),
+          rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'amount'], it.amount, { type: 'money' }),
+          rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'returnRate'], it.returnRate, { type: 'percent' })
+        ];
+      },
+      addAction: 'addRecurringInvestment', addLabel: 'เพิ่มเงินลงทุนต่อเนื่อง', delAction: 'delRecurringInvestment',
+      emptyMsg: 'เช่น DCA กองทุนรวมทุกเดือน, ซื้อหุ้นปันผลทุก 6 เดือน — ระบุได้หลายรายการ'
+    });
+    return '<div class="subblock" style="margin-top:0"><div class="subblock-title">เงินลงทุนที่มีในปัจจุบัน</div>' + currentTable +
+      metricCard('รวมเงินลงทุนปัจจุบัน', fmt(fr.invCurrentTotal) + ' บาท', 'navy') + '</div>' +
+      '<div class="subblock"><div class="subblock-title">เงินลงทุนอย่างต่อเนื่อง</div>' + recurringTable +
+      metricCard('รวมเงินลงทุนต่อเนื่อง', fmt(fr.invRecurringMonthly) + ' บาท/เดือน', 'navy') + '</div>' +
+      '<div class="grid-2">' +
+      field('ระยะเวลาลงทุน (สำหรับคาดการณ์ด้านล่าง)', ['finance', 'investment', 'years'], inv.years, { suffix: 'ปี' }) +
       '</div>' +
       '<div class="subblock"><div class="subblock-title">สัดส่วนการลงทุน (Asset Allocation) ของคุณ</div>' +
       '<div class="note" style="margin-bottom:10px">' + presetBtns + '</div>' +
@@ -1367,31 +1431,31 @@
 
   function renderFinancialHealthCheckBox(a, fr) {
     var hc = computeFinancialHealthCheck(a, fr);
-    function groupBlock(groups, unitSuffix) {
+    function groupBlock(groups) {
       if (!groups.length) return '<div class="entry-note" style="padding:6px 0">ยังไม่มีรายการ</div>';
       return groups.map(function (g) {
         return '<div class="tacct-cat-block">' +
-          '<div class="tacct-cat-row"><span>' + esc(g.label) + '</span><span>' + fmt(g.total) + (unitSuffix || ' บาท') + ' <span class="va-pct">(' + (g.pct * 100).toFixed(1) + '%)</span></span></div>' +
-          g.items.map(function (it) { return '<div class="tacct-row tacct-row-sub"><span>' + esc(it.name) + '</span><span>' + fmt(it.value) + (unitSuffix || ' บาท') + ' <span class="va-pct">(' + (it.pct * 100).toFixed(1) + '%)</span></span></div>'; }).join('') +
+          '<div class="tacct-cat-row"><span>' + esc(g.label) + '</span><span>' + fmt(g.total) + ' <span class="va-pct">(' + (g.pct * 100).toFixed(1) + '%)</span></span></div>' +
+          g.items.map(function (it) { return '<div class="tacct-row tacct-row-sub"><span>' + esc(it.name) + '</span><span>' + fmt(it.value) + ' <span class="va-pct">(' + (it.pct * 100).toFixed(1) + '%)</span></span></div>'; }).join('') +
           '</div>';
       }).join('');
     }
-    var bsHtml = '<div class="tacct-wrap">' +
-      '<div class="tacct-col tacct-left"><div class="tacct-head">สินทรัพย์</div>' + groupBlock(hc.assetGroups) + '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalAssets) + ' บาท (100%)</div></div>' +
+    var bsHtml = '<div class="entry-note" style="text-align:right;padding:0 0 6px">หน่วย: บาท</div><div class="tacct-wrap">' +
+      '<div class="tacct-col tacct-left"><div class="tacct-head">สินทรัพย์</div>' + groupBlock(hc.assetGroups) + '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalAssets) + ' (100%)</div></div>' +
       '<div class="tacct-col tacct-right"><div class="tacct-head">หนี้สิน + ส่วนของทุน</div>' + groupBlock(hc.liabGroups) +
-      '<div class="tacct-row tacct-networth-row"><span>ส่วนของทุน (Net Worth)</span><span>' + fmt(fr.netWorthCalc.netWorth) + ' บาท (' + (hc.netWorthPct * 100).toFixed(1) + '%)</span></div>' +
-      '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalLiabilities + fr.netWorthCalc.netWorth) + ' บาท (100%)</div></div>' +
+      '<div class="tacct-row tacct-networth-row"><span>ส่วนของทุน (Net Worth)</span><span>' + fmt(fr.netWorthCalc.netWorth) + ' (' + (hc.netWorthPct * 100).toFixed(1) + '%)</span></div>' +
+      '<div class="tacct-total">รวม: ' + fmt(fr.netWorthCalc.totalLiabilities + fr.netWorthCalc.netWorth) + ' (100%)</div></div>' +
       '</div>';
 
     function cfRows(list) {
       if (!list.length) return '<div class="entry-note" style="padding:6px 0">ยังไม่มีรายการ</div>';
       return list.map(function (row) {
-        return '<div class="tacct-row"><span>' + esc(row.name) + '</span><span>' + fmt(row.value) + ' บาท/ด. (' + (row.pct * 100).toFixed(1) + '%)</span></div>';
+        return '<div class="tacct-row"><span>' + esc(row.name) + '</span><span>' + fmt(row.value) + ' (' + (row.pct * 100).toFixed(1) + '%)</span></div>';
       }).join('');
     }
-    var cfHtml = '<div class="tacct-wrap">' +
-      '<div class="tacct-col tacct-left"><div class="tacct-head">รายได้</div>' + cfRows(hc.incomeVertical) + '<div class="tacct-total">รวมรายได้: ' + fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน (100%)</div></div>' +
-      '<div class="tacct-col tacct-right"><div class="tacct-head">ค่าใช้จ่าย</div>' + groupBlock(hc.expenseGroups, ' บาท/ด.') +
+    var cfHtml = '<div class="entry-note" style="text-align:right;padding:0 0 6px">หน่วย: บาท/เดือน</div><div class="tacct-wrap">' +
+      '<div class="tacct-col tacct-left"><div class="tacct-head">รายได้</div>' + cfRows(hc.incomeVertical) + '<div class="tacct-total">รวมรายได้: ' + fmt(fr.cashFlowCalc.totalIncome) + ' (100%)</div></div>' +
+      '<div class="tacct-col tacct-right"><div class="tacct-head">ค่าใช้จ่าย</div>' + groupBlock(hc.expenseGroups) +
       '<div class="tacct-total">รวมค่าใช้จ่าย: ' + fmt(fr.cashFlowCalc.totalExpenses + fr.cashFlowCalc.totalDebtPayment) + ' บาท (' + (hc.totalExpensePct * 100).toFixed(1) + '%)</div></div>' +
       '</div>' +
       '<div class="net-cashflow-highlight net-cashflow-' + (fr.cashFlowCalc.netCashFlow >= 0 ? 'positive' : 'negative') + '">' +
@@ -2254,7 +2318,7 @@
       [109, 'เป้าหมายทางการเงินทั่วไป', '', 'navy', renderFinanceGoals(a, fr), a.finance.goals.items.length > 0, true],
       [110, 'การศึกษาบุตร', '', 'navy', renderFinanceEducation(a, fr), a.finance.education.items.length > 0, true],
       [111, 'แผนซื้อบ้าน/รถ', '', 'navy', renderMajorPurchases(a, fr), a.finance.majorPurchases.items.length > 0, true],
-      [112, 'การลงทุน (Asset Allocation & Risk)', '', 'navy', renderInvestment(a, fr), (a.finance.investment.currentAmount > 0 || a.finance.investment.monthlyAmount > 0), true],
+      [112, 'การลงทุน (Asset Allocation & Risk)', '', 'navy', renderInvestment(a, fr), (a.finance.investment.currentInvestments.items.length > 0 || a.finance.investment.recurringInvestments.items.length > 0), true],
       [113, 'ประกันและการบริหารความเสี่ยง', '', 'navy', renderInsurance(a, fr), (a.finance.insurance.life.existingCoverage > 0 || a.finance.insurance.otherPolicies.items.length > 0), true]
     ].filter(function (s) { return s[6]; });
     var calcSections = [
@@ -2466,6 +2530,10 @@
       a.finance.investment.riskLevel = t.dataset.key;
       saveStore(); render();
     }
+    else if (action === 'addCurrentInvestment') { a.finance.investment.currentInvestments.items.push({ id: uid(), type: 'การลงทุนใหม่', amount: 0, returnRate: 0.05 }); saveStore(); render(); }
+    else if (action === 'delCurrentInvestment') { a.finance.investment.currentInvestments.items.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'addRecurringInvestment') { a.finance.investment.recurringInvestments.items.push({ id: uid(), type: 'การลงทุนใหม่', frequency: 'monthly', amount: 0, returnRate: 0.05 }); saveStore(); render(); }
+    else if (action === 'delRecurringInvestment') { a.finance.investment.recurringInvestments.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addOtherPolicy') { a.finance.insurance.otherPolicies.items.push({ id: uid(), type: 'กรมธรรม์ใหม่', currentCoverage: 0, recommendedCoverage: 0 }); saveStore(); render(); }
     else if (action === 'delOtherPolicy') { a.finance.insurance.otherPolicies.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'clearCurrentCase') {
