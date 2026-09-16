@@ -3,6 +3,7 @@
    ============================================================ */
 (function () {
   'use strict';
+  var APP_VERSION = 'v1.0 — จัดระเบียบแท็บเป้าหมาย + เชนอายุเบี้ยประกันอัตโนมัติ';
   var LOGO_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAABBR0lEQVR42m29d5gcV5U+/J5zb1WnyaOZ0SjLtoJzzsgRB4INNpjs3WXJOXmX38JiTM4LeA3sEozBYFjAGGPAGeeIs2VZtixLVhpJk3s6Vt17zvfHreoRPJ8ePfNM91TPdJ0++bznvSTiAYICBACAAph/oOqVIgMA8Hi2rre3cJfiKcU2UCLECvYgB+PAogRYwECNggAigEAKQMEgghAAIgIbpewvkRKEQAwQlMGWiPOHBGVYBrMCBAKgHH41gQFDMAQGLIEABmJCBESAVURADDKqC4AlhDXQg0AHEDjckII6by97o9mNh3snIhLvAYAIqqAgmiAjeCVDIEI9wbUTenUTDzDVHWEOmBaa81QXJEJeWTxDGMIkRGoMsYFCQaoEArIbZsAQMYEUBDJQgJiUCUREIENgKIfrCYaIoIaIAVJmgIlIQWBD4eLwDFtiBjMMwxowg0ljg5i5YKjC1M22i7kCqihGoAcTjiLqBaAqICLNZUOZlmSPibz3lD+5j/jghCID5/HDrfpfE9isjIZil7O72lptI00UAhYwwEosZMAm/CUhJgp3BYAVBDCRIRiEm9R9blI5aAVABCZAg2jAIEPMUKZMXhwuAxGYQZYp6Awrh4sNjAnCVWa1rMwwVo1BbKkcmcE4HrWFUYq6lIqEtdDjicqAh3J237kIFCCFEmUmtq+NqYqSNbh/t35sPR5uMGpqt7expybNhlIK40EKBojIMKAgkCUyAIKAkD3PIEPEpOGjZoRbUkMcbtUSmBUKCpaDYCdkGYaYQZmAiBhgAgMEJpDJHgbdDNI3BpwJC8RglsjAGoCFSGOWKEKxwN1xtCIuH83lxbAEWQNaSdB/1JBMSCQi+Y803B9AzPjmo/If68m12O5q6a4ZSevgBHBBHUAKJjDBcKaaBmANwgKFtx68goa7BWUfvhLIEFnOrmHV/CUAUbjSBPsiGITLguoBqgS2xIaDw4IFUbDcoD5qWNkQjBqGMUqWwGJYY9bYSvjaVabRYnwE959JFYbOAicQsUIyL6e5zwk+KJebaOYG332L/GQDU134pWlfmwQlRAKS7P45e98wDM7uHCY31KD2RJksGLBETBpUI7sYsIYNBUXQTMRkDYGCc2EPlVx31DBYM5cPJcOw2WeQOSyb2S8ZZQYHN8RqrJIBGbWs1khkNGYUIu0tak/Jl6wZ5YEz0NtDPA2cRYhVhYjmNWbeSUOVBGDgTdfpb5/mqNpy23ernwFSkFJuUwjRxFAmnUxACiYEZxacMWWeHkFZsms6ZkJgIstkoByCGhIlKMCMyMAatlQwEIIG5QqayqrZ7wyeG2BiC7akhsBqSMnAWIBhjLJRNmossVFj1BrEkZZjFK2PrXYVYQ0Z6j6VBlaSbUDPJ7KAQgl/r0EKeKHI4F1/kB8/aKKZmtu9Q90s4AABK5iI5u8NRCH2ZurT+c8AcWZrmTYxLIcwpJT72iAgQzDEhhwBHkuGiqes6Fo1VHKgp2f8nXtctekLRgQKCCAAiHMLZSgTQuCz4OABc5dkrOZflazamIwBG1iLQoTYijUSxxRFgEhkNCqUTuahlRRHwEUEUSXKPIcNjklEI4PL75Ef322iWi0d20puFpJQyG2UIFBmCFHwF4YgHByQQskQWEEErwCBGSq5WnkIa+5fNXNeDAY8TGTSui91xZ95+eh7j+7vL9mOh3yxJl94pn3VCy24tKBOnFf1KkoMFcAApMpQDbJXlkx52UAVZCCq1oKZxGc5koh6QeJJyIhDM1FisgYFNO8ujicY7qfoVtWzibxqsAfy4kVgDT2xTY7/DvtaW3Zt1mQKmgCeWDOloMyClBh5nkaGlAgUBLRPsvB32pQZQpbVBatkMEEJ0vQnHtj3/YtWHLGoDGjqtRNsrSGAfrlLPvJka3KmVUwTnzoVIdKQRmUfgCUYhiEYJVIyWT5BkRoDa2Es2CpHsBGMRWQUDDZEKgo1RqNY4xjFglaiyjE0FMFczNg/i/1E3osCBF33Hdz/lJjZrb4+BmkDKXU8LnMn6ikzghuj+eSFgtF1cggK3pooFweINLMpBsFGlLYcMT796mWXvnJZZKjpxOT2mmWrCgUiQy808a4N7s6XGnGzpalTL1ABENyihszTZmkEDJEBWXBEbJWNsiUTqQ0PrRomBRhCqmBlo3FMUaxxAYWC9kd9qzEwSPpJIlYlIusFkcX/Paz3P8W2sdfVd5NvKRzUA6KZRYUMQENdoJR74HDzyqoc0kJVBK+qwfF3xJdJlQiGCOlscuCK7u//y5rT1vTVvTadMMFr7sqokyog8XpACbcfbT871P3FjRGmGoXUOedJvAZHJ6RZdaSwuWdVUh8cPCBKQk5glMSRJ7CqKEIipiDnkOVZoHGuW1Oa0NJd0DOJHEDei6ge9WVav6HJ0xt9MgVtQx1oHy9LWQ0CzXMWysoSZQIzMef1XHgVBQGFwKzE4eM1kXGicPres5d8+S2ru0t2vCU2yA5ZOt1JG7IciEAKQ7BMN1fx3ufc1rFmsdn27VS9ZPkuZ6avhshScNhkQRYwwjFxRLZAYCWvhpVEOBQuRo1FVIApkDHgSBGhWKos4wVLCN8kigDLjNvX4+kXwO0Jn1ahKdRDPVQQ3LN2QrgGTaIgh8wSCKoQr0z5sxpquzxXD5GLTWTddHN0pPTddx36uhMW7k11tuEtk9eQ/f1dDkCKkLaFJwVwXs/pwUNHRR98yfx2i43m2raVutRDlFQVgpAlKKkABBKoFyJSZQWlXjnRiFWcQKGsapSIWEkV3kEVoiAhx8lkqdXQ0kOk60AWwM8eImq2uTUhkgTLIkj2J0mhgEfmpHPfoMHPUKjzCAQS+nvhzYvTWPaO3GzzNacu/db7Dh8aKj1X84aIibxmCVOeM4fSKhNKlntpVrI3PIZZfrMfXdFf+tTmaG6iVWokLvFIBUpKClV4AUiZxCuFuoZYFNR0SnAhqOS1qFFA4TwMkRN4B/ZkSWdsQ+LC7crrCHamrrc/T+qrkjZCrkzioL6jJAraR2GIoKqa1STBE8//TYA46ANBoUoEY9nNtiqV6IsfOuqfX7NqIsELVR8xucwW5xVHAPVZ8kwqkeGOuflcRnUhS/rBfjrpUPuu7ZXHxuLSXEsaqaQeXgAJIQ4e2lFEr5x6gmpIMknBKqpgYoUTJUcCSlXCC5S1liRxlD6BwjipvX8zdo8LuRnVFCpQryqkPkhAKdcLyQKMUkdG6Hz6ubAymwvOihmAuqnm8Uct+sa/nbzfqoHnqgKoYfJ5skMCQ7AgiBimBRUbAQxY8ERb4NSYrGIXgicwqQec16Ni3L0/faq3cMU2jqbacSNJWg6eAFFVBRGzhtZIK+S6EsKukoZgAYUoqRcAKpp7WSgT2pIUkzFbeEJh794MtFJ2dS8+8z7iVSUP1gRSSOZZFIqQB0GhmRdXBEMLAs3Cl7Hk6gmJ//g/Hfmedx83y+aZaR8bIhAkj1NBFoq28z3dtkz49TV3/+nGx1ttee05R73zX05pRlytu8gyEzxgFEzwhIgwJyiTfncI6yr249vN9j2ma66dtp0GPWICkUI5cQwhVhVVKIXmDIhZCRBPSiwpMl9pQt0LSqiRpN7KY2D72E6CtOGToONQIVVVyftnmXS0028UyfNwhcq84PICL/Qo3ERj1cr+L/2/0w86cdnGqqj3kSGnyAs2DUGZRAkY7rN7Xtz9pc9cffstTyOOYaJ77t500x0bL//yGxYt69815yJmw/CUuyeCDZ1Gr68v4+gD6ANdxRt3mq65RNuppB5QZWjqST1Y1YtCwpNkAEMK9h4glYSz3IRhBKQgA5+i1XIoyrPMBideNr13Fs29kAQ+IXUqKcQT8lgGBSlUIJJ1UYP6iEAFKiQe4qGe1BlWSdo6M/eW89d+5evnmf0XPDflBJSCUsCDHNQBTiGExIkp2b4uvvFXd37kAz/Y8OxuOzxElQqXy7a7vGnT7t/8ef3+i/qPO2R0ziNJlYgk/ygk+zwpVSxkvKWHCl3mQbGiVCQFwYhncaSSvfPwkYd2ryUQecA5JUcqwWCCj6CsCDbMpZjYGnfcZ5PpKWpNwSeQBOKgLvuqncQ4i0h5aELwVh2ThDhSb1j9zNxQhb9y6Tmv/cApz7po95wDc6JoCxJFCqSKVJGKOq+9C2xt9+TXP/GjH15xU6vQZReMuKhb427EJU/Wlgu1VvvaPz01O90+++T9bNnONTwzCRDEJAqvECBVMHBaCSf38RMwux26xLH4/PNTCgYQkt7QRWYSIWkrhQ9albJKOo87hkypIJE16QmXYnYCzWn4BJpCOnlQuDLvUqvkjjVk+tmfD9JhEnWpTM68/GXLv375G8snrHx83Le8psRNQapIgUThAAekXrhge/v44T/cf9n7v//0kzvNosVUGfDFPpR7EVcQlxAVhJgjwwXz0AOb7rh307rDlq5c1jvVCr6EvMLnehTs3CsOiPC6XmpGvDERqxpBSIVENQ8qbAjEGhrDKUEotAuzykUVFPpWBGZTiqkQGZx4KWbG0coFpB7ismIni+WZ6yFFJhQI1BOE1JN6a9TXakVJ//3jZ1586WueK5a3TDk13FbqKI5TOIVXTZ2WBq1UZ6/+1JVXfuMPDSrZoYUS9WqpH8VuiosUFchGZCxby8ykGnVF23eM/9/1jw93l085dmlDuJV4IvK5XII2AXBAL+Psbj6g227x0nDOeIF4VWhQE+ZMuC2FU0gIeoAgiy6dNNcYLsW2FBuc9J+YHkdrFtJG5n2CcwmWpVCl8BUhOZLgcSDCEFLvJ6ePXDv89cvfvOi8Ix6alNm2OuKGRxKko0gEDkidaGR6F5hNt/zte+/+9pP3v2BGRqncJ3G3FnuoWEZUJBuBWUFsWUQlVfHwbQdo0k5uvGX9S9tmzzppv3JfYbbumSjTIM3bRSGlBQ4q8hl9UYJ0st32Aoh6geQR3rdUnapXDVk1sqo8rwMp1E9ciqNKTPhYG1ueRXUH0gZ8i8RBUvUOKvP5TifKZ+osUGFWaSVot9598fGv+9i5z9p464QjwyngJPMO+dQJEOkdtMV2895vXn3nVbeh1Gv6BsWUUexBsQtxCTaGjcAm/H5N06UjpQMWRt61kCYmbU9N1NY/t9dPNw5YOXL5F197zAkrt88KqbLJOtcRI2YUGUVGgVBiAuG+yakfvTj1wF6aaaLp1DOJkE8E+Y2RJQ3dcQuyRDEhZooNl200VC4v7A4NRp854PC9dISSu54sgksW1NQzi9Rbi/oLn/v8W0bOPPjuvTrbdo44SZGARNV3JksibLln2O546Kk7P/Oj3Rt20chCKnR7U0Ghi+ISbEHZAhzUk6Ca+tXLum780pLe3qYDAC2AJqbsMRfeVie8MDZ53tt/9pkPnvGe954ymaLWcLHlUBF23iyYSBGpnjw4uDim9zXHn2gbw+RTaOJJVLyAiThvQVjKOhEMMNRCBexJAAuvmQ9WhaqqUij4MjeUyZpUoV7FQz2TopUMd/NPfvqO6VUL79jm2qCGckuQClKFVxIoAPFS7LWlyD3+zV888v3rhItmdJGYstoKxWXYAjjKmg4QCFTFkLh686iV3T29cy+0q5ExqrBGiSpxV2W2qbYn9om77Fs3P/j4tq9/7vyhRT27p13BcJ7azis8M8TLiu6B80aqT0+0KSWtO5HgMLKqTzOryJr18ARPJARP4tUDNi+qBLnr0X2L8ixJ1OCngwsnC1+b+9gnL8SBC/+2OWmRrTo0HNqCVOFEPcGrglAZtrXnX3jwC9/f8+CzNDTMcUWoCFuGKYAjZD0kIXUQhhKpQBPUZ5O5eFK758gYsBIsIwYjilGqCCmMt8XiTfc8/9Sbf/itz7z6lLPWbq8KnCIilU5NqIZQABQ4rK+7iHqtRZKI+rx/zqokCAOS0KD0RB7wUAd4qCcnsJA8CdbM0VAuI9Lg2TLLUnEED4hvpz2DpWNOP+TRcW3DzKSopWg6tD28kgdS57ViS13YcdVvn7/8F64tPLJQuahcgi2CI7ANs3cm9RLeDkEV3pG0UJ+RpGeSzB6FBakSQ/sUZAziAqxBkXya2NFo19zcmz/8i4/+y8s++uGzZwum2fSRJRIYUqtIBMyIgZht2hbfgqZQp6p5W50AkTC9BgXRkBqQUwSL8rCdPuC+zpg0L16ypExJHKmHOoLXpD0y2kvdlak6ag71FPUETRfG9HBe0GdlfNe2T18x+dcH0TfI/V1KRTVlsiVwDLbZWA7iGy3EURRxaKT6NE1dA67pXHsMNCbGBpyBhwsuLbIoFsAGKPmkwDFTxX7np3c+8tS2b3z+gq4lQ/WmZ0OpZJ0TA8CglWq95qXNkmrmb0M71BLU5NNSkAcMKE9gxEE8LPIOjmYfombuTmWfMN8xQAE8fEpwTUXDo+XQcmjn/1Mn1Gsad9819vXvuqk5HhpRihUF2BIFj5NLh0l8o/mq05f9v3esbtq2Qry6MuJPfuXxh27Z6VTGEO1ykc3m0crKgMAYFCxiC0uAoTahCRT13qc3X/TeK6//2fttX5dLhYlYYRRWFUArRa0maIm6fWbMTFAGKYQQ8k4POMCoOqhTpBCnFiraGSVoblCd6I7Q3XWQYJ0hA0pJnAM1BS1PbR+kQ0kqzhps277z818VTzw4pIjAxcwZh4F5Fg1VvCeRD//rsoE1rXG0FNqGG0S0dIQearXbqjsQj6UFwxAoVK1nVQdjUCSULcpkS5Qai6T08cNX1ne0/vfyu/74p0fe9u7Td08rMUHBCiMA0Eq1XZMoCW48Q3KQIQCaCpSIAadKEnw7GUWqcKqegg/qzHQpmygGbcoq+xCxlTQP/OogzgOJIEgncUidJqmaLhRe2CDNhAZGVA1MASYCW3TSVPEgD4V6b1wy5Wt1KVQTEULTS6voG+0WJKl52Z7GO5KIOcx8tSDw8CCPWKlbeVDTofbxS7o/vXrpeUvtZ3+zg3pKeyZmFEgVVgGBIQRgk0uBeuhQZG2qrGWlkpkYSdbTCjlVRxkcLHyWmmU54DzCQwi5KgU9DKUGPMSpukSRKBKP1CH1WXIYMboLBI5BFhREY4iIDSkLscu7Hd6lbUqaU+Id2zkRT9oWVuaWd/BJ3fvt7WhXMzZMUCGHghcPD/YoeOlrl5bjk0ePfmRFHPPUnLAUjXYbtqxAClgFEVLNhnXiFA2hkIRmoJzgVphIYaAeykoGJNAgCq+a+aBQ9UqoLeaNi7KcMBQWSp0eg7hQuyeKliBRJHnenMMTGBSBI8CEHpQ4L7MNWJMDHAjqUQSl9XFPU2LriQgh8dTSqC4CnzSVdzQLe+ptw0QqsBqHvIRSoD0y3HP1WSvP6kvG/Oxki4YLBtYjBgylQALEBBcQEpp1ctHyGoWGhmYtXgDE6hVOs8Yya3iBOiUHpKqp2nm16dTrmmfBIhBPGvpBQVjaAckkirYiCVVo6NlnwJwMvQMyxKTiB3qKH//EqX3DBaciKoXIPLth8oof3kXqdzgeaxYbLQgh8aaeFGoiUN/waNbixpwNJiYW4yb16iAK13Z7pz9168TdqysfOmS/rmLbQlseENXMOJAG2ETI+0IV23Z5+sPgPMazwitIwk/UETklA8z7IFh04EFE8zP7rEfYqS32QRXlrcW2IAmtDCJHEMAzXAZwMUFGbMjNNN774XVvf/fhL2DKAwmcgVl+RNf//kjE+21JvL1RbDVUCM75uVJhVgjwidO0ypglEEMVRmsxPHlrYDmdrFZ7a+WXj64eMMX/fnTXQaNRb8xoeKiEQJQCBDggjLLrSR2tNowFMbKZIWdzAgKcZMMDo+oBp8RKkYa4bXPn0lGebCYYAnzWeAbm0Rp5Yuly9UkVjiCkDvABExVgFqoqHpKUB+09vrat0XaGEu9QolK1wZI6cbuS+KV60dcBqDhfLxTUMSCpJ5kFpj1IybAtRimbtMQatSuj/C8nrf38iYcNFfyOdv0Lf9gg08kRw0uQOp/6FAhGEwZHQiTAjvYmtBNEABtElN2NV5jQHmeIZvCfMLXwgMu6nxaa21SGo8y7xvkwPk+Scj3KIFDqgEQoFXXQFOQZqSJi+A5SNvgv15xK002m8JJLEiHnrVru1zbEQXWqHTWqEVVTKDShGll2DEupsCZxRBUh9XNzGNuD+u6eYT7vhIPf97JDT140VPOzQPGbtzw+/dwMVaO7nt9BzgcBpYBFAI9oxDyF3RPN9UgP0LQNG2cjZyKQwCG3O8CrslIqBFJWpKopKA0mJtnYRnMIWW5NHaiV5mOMTt8ETuEETpEStRmekDIizuw/SyzFw7cnveyQeHvDOjbOexWzoB2pikKaDcY00YyqB3mgUNSoZLpKbSE89yI2bkRtYqSQHrNi8JXHrDjr8ONWDfcB6WQyOxiX/rB+y3//5nHTrGjLR6pJM+kf6G4AqSIGQPCkZUvrZ2/ophrSNhxBSZUpIhCDcvccZrgu9M0IzEF3KA0+SPM7znRGtNPBJc67P7mkJEuyoeoVHiphLsxIiTyQGHgGQoTUMD6S3d6M1Qtj9aIj9k415blWLEwAuYaSJU5KxOwac+7JLdi2C4M9XdXpg5+57ZSDFp925Ilrlw3tt3QhkAJSd42Gbw8Vuh/asvtfv3mT7lU4Q56SWr1Sjk54+ZFjdQWTJyTqh4rR+rH7anzXssKxSOvwBYghsjA2a2iHClwYYcLLUBcmi0KhPew61fzfueB8Ap/hE3LwinRAKZqPFOEBT+qJhFQIjuCzBlMwaAXJXme3VgtzMzFASEUjI9VIbURKzlR0puXWP41tL1Jj8tDB8innHHLGca9bd/Cyod4+AHunJv9w+6b+jdsnZhunv2y/RQu7h2zfLU9vfstXrpveVo0rvcS2XZ3iubn//Mo/6f4LZ6Z9V0yJ+MHuaGxy002brrj4+J6d1AVpwTM4Uu/J+3ySntcZlOU+YIUofBbpNTOxDiiHOEwBA4IkiyCgDA2feWrN0sigYQZZQhmy8QjCnWoOSgqiOWcbs5FOMYuqI6qU07RLC1a8bf7qt5FrHzdaOf/sg84+6VVHrFkMRABeGtt59+bdj2/YCW3vnWje8XB1YKBy5svWFFD66m/u/s/v3eRbKC5fglRa619aOtz90a+9b+SMI16Y9JWImuIX9UR7Jjb//uHPrVnilpb6JlGCnybvEcZkzhMxwnyXQxKkIAFzHvUFLJoq8moeOUYyN7dOtggmCoqCbEAmCEN3RcC9aCjhwIA6MnbeXrMxLDVSxjSoxiiUTNJ2m15IHn0QsTniyAMvPG6/15551KEHLA8vmKxW//b0M/c+umXxyMBjG7bUG8mikcHFS0uvf/3R+y8dfnTDtrdf+ov7H3y+dNCqwqLRmae2mBd3XvCaE179sQurQ30bJnzZoqmyuDfauOXRax/42qqlbvlg3yJUHhOBdxoEZDyJUe+JcqigEnzwPjIPIbchkJHdRyjBDYekMh+IZ0i5+RIk746Dg8JZZ0SsSmoU4sjEYYgSQM9hPNDWGNxl6uPuwUfk0Yd7tXnBqYe/9RP/dtoRK62JAeyZnpid8zf89bHuvu477t24ds3w0hWDq9YMz6X1lx2zdpC6bt+w4XOX/PT6O9fHR65Z/J4Lp9dvm7np4SP3W3j+/36ofNKhT9SACVc0cMYOlHHbfdfe/NRP16yMlwx1remrRODEp3AOIiAl8RAhyWefAQ1iDHGeNREggBM4hEya8ufm3ZDmkCYI8tiWJ0dZnNOI1ZrUmiQiX4BnkoScNYZDwZWjE6lYSKsN9/vrcOvNyxd2v+Mtp1x8/stWjAwA8Gg//cL2x5/Z+cgzm6u1ZrXmhodLRx6x/NR1q3sGiyu6BqbT5m9ufvQn19zz+PodleMPOvAb7288P/bST/+62LXf+NHXjF5wxjYyc2O+bBEzSmXrm5NX/el7j2+/66C1g6PDxYNHKz3lqIq2qIPPZjMQH7IeBIA4cTb/Cx40eFgWGIVXuCxR1H9Mhf7Bb3fgLnlXBKox+0LkC66dkFP1zA7qIkvErmOwJrbOdlevuXblAQs/8smL/vk16/rKhaCK1//16SVL+q/5430bN+0ZHR7w7F974ZGHHbSkf0Glj0sv7Nz96Z/85tc3PTm2ZXz0hLUvv+qTabn8+KVXz93+6JlvPeuQ91801tN934TG8EULApe7aOv6e269+YrZwtTK/YaHh6KjV3YP9kYTzi2y6tTD+04jAeLhOM+IhbK0iMEhXhNCM8kp8pYr5jseoiQ6jxWbl45keXbez484jU0SmbYlJ0iJPWlaIDEmBTNbVsMuTYaWD11y8VkfuOi0ShwFb/fIs9uuvfGRrsHyn+56utVqrzt97bHH7H/AyuGWeBuZnTv3fuWnd/zmxiend04WBytv/8q/9lyw7oXHN9/92sswW7voWx/2Z594x17wrCvFJoVS0Ra59cB1//PkEzdEi7pGlwwvW1I48cDuchePJ76bpApOheBSiAeF1MxnoP8M6Zs7I5M1jIKTDuHL5si1fO6eg6No3/CfwX6UIJ08MiJXNO2CaRc5YUodO/atrn5rrDOFyBugHL3jwtMve/u5S4b6Zqq1n//5oSMOWfmXO57pHapEhXjFfkNrDllc6i4tWdLvvWyoVj0nd/36vqv+9/aJPTUUo6XLRj7+g4/uPnhFdXzmwfdenuyZXPfhiybPOPG5TWklNsSm3fLdPbY1ve3R6740Ob2psGKod6Sw/6rutctLKctE23dbdcA0uK0E79VLXsx6sEEI9h0wJe8TozhcpXBq5w1KslxZ9x0UqlDnZaBs6YsUqiWTVmyrEbU8EktpomlliW3fsX7Tj+73RXvAgUsvv+QNrzh2rYo0k6Rab0/ONK78zQPdC8qT2/bEcdQ92Lt4vwVp2700XdvAzfqePTd/7o9/u+M59Jaj7nKsuOS/3jtz8Aovwrc8OvnSHttXNkcd9swe8crqiFQKZVvf+/yTv/1Um+vRyiWlBXbZ2oHBoXgmcYloT8wOcKyzMIly6EyAvLKQZLi7rEtBAniYzqaRhh4IOcnDfNjs+8d/tM+wutPIpTwzogq7HttqxS2RdovaPUNm108e2/L1B9Xyxf967g8ueWOlEKXORdaW4vj+J7cOLx56ZMO2gdHuE049ujJYjiIen2ndNzmxOW73b9nzh4/9YteOabugn4xNp+Yu/sBrK8esfbDRWlkuzs7VoSrtZO9Lu9KVa+Ymk0IMYwnNqe3XfT7hxCwd5YF4aM0CKvPehuuKbEsogU+B1OoMTFsZ3sM7UJiKeSjnCJ5cLpBMUgFwaQQecMp5i2e+GUQ5Wj532PsW9HnbUREE1GUaXbY+POz3fO2eFz93r/aVv/3ld/z8029rzDVExFj7o/+75/Hndx192Iqrf3vH0MK+U885ujzcK8Lrpxrf37L97nY9fmHPr975P7t2V+1An/fs1JrIHv+qY59TFWNeUl19znE9PQVJk21X/a6ydwwjcb3tW4bHH74mSWfM4iVaLnUtXZjY8kyDaomZTXg2NdOJnU6jWWdnEDeV4dMsqHsPEYjAOQ2x3wtcaIkKvKhXEoEoXBbFNPQMO+WoAmHao3k/iPbtDeWiqnA6YNtN1+pegIe/9rdNlz8ZLR+4+mvveeOZR9741ye+97Pbjjtq1UFrFt9y15N/vO3x737rPR/66EWFvi6U4iRJbt4z9+excRT0SGv++ulfT1dT09vnJSIbS+oq3ZW+kQXjRE3DiZPNKxe+4xvv+vGHrph7dkv6sf/svuRdjWNPSCbbsusJGlosxZIZ6GpF3VJPylEUOp4pfAoGK0imYRsCiId4hYMR8gqIUr4zoZRDqzwUYcsja5q4bPknr7k6YlLNgFdh+EPzK5z5f9NFvoebZgE9/n/PPf6tp8xo3zXfeN/rTz/ceSkX7eteccx0I73uL3+rzdUOPHT1s9unRlYsmak1qi35wabZ+yZnu41dPjqw4+o/bN+ww4yOijewRSVDBs1aI5msRkuGGgLP9Gjb7//ade9cNHjHZ6584u4n2u/7z+KF5/LLj5WhPpQLADTqarfZsXVCiUqqmiqnEDIIAqrDQkRDZa0CESVPhE4HCJ1igZh8pkoBgMT79Fs1wDAy9FQ2ks7bZtSxVQYZBZXVjRbFvDB54+ef0EL0nU+/9fWnH95OUhAduHrZC9smjzrmwFK5sHK/pW+8+NwFi4bn5lrVlC99dPbGbUmMSmJ6euqy+bYnqbtPNUJUgSkpWWML6Vx9/W2PHEJU89IQcsqPz7l7jzvoyD9+9U3/e8n+hx7Q+tnv0g98Vm8d52lgQb+Wy9JU10QzMbW2qSVcT00jtXNpVHPRLGw9ZMKqHcQXhR68ZPgyiJAIVNSLesnNTeHBGYJV8x5r9r2fx5mJQH3Www+BjAyIY5VlTDd+fX11W/0tbzvzg288NUmdgCzT5VfetGNs/Iof/IFs9KF/e6vjuJ1IQ+yn7597Ygwl2932BVsaqIzPTe+e0lKXUgGmABMTxyJMvT0/v/KW0Z0Ti0tROxUnAJm90/6mttn4T+ceeON3zvnl51cdc4j962b/xTv1x09g0ywqZS0WJdGkJY0ETcdNbxuO687MSVwHB+loVl4E2GA27yPvSLyGVSnv4XwuHUUaxh+q+0BW91WcALkP0ps3Ltio1kZfqbD7qeqdN2wfOnjxtz9xgRf1YAeuOX3NBadOTFVftu6IC998brXl2x4ge9m9zY17qBCVvRZB5UKhp9eJVwMuwBTABVAMU1CKuNg1NjF3+Xu/e1GzPVQyiRNVELNxum2PuystbnjD2Quuv/yk67+x6tXrivdtl49eJ5//K56aRLmkfeVUqNGSekoNbxrOznnTzgSE+dFeiPriA2o+E5N3QXbqHXzQpn2nGhkMWElz+GMGLJN9A78CFMV7x+Ymdrbu/PMumWx+4nNnDS/omWs7JdP2qLd0dPnI+a8/6/CjD44q8VTV91fMtx9NHxmjYndZLMUxF2ItsOkaGIiLJUcWXMhm9gAsxKvpX3DvAxujt37t4h9+9PoFPU/MOlYWJWJDqezZJdvZVF524sipJx781LPNX/1px29vq17yJxy2iN54KK0bTXuBVpsTMUSzKReIs0xGRbP78tkQR/NATQTxRKwSkiYhCR571SfRmoSvBhgw1FGYDma1RWdI3wlhyqzSbE3V9P7HdlXBV33jn4ulQtOhLdT02hbMNmTZAYtajqtN6S7RY3vw9UelXLYmjopFWymZ3pIpWTpqaWX7nY9NTjS51CVUIFPIxyGkorYcv7hp+/M3P3rB2qULVo3sIGq2BBLghMyiyZyfquqehcP0ipMXXnDW4LIhfXJL69ePyl07IIbWjOjiPmWUR4anb6+O3z3G3RXAEpucECLb19on82NQ2Ag2YEPFMgZ6DNZ+Eq1xpLOQNmkSIBwZQlp9vpOQ61FYzFalQvTkxrG922fOevlh737TutmWbwu1vLY8Wg6poNb0gfihYOnLf9OJhCtFLhSoXER3CX1FdFs/OhytYdx7yxPc2wsqwEZgq2QCXFcFplzYOzlz9+/vPWBydt2hy3ikMkXUbov6MA8nFkXd1abdeKGvddLhfa9/5eBRq+22ve1rHnHXb3Z7Ej5gNHlRd379CQ8DG+a9+aZ2Vmjus8KUrW0ZGEsm0kKF+noN1nwSzb1IZyEJpJ0LKFuog3qCz9AdlJevIBDiQuSbyemnHHz+mYc1hNWwECtnRBscGTbcX+anpumardzXxYUKV7q4t5v7u3mgi4e6jCWceeLKF5/Ysn3LrCmXJdulzKDcSgwlU4hSy0/d/8zmGx5YW60fumxB/7JudLGEVXrLsIZjC2i7rrOmUD1i/+hNrxx89SkF7911jzV/sbF23VbvDBVKoAhks/W3gEyFzBesTGBWNsSGTAQToVBGby/hVeOY2YDmdvg6fAPSJEkytHTYIFGnHThe1mZUBZhUvR8eKF/97X89YP9FbedFSQAv6lRVyUF7LL73Av46rgMFFGKUC1QuoDtGt0VvRBWSZX1R/9jUW9//y6mWpaigZDSk9ZJCE9IU0oa2mb1vNlCrLhioHLLu4CVnHmUOXTVVLs14TYScwqkqSFXFixpju4rdJV68c6z9h7sfvuGR3VVGVAaX1MQUZNRZkGYDjjKEhYnVxhSVEBU1KlHfMFYuJZy7G9WNaG6Dr5FvqG+QZIhyVUHSzrUpR7YxI4qsZS8AkSYpxHX3RBBHqioJBZi1ZoP8RKHqOTN49l5EUCzEABFHwl1RuaeOnrYrkok1OAjVXItTRgJtkaZQB0l9u4HZWfh2T3/JxPAg7/MGgyoxcWh0OhU1XKkUy+VWg+ZahmwRHIMjNibEYgWRsSCrFCnH4Agmhok1KlJU1KhM/SNYsdTmq4SS4VrCaoE6iLPsRkYrua2JQolMKtg7UXWzjvp7oMSxhdJcLYHmWb64eSy1CdvZEBEQodks9Fb6eyt7tk+iXAZbcAvtCKUKItpnwq0U1q3ZSBNIAFEYILZkSzxoxLWrk9MQATy6Cug00JspHECMOEaZ0Jqbm2whLlPclY/qnJ9LwioGijHmEtgCYqWyUTUQDxaIV9EwmiGB7XQM50MgxDDcTO3CNxx75Tff7pwngko2YHVOtu2c/Mmv7/r+z+/iQhFsFEw2JvVQAzGZNMVDndbqXhRQ7qloki5eseBPv7psxdLhD336yl9cc6fp6/IawZY0L4kpoLkIqmpYfcOddu7w+ef3Ot/+y58m7rxhF5cLviWlon74ijMXDMUbnhr/6bef5EJMBJlrnfbaVRe+Ya0l8+e/7PjzbzabnpIXA47DhIdIJPEf/dDoSYf13PNE45rf7/7iV1f2lcwPf9u4457E9BivJuTDGvIbkTA4zEem1NlqUkDg0/7ecqVcEBHugI4AAAsGe446bOVBqxZ98D+uNt1dYXmP2agSGVYV7z2x4bZ7/wcvOOrwVdu27/nq9/6Q1BoHH7js8INXAnjDeSf+8pf32EIZYjysZVLyIoCBzUKMN+zFOR+5g04fSIF0uHTXn3cREZp+zcnDp7/t4Bb8krNW3PD77RPbqqZolaPXvf/I444ZNeCb7h6DGBMX1DPIkCGBVxGIO/Pl3acf2I8eufNu/+pzuntAD65v3XFLjbrjjJwk1KHi8550Zw6fIe/y+k2dc2kIp3fe++TPfv6XqLtL2ukppxz+1tedLqIfePvZV/3urkcefcl2d7nZqk9TEEEFkTXdJfXiJqtvvfCU445aPTFZvfSLP0OzdetfH/3MV65es2rJF759nai0xmdhS+i2bmoGNua+LknarpGE2tCRRwEP3TZ3x5ZF/UtKsrJrcIWd2FqDpPudtnCTyOxsu7evvHrdwomfTHtDC/YrF1f3bXDtxrS78+btGlN7ogUYsAV5VKyJyfv22Fy6xfs9c0nSbm5P0m5jZpttSBviiC3Eq4R18gxCbTuFhc4jNYPTcaQ+LAY9vWHLVT+6Fr0D8P4nV16/37KRk084RESPP2y/R+5a71jPPOOQM08+eHiwZ+/k7E13PHX3XU+Z7uLb3n52b085dd57/7EPXFBrJDfdft+LL+3aOzmbCh1/ykEnHXPQ3qnmdTev/+d3nqRk/+eHd3SP9l9w3uHHHLIkMvTUpj3X3vzw3vU7H7l/6qA3r5AKFh7fP/HkLrsg6jlu5CWPBDynMnz6Evx8A+rNFSeumOopisqGh3fOPjvet2rkrHOXrjlkwFhsfqFx2017d2+vUuRm4McN5khEW9NMiUFLHaStmqhYsGRmni2jBvYdCnVGDoRRyRffsiLDGANEiCIwo93y3gesY3VuNorcr3/04QtfdXzHAP/jQ6/5wVU3f/zSH/3sBx9jIu/9yHD/f33hnQDef4n//jc/BOAzX/3lssVD77r47Gq1cfF5R51zxuEPPrH1vnufvvbH71u1crjzqz797lPe/M7L7/vN0+XXrfbiiycvwn8/3Lt2eX3ZQG3WcRRLVeSw0fLScmPj+OApS19qwVh7x2+fX3Vk/2d/efrK5X0GRpAq9ML3rPjKxx/+203bZ4AxmAmvibg9nkuWa6Fq1QBMDAWtJ8mGiAEoQn/fdc1xv1AAXnTp4qHTzz2+0NfrW+2zX370iccd7EXEy59veeC//uv9F77q+CR1P/3lTfff+9RZ5xz/lted8b5/OWf7tu3f+NYv3/WO8/t6u+r15u13PzY9Vd01trvZbEeRbdZrzUbFOSkUonPOOHzn7smxnXuuu/J9+y8f3r5z4vIf3tBqpe9/x6sOXL342p9+5NBXXfL409N9q4bcgUtoMIqPGtluir7ZaG+dK452x3195SMXtsamcfjiXW2e21avbZ665JfnmOW99740c8eVT7umrrt49f6HDrz928c+/8Su3XUdgJlIkbh0Z4pigas+A88Rdyp+zdBqCjs/cSbKeZdyeI8qgFrbn3X2Ca889wRF5rEcYIH3XHJ5ZPCui8/1Itf+8a73fuCrKJZ+ee2to8P960467G1vOvvgQ9587PGHnLHuiN17p19z8WWYnDnmzGNLpUIeyNVaNoZ+es1NH/vQ197/kTdf8KrjnfMf+fQPrvvtXWDz2Prnb/7NFxYM9b3p+LXf/cvG5kdWSimyJy2trxl9qRW5iWTmCzeNfOuNcdnqMctLu+f29vTGyttu33jI8cNYPrSl1vzV5x5++tpNMLxx/cS/XnV2ZUFx9SuX76qiF2YypUSwrUkFi6oLDUbJty8yigmIQOYF1MEFdVaYyCslQN0hgRKpMdxqpYWYtm3e+alLv3fjtX+98F/Oi62Zbvqzz3nZzMQdzOxSV+kqxMCa1ctG1ixPXWBv4t6+3loq1kaBe6+zZdVstj779Z/PTjWPPebgsBh49fcuKfz4UyqSOlculwCsO/nIy//nV3PvIN9QfdNJzeHeZt3Kk3v9Lc/u3TgVH9Pj1i6JSsU9VTJF2nvr80e9csX2lOpzcuJn1538xdO8SprK7rhgOY5Xj0w0/fYWJlqSeNpeZ0s8m9L8Ene2zoMOyifbmZiHCFEuJSanNO0hRXP9DQ98+9Jvvubtb/q3T7xhruaTKHr46S1kLYydEzimZ5956fmNW4s9Fe9lenLWGCvw1emqGgug5SRJvZAJuDebdXcVQKuVKsdULJq8rL7zvqddmkaFQrudjO2eGBjou/2BJ/SZbfLCjA526+JlPnVaM7h7C7WS9K/PuUP2R1efHNHv6orxpv/bS7OvXb2rSc0WTz60MxFFZFzLtWcSs6C8674tPWeu3TGrE01NRXfNkVEKmaPm/C2ZCYVZBpG1rC7jFtt3x4cATpRmEoBo886JDc/s3PDlK1cdvOq0M44cWbnoxz/70kXnvPupZ14cr/liibbsmXn3Oy5DkgD+5Re9cnK6/vgdf0NXMfFaVy30dC0Y7Nu+Y4+SaQtZRk5IASViNurw2NNbzn/FScz8uxvuveqKawCDBf3/9Mazf/une5pTNTLs730erz4Z022NLLbV8NAL6O3BPZvwhjZgXdO5ngIe3oxd1R3Pz1ScbWq0/s8vTP3iKUQRhksD56yavn2rzjTTMw5vTKHZQOpprGZYqN7Ke6qUEZGoeLCCDDNzdyGwHOYUddmbJ7BJhaebfrLhU1ju7SPDn/73b+3aW9s9na4+fPVHvvCJFx782++vv1MiPu604/74wK8v++9Lf/iH/7nyl1+659bv/PPH3obZ+os7J1MiKpR+cfUXfva7ry8a6dtbbbWcT0W9qHO+5USU0d3z42vuGJ+sGsM/+s5Hr7/xe9//4ac23PfDn13x8bGnfrHkgGVwnh54DnOCOUFi8cgWjM2gtxdb9uqTO9THWhWtQu94HuXCzhs2jr1YndZ4wcfOGP7+BT3/cdrAd15T/PfT+39wAS/sqU77vVM8W2PxmJ6lyWlqJR1OEoX6fdqE3BWRHek10y+ZfPsy7DlTRhsURaU+owQuFCR1hYG+sRd3f/bT3/vuTz7ZaOM9Hz5v86atn/noV9WYc88/7cCjlh1+1DIC6m3cfOOjt9/6EPUNfP8Hv1936lGLlvYf1rtkzcFLbr3jYdtVLFqYQikqla01XT1dokC5snPn1Gve9oWrLv/I6lVLzj83SxpqteY3/vt3e3ZPU2+vbtiKsRkM9imBHnwOFMEW4Ju4byOOOAgFwu45PLWN+rrTsfpzl/yx/9/OSZYOJi87OHHimk421eiGTTrTJC4CJXUxCXktQg3E0nwnRwGfqZLycEnp1Z+p/emmZ40841tTkAb5BqRF0pJWbfGyBcefdBCxrH984/NPbaJiESLSbJz2inXDIwPM2DU2cfef74DiyBMPP/L4QwcH+mq12pOPbrj/zidAhru6ZG5udOnQq1998sKRwa0vjd1268OnnnZ0Tzm67c7H+/p61x29anym8bu//C31zIb8zFRXT3ze2ccecdgBcWy2bNtz0+2PPv/0S+jrIya0Gzh4PywZQb2Fx5+HUzDDJSgZHL0akcGuKTy7HXEMUq010BWbY/eTJf0gwvgcnt6J7VWUYhy8BCO92DmFrZM4ZhUKMV6cw6Sg1ANTUVuGKcGWTKHHdx14zumL6XO/aH32is3GP+Wbe+Br8E2SFqQNTbRVw9w0JEWpQKVyjjEXmZmBOIgisqavF+L93BySNIMZ2Zj6+4ljVTCrb9TQaEAcQKiU0GhCgEoJXpEIbIy+fjIRVBjOt+uozsI7KMAGlbIpd0lGD+eo2dA0gTFU6VZTAAB1cC3U61BBXKRyl4ZJHzxcorUawio4iItlKcSkhGaLvFdrUCig7WGKqPSj1ANTRlRWU4IpwpZsadD1HPqptwzadYdYKhalXiBiJQM2CAwXylwocmEQ8N6Leq+isBaqdmDAuRSkxljfSGAN9/QzE0RgCKWSr4tSBIZPEypWlBnWGGafeuorMZNXspH1TtjGwjEU4EiEOVYzVIB4lCzaImokcMGKEsdSZJQ8lBRRAJkyW7VF9EUqHmpUDIwFgyiCgnp7QKqibGPxzCYW71DpUu/ATGTQG8GUwEWEGw/EPASCeltEsXjyfmS+9+3PXXNXe2Z8ljGrkqCzHJ/FYhWPQmzPO/3wSndFxZXLlbm9MwcftHxBf+/EdP3lpx4mMO0U7VRVWUuR7j+oY20uRJr4lcuHFf6Eo9YUiyUCLVky2t1VtDY6/aRD0mZa6e09+cj9X9g8tu64NSuXDG/dPgMbCdg76EELZMqrRkq2XC4sXzw0tXduvxULisXCwqG+gaEFUWTOOnFVvYlqtaWCvt6u173i2LanYiE644QDt26bOObQpav3W7lr59SF5xw7Pp0esGLhIWuWb9tdPfdlaxcOD+zc01ATgSOEkZwtwsRh34/IkIm1uHjh4qGvXmi5UsQ5x/XA97MpdliNlUyg+AxLO5WurkULB5rVxvBA7+KRblsonHDE/icfs7a7q7xk4YJXnX4k2whcABeUopwR2kBouL/S21Pp6e4674wjOK4s6Cu97NgDa01dPtqXwvhURga7BgcGxyab49N1KJMtqinCFEBxaACCTBQVVi0biK1Ztmio6ewRhxyweml/6nn5kpHECccVUKGrp2/JUNeyxcMLFgwO9ESaymSDpqrNdp2qbUzMueWLhyMDNtF+y0cXjY4AEUVlmFLoIoJtvu/HIOa4QjRw5oG2vwJz2WWfHey1P7k1gUyrq0EdyGeEJlnOyKrYvH1y64t7fRwN9nXPNpPt461NW/d60fWbJ3dP1qfmUq9MMChYGizTXqfWgrjpqN50L26feGlPY3qmNj7THJ9pjU82hc1cS6dmGxyVtk+7Wr1Va0nbBwZlhjItqWAiBQzZKHXa11dpKe2u6mzDTVfbO8cbk7MtITNdS+stIRulwi3Hz2+bmpxtCXhv1TUSrTbTlnA95VrDNVqpgxmfaby0p7F1rFpLBWRhomzljyJwpGxAlkwRPUu0tOQbby4cMAxy3jPxSf82++CdzxhslPYEpAlJEVr38Nm6vEs54owJyxqIAARjAvU0isVATAVLqESY9Rn3sc+ntc7BmowRNY40cTAMY5B6xIUwjcm4V1RUPPUbzKaBelsJaKeILEBkWEP5EkVIUlhLhhQKL0gdjIExcB6xzTbgrNHUkSF1HqqwFt4DRHGczdBNEE0MExNH4AKXF0jPYQetXfjEZy0TrAiM1Uvf3P3Kh5YgHddkjpAoeSILDlxuREwUs6pyHBFBFNlkJqhYzFkhR6QemFWYOKtYonzTMc7qr7DOYMolhaqCYyvIdTssFqvCCGYExoaMjACqlDToMogj0jC3icvz9PIRqJRBvbhE2cY2EaBsvYqwzZYwKUI2UwooDLLEEdhkM0uKqLJQzeCnXmmsQepgLZP3+oqj+RVnD994w3JbnHWNNiAZl6g6KEONqsyv1mcTSdYAyf87tlvNOLWDvHI55jReGQmaD++dICF0digXs96mqs2QFIEAUgPFODGxFaJ/3EWap+fTjOAto5ujnOdIJMuPQ7GlgftbwWALtiALMmDLXQtctPz4QwpvOp68qDVZ1gBV+e47i3c/vry1d5ZdS9IpSKIECFHGLpvBzPeRQsAMc74EzxnLWyagwMiX7x6B83ZTlqZ3MEk5YiSnQ+7wxYX+OSjQbROzEmt25TxfEnV450TmJ+2as/RnKKdAPSb5aCDHpSoph1GiBUeIumlgtY16v/9WYlInBIINM0XnddWofueDve/6/AFRpa11gauSJPlyuWS8kzkHWQekt48IMtEE4J7Ok2tTSDHmdYrm8VidjQVio5z3FTLQuuS0eoGkPv89OZOpdsSEfIE0LD8E3poMJuc7sCANIAN04Mya7XmzIY6Vy3Z0baqLvvYGPmoFOQ/DAUsBALCGUqfvPIOf3DpyxU9d1K2utj1DNIiDusC9E2yc8hlrxk0DnreRTHVzPGyGCCCiwBfOmtOmztN1BssN9OSZcHP+vRzQloFvDCODHgQCdJo/9YE6YFNAJHggDRiX0NnxDt53wHR580dARBypKUejq1Ps/6aTzL+fy86jM8chL0GugY0CxtCbL/f/9/vdET3vatvgqpAkDBQ7WPx9JkAdhc+VP1CKI0cSEecjQM5CeGb5NK8sgQqVDRErBfbQnOSTOdOUcCYEcyYXdJia6e92Z/Ito3xfO4ds5gLqkNxk9h1wT6YSja5Kef+zD+I/fois6ezzBIbRfTjts3Vn4rf/r//576eM26zNrdKeCWNyVfk7OM183Z8PuTOa807GFWRkM0BJx2HN/zRXsYxy02TIgs6VJnM9YIANcRAW5ZTd+0K486FjvmdL4tUHZJTXeVSZzGPuCCrExV5edIBzo+cdgv97F4oRSdi275yzsa+AAkQRBMP0uetx2c8amN0Wua2uNQFfh7psHTq4zvw+A+9lEIFqrlbIgTbzAuLciXDGnht0LagGdY7LCD/lea0JxmU4Y4sP51Bke8qcoyw9BTBT8McZ4NBTkIv36lxAJKoIqaiAEJnBBW5gKZpdHzxRvnsREVQEzPMKScjO1fg7CpjAzmsM/rIeH/6J3/zsNPxOm+727RmVdjY7y+i+uHO6QlAcDedAZFgbixAj2GaJRn4sSH6cAhMbDfcPDvFKM8QFwdr8QI5wfb7vntGah3U+ApNmjFD7QE4DAFoCANp31CcANAnG9HS5oQWg3oWW/uvl8uajSQJJcF49aE5EOi8g6N+t9zhBZDHdpC//ET+4Ma2Pz8HtMX4cbk58ku1W5ea2j3bkh0MExQmHXRibmY8J8jLzerHPwxADlYJ0DCJDgfqewyEROTt7JhfMM+B0dgG8QhSicJ4yvKqH8+okQJ/ZsOkppgNdiIpRm96+VD57Ohb1kvPKTLSPFDTPRDoHj+Dv2APC1rCQNQDw/B589zb61X1uelcLfg5aJamxb0JTVdEO130nTofDUTIB2UwExsIasIExxKxAOEklMx8mMrl7DgIKx5VYgkFgxM3YSoJ0oIEUd5+F5Jx4MsDAvcJlDttYcNH4Cktsodzr9XX9+qFDcMQiApD6nIMK/z/HP2UCygRGf3doS4fkxFoFMDZLf3oa1z1Nj2yW8RmHJBRrGZ1Vlr5Txtic+RRrMoOyDGvIsuZOJHBAqWUyyKSQK4XmSX84aYoCC4jNDp7KhsGcnQVDnHsNRQcIl50JQ1nkcCBx2pPiUOir+/DapVjaB4Cc18C7vw/FFHXOhcqyWAkLHf+wy7KPooEyx2+znEnHqnh0J/1tF23Yiy2z2FPT2RY1AqFzSIbzk3w0ygg9wj1jn29yKu2cBSBj+wAMELxZSIxY2VCoBDKlzOI+sVFiMiE3oPkoT4BVlFXLin7FQmB/wuERju2h5b3ZnTq/zwYUdJ/zsegfzoH6/wAqY0N8ELckAgAAAABJRU5ErkJggg==';
   var C = window.RPCalc;
 
@@ -47,6 +48,7 @@
           gender: '', maritalStatus: '', numChildren: 0, occupation: '', province: ''
         },
         preRetirementPortfolio: { mode: 'flat', flatReturn: 0.05, segments: [] },
+        assumptions: { educationInflation: 0.05, returnLow: 0.03, returnMid: 0.05, returnHigh: 0.08 },
         pvd: { enabled: false, employeeRate: 0.03, employerMode: 'flat', employerFlatRate: 0.03, employerTiers: [], fundReturn: 0.04, startingBalance: 0, serviceYearsSoFar: 0 },
         sso: { enabled: false, avgWageCapped: 15000, monthsPaidSoFar: 0 },
         severance: { enabled: false },
@@ -87,6 +89,7 @@
         gender: '', maritalStatus: '', numChildren: 0, occupation: '', province: ''
       },
       preRetirementPortfolio: { mode: 'flat', flatReturn: 0.05, segments: [{ id: uid(), fromAge: 35, toAge: 51, returnRate: 0.07 }, { id: uid(), fromAge: 51, toAge: 60, returnRate: 0.03 }] },
+      assumptions: { educationInflation: 0.05, returnLow: 0.03, returnMid: 0.05, returnHigh: 0.08 },
       pvd: {
         enabled: true, employeeRate: 0.03, employerMode: 'flat', employerFlatRate: 0.03,
         employerTiers: [{ minYears: 0, employerRate: 0.03 }, { minYears: 5, employerRate: 0.05 }, { minYears: 10, employerRate: 0.07 }],
@@ -116,8 +119,8 @@
         liabilities: { items: [] },
         emergencyFund: { targetMonths: 6 },
         cashFlowSurplusReturn: 0.02,
-        goals: { items: [{ id: uid(), name: 'ซื้อรถใหม่ (ตัวอย่าง)', category: 'รถ', targetAmountToday: 800000, targetAge: 40, currentSavings: 50000, expectedReturn: 0.04, inflationRate: 0.03 }] },
-        education: { items: [] },
+        goals: { items: [{ id: uid(), name: 'ซื้อรถใหม่ (ตัวอย่าง)', amountToday: 800000, startAge: 40, endAge: 40, frequency: 'once' }] },
+        education: { items: [{ id: uid(), childName: 'บุตรตัวอย่าง', childCurrentAge: 8, level: 'mattayom1_3', annualCostToday: 60000, inflationRate: 0.05 }] },
         majorPurchases: { items: [{ id: uid(), name: 'บ้านหลังแรก (ตัวอย่าง)', price: 3000000, downPaymentPercent: 0.1, interestRate: 0.055, loanTermYears: 30, extraCosts: 50000 }] },
         investment: { currentInvestments: { items: [{ id: uid(), type: 'กองทุนรวมหุ้น (ตัวอย่าง)', amount: 200000, returnRate: 0.07 }] }, recurringInvestments: { items: [{ id: uid(), type: 'DCA กองทุนรวม (ตัวอย่าง)', frequency: 'monthly', amount: 5000, returnRate: 0.07 }] }, years: 15, riskLevel: 'moderate', allocation: { cash: 0.15, bonds: 0.35, stocks: 0.4, alternatives: 0.1 } },
         insurance: {
@@ -135,6 +138,16 @@
   var STORE_KEY = 'retirementPlannerCases_v2';
   function loadStore() { try { var raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
   function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); } catch (e) {} }
+  /* keep all later health-insurance age bands chained to whichever one was just edited: each subsequent
+     band starts right after the previous one ends, keeping its own original length */
+  function cascadeHealthBands(a, editedIndex) {
+    var bands = a.healthInsurance.bands;
+    for (var i = editedIndex + 1; i < bands.length; i++) {
+      var prevSpan = Math.max(1, bands[i].toAge - bands[i].fromAge);
+      bands[i].fromAge = bands[i - 1].toAge + 1;
+      bands[i].toAge = bands[i].fromAge + prevSpan;
+    }
+  }
 
   /* Merge a loaded (possibly older-format) case onto a fresh default case, so old
      saved data from earlier versions of this tool never crashes the app. */
@@ -143,6 +156,16 @@
     Object.keys(target).forEach(function (k) { if (source[k] !== undefined) target[k] = source[k]; });
     return target;
   }
+  var EDUCATION_LEVELS = [
+    { value: 'kindergarten', label: 'อนุบาล', startAge: 3, years: 3 },
+    { value: 'prathom1_3', label: 'ประถมศึกษาปีที่ 1-3', startAge: 6, years: 3 },
+    { value: 'prathom4_6', label: 'ประถมศึกษาปีที่ 4-6', startAge: 9, years: 3 },
+    { value: 'mattayom1_3', label: 'มัธยมศึกษาปีที่ 1-3', startAge: 12, years: 3 },
+    { value: 'mattayom4_6', label: 'มัธยมศึกษาปีที่ 4-6', startAge: 15, years: 3 },
+    { value: 'bachelor', label: 'ปริญญาตรี', startAge: 18, years: 4 },
+    { value: 'master', label: 'ปริญญาโท', startAge: 22, years: 2 }
+  ];
+  function educationLevelInfo(value) { return EDUCATION_LEVELS.filter(function (l) { return l.value === value; })[0] || EDUCATION_LEVELS[0]; }
   function normalizeCase(loaded) {
     try {
       var base = newCase(loaded.name || 'เคส');
@@ -152,6 +175,7 @@
       /* migrate old finance.personal (gender/maritalStatus/numChildren/occupation/province) into the merged personal object */
       if (loaded.finance && loaded.finance.personal) base.personal = mergeObj(base.personal, loaded.finance.personal);
       if (loaded.preRetirementPortfolio && Array.isArray(loaded.preRetirementPortfolio.segments)) base.preRetirementPortfolio = loaded.preRetirementPortfolio;
+      base.assumptions = mergeObj(base.assumptions, loaded.assumptions);
       base.pvd = mergeObj(base.pvd, loaded.pvd);
       if (loaded.pvd && Array.isArray(loaded.pvd.employerTiers) && loaded.pvd.employerTiers.length) base.pvd.employerTiers = loaded.pvd.employerTiers;
       base.sso = mergeObj(base.sso, loaded.sso);
@@ -244,8 +268,24 @@
         }
         if (loaded.finance.emergencyFund) base.finance.emergencyFund = mergeObj(base.finance.emergencyFund, loaded.finance.emergencyFund);
         if (typeof loaded.finance.cashFlowSurplusReturn === 'number') base.finance.cashFlowSurplusReturn = loaded.finance.cashFlowSurplusReturn;
-        if (loaded.finance.goals && Array.isArray(loaded.finance.goals.items)) base.finance.goals = { items: loaded.finance.goals.items };
-        if (loaded.finance.education && Array.isArray(loaded.finance.education.items)) base.finance.education = { items: loaded.finance.education.items };
+        if (loaded.finance.goals && Array.isArray(loaded.finance.goals.items)) {
+          base.finance.goals = {
+            items: loaded.finance.goals.items.map(function (g) {
+              if (g.amountToday != null && g.startAge != null) return g; /* already new shape */
+              var startAge = g.targetAge != null ? g.targetAge : (base.personal.currentAge + 5);
+              return { id: g.id || uid(), name: g.name || 'เป้าหมาย', amountToday: g.targetAmountToday != null ? g.targetAmountToday : (g.amountToday || 0), startAge: startAge, endAge: startAge, frequency: 'once' };
+            })
+          };
+        }
+        if (loaded.finance.education && Array.isArray(loaded.finance.education.items)) {
+          base.finance.education = {
+            items: loaded.finance.education.items.map(function (e) {
+              if (e.level) return e; /* already new shape */
+              var nearestLevel = EDUCATION_LEVELS.reduce(function (best, l) { return Math.abs(l.startAge - (e.startAge || 18)) < Math.abs(best.startAge - (e.startAge || 18)) ? l : best; }, EDUCATION_LEVELS[0]);
+              return { id: e.id || uid(), childName: e.childName || 'บุตร', childCurrentAge: e.childCurrentAge != null ? e.childCurrentAge : 5, level: nearestLevel.value, annualCostToday: e.annualCostToday || 0, inflationRate: e.inflationRate != null ? e.inflationRate : base.assumptions.educationInflation };
+            })
+          };
+        }
         if (loaded.finance.majorPurchases && Array.isArray(loaded.finance.majorPurchases.items)) base.finance.majorPurchases = { items: loaded.finance.majorPurchases.items };
         if (loaded.finance.investment) {
           var li = loaded.finance.investment;
@@ -638,24 +678,29 @@
     });
 
     /* general financial goals */
+    var generalInflation = a.personal.inflation;
+    var returnMid = a.assumptions.returnMid;
     var goalsCalc = (f.goals.items || []).map(function (g) {
-      var years = Math.max(0, g.targetAge - currentAge);
-      var futureValueNeeded = g.targetAmountToday * Math.pow(1 + g.inflationRate, years);
-      var futureValueOfSavings = C.fv(g.currentSavings, g.expectedReturn, years);
-      var shortfall = Math.max(0, futureValueNeeded - futureValueOfSavings);
-      var requiredMonthly = years > 0 ? C.pmtFromFV(shortfall, g.expectedReturn, years, false) / 12 : shortfall;
-      return { id: g.id, name: g.name, category: g.category, years: years, futureValueNeeded: futureValueNeeded, futureValueOfSavings: futureValueOfSavings, shortfall: shortfall, requiredMonthly: requiredMonthly };
+      var yearsToStart = Math.max(0, g.startAge - currentAge);
+      var span = Math.max(1, (g.endAge || g.startAge) - g.startAge + 1);
+      var futureValueNeeded;
+      if (g.frequency === 'annual') {
+        futureValueNeeded = C.growingAnnuityPV(g.amountToday * Math.pow(1 + generalInflation, yearsToStart), returnMid, generalInflation, span, true);
+      } else {
+        futureValueNeeded = g.amountToday * Math.pow(1 + generalInflation, yearsToStart);
+      }
+      var requiredMonthly = yearsToStart > 0 ? C.pmtFromFV(futureValueNeeded, returnMid, yearsToStart, false) / 12 : futureValueNeeded;
+      return { id: g.id, name: g.name, years: yearsToStart, futureValueNeeded: futureValueNeeded, requiredMonthly: requiredMonthly };
     });
 
     /* children's education */
     var educationCalc = (f.education.items || []).map(function (e) {
-      var yearsToStart = Math.max(0, e.startAge - e.childCurrentAge);
+      var lvl = educationLevelInfo(e.level);
+      var yearsToStart = Math.max(0, lvl.startAge - e.childCurrentAge);
       var costAtStart = e.annualCostToday * Math.pow(1 + e.inflationRate, yearsToStart);
-      var pvAtStart = C.growingAnnuityPV(costAtStart, e.expectedReturn, e.inflationRate, e.programYears, true);
-      var futureValueOfSavings = C.fv(e.currentSavings, e.expectedReturn, yearsToStart);
-      var shortfall = Math.max(0, pvAtStart - futureValueOfSavings);
-      var requiredMonthly = yearsToStart > 0 ? C.pmtFromFV(shortfall, e.expectedReturn, yearsToStart, false) / 12 : shortfall;
-      return { id: e.id, childName: e.childName, yearsToStart: yearsToStart, costAtStart: costAtStart, totalNeededAtStart: pvAtStart, shortfall: shortfall, requiredMonthly: requiredMonthly };
+      var pvAtStart = C.growingAnnuityPV(costAtStart, returnMid, e.inflationRate, lvl.years, true);
+      var requiredMonthly = yearsToStart > 0 ? C.pmtFromFV(pvAtStart, returnMid, yearsToStart, false) / 12 : pvAtStart;
+      return { id: e.id, childName: e.childName, levelLabel: lvl.label, yearsToStart: yearsToStart, costAtStart: costAtStart, totalNeededAtStart: pvAtStart, requiredMonthly: requiredMonthly };
     });
 
     /* major purchases (house/car) */
@@ -768,7 +813,8 @@
     }
 
     var ssoMonthsAtRetirement = a.sso.monthsPaidSoFar + yearsToRetire * 12;
-    var ssoMonthly = a.sso.enabled ? C.ssoPensionMonthly(a.sso.avgWageCapped, ssoMonthsAtRetirement) : 0;
+    var ssoAvgWageCapped = Math.min(p.currentSalary, 15000);
+    var ssoMonthly = a.sso.enabled ? C.ssoPensionMonthly(ssoAvgWageCapped, ssoMonthsAtRetirement) : 0;
     var ssoAnnual = ssoMonthly * 12;
     var ssoYearsPaid = ssoMonthsAtRetirement / 12;
     var ssoExtraYears = Math.max(0, ssoYearsPaid - 15);
@@ -1031,7 +1077,7 @@
     return {
       yearsToRetire: yearsToRetire, yearsRetired: yearsRetired, salaryAtRetire: salaryAtRetire,
       firstYearMonthlyNeed: firstYearMonthlyNeed, firstYearAnnualNeed: firstYearAnnualNeed,
-      pvdResult: pvdResult, ssoMonthly: ssoMonthly, ssoMonthsAtRetirement: ssoMonthsAtRetirement, ssoYearsPaid: ssoYearsPaid, ssoPct: ssoPct, severance: severance,
+      pvdResult: pvdResult, ssoMonthly: ssoMonthly, ssoMonthsAtRetirement: ssoMonthsAtRetirement, ssoYearsPaid: ssoYearsPaid, ssoPct: ssoPct, ssoAvgWageCapped: ssoAvgWageCapped, severance: severance,
       savingsRegularFV: savingsRegularFV, windfallsFV: windfallsFV, regularItems: regularItems,
       currentItems: currentItems, currentSavingsFV_asis: currentSavingsFV_asis, currentSavingsFV_ifPlanned: currentSavingsFV_ifPlanned,
       availableAtRetirement: availableAtRetirement, netRequiredCorpus: netRequiredCorpus, gap: gap,
@@ -1050,7 +1096,7 @@
 
   /* ================= SECTION RENDERERS ================= */
   var SECTION_ICONS = { 1: '👤', 2: '🏦', 3: '🎯', 4: '💰', 5: '🎁', 6: '🏥', 7: '📊', 8: '🏦', 9: '📜', 10: '💹', 11: '🏥', 12: '🧮', 13: '🪣', 14: '⚡',
-    102: '💵', 103: '🧾', 104: '💎', 105: '💳', 109: '🏆', 110: '🎓', 111: '🏠', 112: '📈', 113: '🛡️', 120: '🩺' };
+    102: '💵', 103: '🧾', 104: '💎', 105: '💳', 109: '🏆', 110: '🎓', 111: '🏠', 112: '📈', 113: '🛡️', 120: '🩺', 130: '📐', 1091: '🏆', 1101: '🎓' };
   function sectionWrap(num, title, subtitle, tone, open, bodyHtml, filled) {
     return '<div class="section tone-' + tone + (open ? ' open' : '') + (filled ? ' filled' : '') + '">' +
       '<button class="section-head" type="button" data-action="toggleSection" data-num="' + num + '">' +
@@ -1166,27 +1212,23 @@
     return lifeSection + otherSection;
   }
 
+  function renderAssumptions(a) {
+    var as = a.assumptions;
+    return '<div class="grid-2">' +
+      field('อัตราเงินเฟ้อทั่วไป', ['personal', 'inflation'], a.personal.inflation, { type: 'percent', suffix: '%/ปี', hint: 'ใช้ปรับมูลค่าค่าใช้จ่ายและเป้าหมายทางการเงินทั่วไป' }) +
+      field('อัตราเงินเฟ้อเพื่อการศึกษา', ['assumptions', 'educationInflation'], as.educationInflation, { type: 'percent', suffix: '%/ปี', hint: 'มักสูงกว่าเงินเฟ้อทั่วไป ใช้ปรับค่าเทอมในอนาคต' }) +
+      '</div>' +
+      '<div class="subblock-title" style="margin-top:14px">อัตราผลตอบแทนจากการลงทุน (ใช้เป็นค่าอ้างอิงในการคำนวณต่างๆ)</div>' +
+      '<div class="grid-3">' +
+      field('พอร์ตความเสี่ยงต่ำ', ['assumptions', 'returnLow'], as.returnLow, { type: 'percent', suffix: '%/ปี' }) +
+      field('พอร์ตความเสี่ยงปานกลาง', ['assumptions', 'returnMid'], as.returnMid, { type: 'percent', suffix: '%/ปี' }) +
+      field('พอร์ตความเสี่ยงสูง', ['assumptions', 'returnHigh'], as.returnHigh, { type: 'percent', suffix: '%/ปี' }) +
+      '</div>' +
+      '<div class="entry-note" style="margin-top:10px">ค่าสมมติฐานเหล่านี้ถูกใช้เป็นค่าเริ่มต้นในการคำนวณเป้าหมายต่างๆ ทั่วทั้งแผน (เช่น เป้าหมายเพื่อค่าใช้จ่ายอื่นๆ, การศึกษาบุตร) — ปรับที่นี่จุดเดียว มีผลทั้งแผน</div>';
+  }
+
   function renderInvestment(a, fr) {
     var inv = a.finance.investment;
-    var classLabels = { cash: 'เงินสด/เทียบเท่าเงินสด', bonds: 'ตราสารหนี้', stocks: 'หุ้น', alternatives: 'สินทรัพย์ทางเลือก' };
-    var allocRows = Object.keys(classLabels).map(function (k) {
-      return field(classLabels[k] + ' (สมมติผลตอบแทน ' + (fr.assetClassAssumptions[k].return * 100).toFixed(1) + '%/ปี)', ['finance', 'investment', 'allocation', k], inv.allocation[k], { type: 'percent' });
-    }).join('');
-    var sumWarning = Math.abs(fr.allocSum - 1) > 0.001
-      ? '<div class="note" style="color:#A8382E">สัดส่วนรวมตอนนี้ ' + (fr.allocSum * 100).toFixed(1) + '% — ควรปรับให้รวมกันครบ 100%</div>' : '';
-    var presetBtns = fr.scenarioCalc.map(function (s) {
-      return '<button class="btn btn-add-row btn-sm" type="button" data-action="setRiskPreset" data-key="' + s.key + '">ใช้ ' + esc(s.label) + '</button>';
-    }).join(' ');
-    var scenarioCols = [
-      { label: 'รูปแบบ', render: function (row) { return esc(row.label); } },
-      { label: 'เงินสด', render: function (row) { return (row.allocation.cash * 100).toFixed(0) + '%'; } },
-      { label: 'ตราสารหนี้', render: function (row) { return (row.allocation.bonds * 100).toFixed(0) + '%'; } },
-      { label: 'หุ้น', render: function (row) { return (row.allocation.stocks * 100).toFixed(0) + '%'; } },
-      { label: 'ทางเลือก', render: function (row) { return (row.allocation.alternatives * 100).toFixed(0) + '%'; } },
-      { label: 'ผลตอบแทนคาดหวัง', render: function (row) { return (row.blendedReturn * 100).toFixed(2) + '%/ปี'; } },
-      { label: 'ความผันผวนโดยประมาณ', render: function (row) { return (row.blendedVol * 100).toFixed(2) + '%'; } },
-      { label: 'มูลค่าคาดการณ์ในอนาคต', render: function (row) { return fmt(row.futureValue) + ' บาท'; } }
-    ];
     var currentItems = inv.currentInvestments.items;
     var currentTable = entryTable({
       headers: ['ประเภทการลงทุน', 'จำนวนเงิน (บาท)', 'ผลตอบแทน (%/ปี)'],
@@ -1211,7 +1253,7 @@
       rowCells: function (row) {
         var it = row.it, i = row.idx;
         return [
-          rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'frequency'], it.frequency, { type: 'select', options: [{ value: 'monthly', label: 'ทุกเดือน' }, { value: 'semiannual', label: 'ทุก 6 เดือน' }, { value: 'annual', label: 'ทุกปี' }] }),
+          rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'frequency'], it.frequency, { type: 'select', options: [{ value: 'monthly', label: 'ทุกเดือน' }, { value: 'quarterly', label: 'ทุก 3 เดือน' }, { value: 'semiannual', label: 'ทุก 6 เดือน' }, { value: 'annual', label: 'ทุกปี' }] }),
           rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'type'], it.type, { type: 'text' }),
           rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'amount'], it.amount, { type: 'money' }),
           rawInput(['finance', 'investment', 'recurringInvestments', 'items', i, 'returnRate'], it.returnRate, { type: 'percent' })
@@ -1220,25 +1262,14 @@
       addAction: 'addRecurringInvestment', addLabel: 'เพิ่มเงินลงทุนต่อเนื่อง', delAction: 'delRecurringInvestment',
       emptyMsg: 'เช่น DCA กองทุนรวมทุกเดือน, ซื้อหุ้นปันผลทุก 6 เดือน — ระบุได้หลายรายการ'
     });
-    return '<div class="subblock" style="margin-top:0"><div class="subblock-title">เงินลงทุนที่มีในปัจจุบัน</div>' + currentTable +
+    return '<div class="subblock" style="margin-top:0"><div class="subblock-title">เงินลงทุนที่มีในปัจจุบัน</div>' +
+      '<button class="btn btn-add-row btn-sm" type="button" data-action="syncCurrentInvestments" style="margin-bottom:10px">🔄 ดึงข้อมูลจากสินทรัพย์เพื่อการลงทุน</button>' +
+      currentTable +
       metricCard('รวมเงินลงทุนปัจจุบัน', fmt(fr.invCurrentTotal) + ' บาท', 'navy') + '</div>' +
-      '<div class="subblock"><div class="subblock-title">เงินลงทุนอย่างต่อเนื่อง</div>' + recurringTable +
-      metricCard('รวมเงินลงทุนต่อเนื่อง', fmt(fr.invRecurringMonthly) + ' บาท/เดือน', 'navy') + '</div>' +
-      '<div class="grid-2">' +
-      field('ระยะเวลาลงทุน (สำหรับคาดการณ์ด้านล่าง)', ['finance', 'investment', 'years'], inv.years, { suffix: 'ปี' }) +
-      '</div>' +
-      '<div class="subblock"><div class="subblock-title">สัดส่วนการลงทุน (Asset Allocation) ของคุณ</div>' +
-      '<div class="note" style="margin-bottom:10px">' + presetBtns + '</div>' +
-      '<div class="grid-2">' + allocRows + '</div>' + sumWarning +
-      '<div class="grid-2" style="margin-top:14px">' +
-      metricCard('ผลตอบแทนคาดหวังของพอร์ตนี้', (fr.customBlend.blendedReturn * 100).toFixed(2) + '%/ปี', 'navy') +
-      metricCard('ความผันผวนโดยประมาณ', (fr.customBlend.blendedVol * 100).toFixed(2) + '%', 'navy', 'ประมาณแบบง่าย ไม่รวมผลของสหสัมพันธ์ระหว่างสินทรัพย์') +
-      '</div>' +
-      metricCard('มูลค่าคาดการณ์ในอีก ' + inv.years + ' ปี', fmt(fr.customFV) + ' บาท', 'green') +
-      '</div>' +
-      '<div class="subblock"><div class="subblock-title">เปรียบเทียบ 3 ระดับความเสี่ยง (ใช้เงินลงทุน/ระยะเวลาเดียวกัน)</div>' +
-      detailTable(fr.scenarioCalc, scenarioCols, 'investscenario') +
-      '<div class="entry-note">ตัวเลขผลตอบแทน/ความผันผวนของแต่ละสินทรัพย์เป็นสมมติฐานอ้างอิงทั่วไป ควรปรับตามมุมมองการลงทุนจริงของแต่ละคน</div></div>';
+      '<div class="subblock"><div class="subblock-title">เงินลงทุนอย่างต่อเนื่อง</div>' +
+      '<button class="btn btn-add-row btn-sm" type="button" data-action="syncRecurringInvestments" style="margin-bottom:10px">🔄 ดึงข้อมูลจากค่าใช้จ่ายเพื่อการลงทุน</button>' +
+      recurringTable +
+      metricCard('รวมเงินลงทุนต่อเนื่อง', fmt(fr.invRecurringMonthly) + ' บาท/เดือน', 'navy') + '</div>';
   }
 
   var ASSET_MAIN_CATEGORIES = [
@@ -1308,69 +1339,68 @@
       '</div>';
   }
 
-  function renderFinanceGoals(a, fr) {
+  function renderFinanceGoalsInput(a) {
     var items = a.finance.goals.items;
-    var table = entryTable({
-      headers: ['ชื่อเป้าหมาย', 'ประเภท', 'จำนวนเงิน (บาท, มูลค่าวันนี้)', 'อายุที่จะใช้เงิน (ปี)', 'เงินที่มีแล้ว (บาท)', 'ผลตอบแทนคาดหวัง (%/ปี)', 'เงินเฟ้อ (%/ปี)'],
-      colTemplate: '1.2fr 0.9fr 1fr 0.9fr 1fr 0.9fr 0.9fr',
+    return entryTable({
+      headers: ['ชื่อเป้าหมาย', 'จำนวนเงินที่ต้องใช้ (มูลค่าวันนี้)', 'อายุเริ่มใช้', 'อายุสิ้นสุด', 'ความถี่'],
+      colTemplate: '1.3fr 1.2fr 0.8fr 0.8fr 1fr',
       rows: items.map(function (it, i) { return { it: it, idx: i }; }),
       rowCells: function (row) {
         var it = row.it, i = row.idx;
         return [
           rawInput(['finance', 'goals', 'items', i, 'name'], it.name, { type: 'text' }),
-          rawInput(['finance', 'goals', 'items', i, 'category'], it.category, { type: 'text' }),
-          rawInput(['finance', 'goals', 'items', i, 'targetAmountToday'], it.targetAmountToday, { type: 'money' }),
-          rawInput(['finance', 'goals', 'items', i, 'targetAge'], it.targetAge, {}),
-          rawInput(['finance', 'goals', 'items', i, 'currentSavings'], it.currentSavings, { type: 'money' }),
-          rawInput(['finance', 'goals', 'items', i, 'expectedReturn'], it.expectedReturn, { type: 'percent' }),
-          rawInput(['finance', 'goals', 'items', i, 'inflationRate'], it.inflationRate, { type: 'percent' })
+          rawInput(['finance', 'goals', 'items', i, 'amountToday'], it.amountToday, { type: 'money' }),
+          rawInput(['finance', 'goals', 'items', i, 'startAge'], it.startAge, {}),
+          rawInput(['finance', 'goals', 'items', i, 'endAge'], it.endAge, {}),
+          rawInput(['finance', 'goals', 'items', i, 'frequency'], it.frequency, { type: 'select', options: [{ value: 'once', label: 'ใช้ครั้งเดียว' }, { value: 'annual', label: 'ใช้ทุกปี' }] })
         ];
       },
       addAction: 'addFinanceGoal', addLabel: 'เพิ่มเป้าหมาย', delAction: 'delFinanceGoal',
-      emptyMsg: 'เช่น ซื้อบ้าน, ซื้อรถ, แต่งงาน, ท่องเที่ยว, เปิดธุรกิจ, เงินก้อนให้ลูก/พ่อแม่'
+      emptyMsg: 'เช่น ซื้อบ้าน, ซื้อรถ, แต่งงาน, ท่องเที่ยว, เปิดธุรกิจ, เงินก้อนให้ลูก/พ่อแม่ — ถ้าใช้ครั้งเดียว อายุเริ่ม=สิ้นสุดได้เลย'
     });
+  }
+  function renderFinanceGoalsCalc(fr) {
     var cols = [
       { label: 'เป้าหมาย', render: function (row) { return esc(row.name); } },
       { label: 'อีก (ปี)', render: function (row) { return row.years; } },
-      { label: 'มูลค่าเป้าหมาย ณ วันนั้น', render: function (row) { return fmt(row.futureValueNeeded) + ' บาท'; } },
-      { label: 'เงินที่มีจะโตเป็น', render: function (row) { return fmt(row.futureValueOfSavings) + ' บาท'; } },
-      { label: 'ส่วนที่ขาด', render: function (row) { return fmt(row.shortfall) + ' บาท'; } },
+      { label: 'มูลค่าที่ต้องเตรียม (ปรับเงินเฟ้อแล้ว)', render: function (row) { return fmt(row.futureValueNeeded) + ' บาท'; } },
       { label: 'ควรออมเพิ่ม/เดือน', render: function (row) { return fmt(row.requiredMonthly) + ' บาท'; } }
     ];
-    return table + (fr.goalsCalc.length ? detailTable(fr.goalsCalc, cols, 'financegoals') : '');
+    return fr.goalsCalc.length ? detailTable(fr.goalsCalc, cols, 'financegoals') : '<div class="note">ยังไม่ได้ระบุเป้าหมายทางการเงินอื่นๆ ในแท็บ "เป้าหมาย"</div>';
   }
 
-  function renderFinanceEducation(a, fr) {
+  function renderFinanceEducationInput(a) {
     var items = a.finance.education.items;
-    var table = entryTable({
-      headers: ['ชื่อบุตร', 'อายุปัจจุบันบุตร (ปี)', 'อายุที่เริ่มเรียน (ปี)', 'ค่าเรียน/ปี วันนี้ (บาท)', 'จำนวนปีที่เรียน', 'เงินที่เตรียมไว้แล้ว (บาท)', 'ผลตอบแทน (%/ปี)', 'เงินเฟ้อค่าเรียน (%/ปี)'],
-      colTemplate: '1fr 0.9fr 0.9fr 1fr 0.8fr 1fr 0.8fr 0.9fr',
+    return entryTable({
+      headers: ['ระดับการศึกษา', 'ชื่อบุตร', 'อายุปัจจุบันบุตร', 'ค่าเทอมปัจจุบัน (บาท/ปี)', 'อีก (ปี) ก่อนเข้าเรียน', 'เงินเฟ้อค่าเรียน (%/ปี)'],
+      colTemplate: '1.3fr 1fr 0.9fr 1.1fr 1fr 1fr',
       rows: items.map(function (it, i) { return { it: it, idx: i }; }),
       rowCells: function (row) {
         var it = row.it, i = row.idx;
+        var lvl = educationLevelInfo(it.level);
+        var yearsToStart = Math.max(0, lvl.startAge - it.childCurrentAge);
         return [
+          rawInput(['finance', 'education', 'items', i, 'level'], it.level, { type: 'select', options: EDUCATION_LEVELS.map(function (l) { return { value: l.value, label: l.label + ' (เริ่มอายุ ' + l.startAge + ')' }; }) }),
           rawInput(['finance', 'education', 'items', i, 'childName'], it.childName, { type: 'text' }),
           rawInput(['finance', 'education', 'items', i, 'childCurrentAge'], it.childCurrentAge, {}),
-          rawInput(['finance', 'education', 'items', i, 'startAge'], it.startAge, {}),
           rawInput(['finance', 'education', 'items', i, 'annualCostToday'], it.annualCostToday, { type: 'money' }),
-          rawInput(['finance', 'education', 'items', i, 'programYears'], it.programYears, {}),
-          rawInput(['finance', 'education', 'items', i, 'currentSavings'], it.currentSavings, { type: 'money' }),
-          rawInput(['finance', 'education', 'items', i, 'expectedReturn'], it.expectedReturn, { type: 'percent' }),
+          '<span class="entry-note">' + yearsToStart + ' ปี</span>',
           rawInput(['finance', 'education', 'items', i, 'inflationRate'], it.inflationRate, { type: 'percent' })
         ];
       },
       addAction: 'addEducation', addLabel: 'เพิ่มแผนการศึกษาบุตร', delAction: 'delEducation',
-      emptyMsg: 'เช่น ค่าเทอมมหาวิทยาลัยของลูก เริ่มอายุ 18 เรียน 4 ปี'
+      emptyMsg: 'เลือกระดับการศึกษา ระบบจะกำหนดอายุที่เข้าเรียนและระยะเวลาเรียนของระดับนั้นให้อัตโนมัติ'
     });
+  }
+  function renderFinanceEducationCalc(fr) {
     var cols = [
-      { label: 'บุตร', render: function (row) { return esc(row.childName); } },
+      { label: 'บุตร', render: function (row) { return esc(row.childName) + ' (' + esc(row.levelLabel) + ')'; } },
       { label: 'อีก (ปี) ก่อนเริ่มเรียน', render: function (row) { return row.yearsToStart; } },
       { label: 'ค่าเรียน/ปี ตอนเริ่ม', render: function (row) { return fmt(row.costAtStart) + ' บาท'; } },
       { label: 'เงินก้อนที่ต้องมีตอนเริ่มเรียน', render: function (row) { return fmt(row.totalNeededAtStart) + ' บาท'; } },
-      { label: 'ส่วนที่ขาด', render: function (row) { return fmt(row.shortfall) + ' บาท'; } },
       { label: 'ควรออมเพิ่ม/เดือน', render: function (row) { return fmt(row.requiredMonthly) + ' บาท'; } }
     ];
-    return table + (fr.educationCalc.length ? detailTable(fr.educationCalc, cols, 'financeedu') : '');
+    return fr.educationCalc.length ? detailTable(fr.educationCalc, cols, 'financeedu') : '<div class="note">ยังไม่ได้ระบุแผนการศึกษาบุตร ในแท็บ "เป้าหมาย"</div>';
   }
 
   function renderMajorPurchases(a, fr) {
@@ -1581,7 +1611,7 @@
       '</div>';
   }
 
-  function renderPersonal(a) {
+  function renderPersonal(a, r) {
     var p = a.personal;
     var beRetire = p.currentYearAD + 543 + (p.retireAge - p.currentAge);
     var beLife = p.currentYearAD + 543 + (p.lifeExpectancy - p.currentAge);
@@ -1598,7 +1628,20 @@
       field('อายุที่คาดว่าจะเกษียณ', ['personal', 'retireAge'], p.retireAge, { suffix: 'ปี', hint: 'จะครบเกษียณปี พ.ศ. ' + beRetire }) +
       field('อายุขัย (คาดการณ์)', ['personal', 'lifeExpectancy'], p.lifeExpectancy, { suffix: 'ปี', hint: 'สิ้นสุดแผนปี พ.ศ. ' + beLife }) +
       '</div>' +
-      '<div class="entry-note" style="margin-top:10px">รายได้ปัจจุบัน (' + fmt(totalMonthlyIncome) + ' บาท/เดือน) และอัตราเติบโตของรายได้ ดึงมาจากหัวข้อ "รายได้" ในงบกระแสเงินสดโดยอัตโนมัติ ไม่ต้องกรอกซ้ำที่นี่ — ถ้าต้องการแก้ไข ไปที่หัวข้อรายได้ได้เลย</div>';
+      '<div class="entry-note" style="margin-top:10px">รายได้ปัจจุบัน (' + fmt(totalMonthlyIncome) + ' บาท/เดือน) และอัตราเติบโตของรายได้ ดึงมาจากหัวข้อ "รายได้" ในงบกระแสเงินสดโดยอัตโนมัติ ไม่ต้องกรอกซ้ำที่นี่ — ถ้าต้องการแก้ไข ไปที่หัวข้อรายได้ได้เลย</div>' +
+      '<div class="checklist-box" style="margin-top:14px"><div class="checklist-title">สวัสดิการ/สิทธิที่มี <span class="checklist-hint">(ติ๊กแล้วกรอกรายละเอียดด้านล่างนี้ได้เลย — ผลคำนวณจะไปโผล่ที่แท็บ "การคำนวณ")</span></div>' +
+      '<div class="checklist-grid">' +
+      ['sso', 'pvd', 'severance'].map(function (key) {
+        var labels = { sso: 'ประกันสังคม', pvd: 'กองทุนสำรองเลี้ยงชีพ / กบข.', severance: 'เงินชดเชยตามกฎหมายแรงงาน' };
+        var val = a[key].enabled;
+        var pa = pathAttr([key, 'enabled']);
+        return '<label class="checklist-item' + (val ? ' checked' : '') + '"><input type="checkbox" data-path=\'' + pa + '\' data-type="checkbox"' + (val ? ' checked' : '') + '> ' + esc(labels[key]) + '</label>';
+      }).join('') +
+      '</div>' +
+      (a.pvd.enabled || a.sso.enabled
+        ? '<div class="subblock"><div class="subblock-title">รายละเอียดกองทุนสำรอง/กบข. และประกันสังคม</div>' + renderPensionInput(a, r) + '</div>'
+        : '') +
+      '</div>';
   }
 
   function renderNeedSummary(a, r) {
@@ -1633,30 +1676,28 @@
       },
       addAction: 'addTier', addLabel: 'เพิ่มขั้น', delAction: 'delTier', emptyMsg: 'ยังไม่มีขั้นบันได'
     });
-    return '<div class="subblock">' +
-      checkbox('มีกองทุนสำรองเลี้ยงชีพ / กบข.', ['pvd', 'enabled'], pvd.enabled) +
-      (pvd.enabled ? (
-        '<div class="grid-2">' +
-        field('อายุงานปัจจุบัน (ปี)', ['pvd', 'serviceYearsSoFar'], pvd.serviceYearsSoFar, { suffix: 'ปี' }) +
-        field('ยอดสะสมปัจจุบันในกองทุน', ['pvd', 'startingBalance'], pvd.startingBalance, { type: 'money', suffix: 'บาท' }) +
-        field('% เงินสะสม (ลูกจ้าง)', ['pvd', 'employeeRate'], pvd.employeeRate, { type: 'percent', suffix: '%' }) +
-        field('ผลตอบแทนเฉลี่ยของกองทุน', ['pvd', 'fundReturn'], pvd.fundReturn, { type: 'percent', suffix: '%/ปี' }) +
-        '</div>' +
-        '<div class="radio-row">' +
-        radio('เงินสมทบนายจ้างคงที่ตลอด', ['pvd', 'employerMode'], 'flat', pvd.employerMode) +
-        radio('เพิ่มตามอายุงาน/การสะสม (ขั้นบันได)', ['pvd', 'employerMode'], 'tiered', pvd.employerMode) +
-        '</div>' +
-        (pvd.employerMode === 'flat'
-          ? field('% เงินสมทบนายจ้าง', ['pvd', 'employerFlatRate'], pvd.employerFlatRate, { type: 'percent', suffix: '%' })
-          : tiersTable)
-      ) : '') + '</div>' +
-      '<div class="subblock">' +
-      checkbox('บำนาญชราภาพจากประกันสังคม', ['sso', 'enabled'], sso.enabled) +
-      (sso.enabled ? '<div class="grid-2">' +
-        field('ค่าจ้างเฉลี่ย 60 เดือนสุดท้าย (ไม่เกิน 15,000)', ['sso', 'avgWageCapped'], sso.avgWageCapped, { type: 'money', suffix: 'บาท' }) +
-        field('จำนวนเดือนที่ส่งเงินสมทบมาแล้ว', ['sso', 'monthsPaidSoFar'], sso.monthsPaidSoFar, { suffix: 'เดือน', hint: 'ต้องส่งสมทบครบ 180 เดือนจึงมีสิทธิรับบำนาญ' }) + '</div>' : '') +
-      '<div class="entry-note" style="margin-top:8px">บำนาญประกันชีวิตหรือเงินรายงวดอื่นๆ ให้ไปเพิ่มที่หัวข้อ "เงินก้อน/เงินได้ระหว่างทาง" แบบรายงวด — ระบบจะรวมให้อัตโนมัติ ผลการคำนวณดูได้ในแท็บ "การคำนวณ"</div>' +
-      '</div>';
+    return (pvd.enabled ? '<div class="subblock">' +
+      '<div class="subblock-title">กองทุนสำรองเลี้ยงชีพ / กบข.</div>' +
+      '<div class="grid-2">' +
+      field('อายุงานปัจจุบัน (ปี)', ['pvd', 'serviceYearsSoFar'], pvd.serviceYearsSoFar, { suffix: 'ปี' }) +
+      field('ยอดสะสมปัจจุบันในกองทุน', ['pvd', 'startingBalance'], pvd.startingBalance, { type: 'money', suffix: 'บาท' }) +
+      field('% เงินสะสม (ลูกจ้าง)', ['pvd', 'employeeRate'], pvd.employeeRate, { type: 'percent', suffix: '%' }) +
+      field('ผลตอบแทนเฉลี่ยของกองทุน', ['pvd', 'fundReturn'], pvd.fundReturn, { type: 'percent', suffix: '%/ปี' }) +
+      '</div>' +
+      '<div class="radio-row">' +
+      radio('เงินสมทบนายจ้างคงที่ตลอด', ['pvd', 'employerMode'], 'flat', pvd.employerMode) +
+      radio('เพิ่มตามอายุงาน/การสะสม (ขั้นบันได)', ['pvd', 'employerMode'], 'tiered', pvd.employerMode) +
+      '</div>' +
+      (pvd.employerMode === 'flat'
+        ? field('% เงินสมทบนายจ้าง', ['pvd', 'employerFlatRate'], pvd.employerFlatRate, { type: 'percent', suffix: '%' })
+        : tiersTable) + '</div>' : '') +
+      (sso.enabled ? '<div class="subblock">' +
+      '<div class="subblock-title">บำนาญชราภาพจากประกันสังคม</div>' +
+      '<div class="grid-2">' +
+        field('จำนวนเดือนที่ส่งเงินสมทบมาแล้ว', ['sso', 'monthsPaidSoFar'], sso.monthsPaidSoFar, { suffix: 'เดือน', hint: 'ต้องส่งสมทบครบ 180 เดือนจึงมีสิทธิรับบำนาญ' }) + '</div>' +
+        '<div class="entry-note" style="margin-top:8px">ค่าจ้างเฉลี่ย 60 เดือนสุดท้าย (ฐานคำนวณบำนาญ) คำนวณอัตโนมัติจากรายได้ปัจจุบันที่กรอกไว้ ครอบเพดานสูงสุด 15,000 บาท/เดือนตามเกณฑ์ประกันสังคม = <strong>' + fmt(r.ssoAvgWageCapped) + ' บาท/เดือน</strong> — ไม่ต้องกรอกซ้ำ ถ้าต้องการแก้ไข ไปที่หัวข้อ "รายได้" ได้เลย</div>' +
+      '</div>' : '') +
+      '<div class="entry-note" style="margin-top:8px">บำนาญประกันชีวิตหรือเงินรายงวดอื่นๆ ให้ไปเพิ่มที่หัวข้อ "เงินก้อน/เงินได้ระหว่างทาง" แบบรายงวด — ระบบจะรวมให้อัตโนมัติ ผลการคำนวณดูได้ในแท็บ "การคำนวณ"</div>';
   }
 
   function renderPensionCalc(a, r) {
@@ -1687,7 +1728,7 @@
         ssoFormula = 'วิธีคิด (ตามกฎหมายประกันสังคม): ส่งเงินสมทบมาแล้ว ' + r.ssoMonthsAtRetirement + ' เดือน (' + yrsPaid.toFixed(1) + ' ปี) ครบ 15 ปีขึ้นไป จึงได้รับ:<br>' +
           '&bull; <strong>20%</strong> ของค่าจ้างเฉลี่ย — เป็นสิทธิพื้นฐานตามกฎหมายเมื่อส่งสมทบครบ 180 เดือน (15 ปี)<br>' +
           '&bull; <strong>+ 1.5% ต่อปี</strong> ของทุกปีที่ส่งเกิน 15 ปี — ตอนนี้ส่งเกินมา ' + extraYrs.toFixed(1) + ' ปี จึงได้เพิ่ม ' + extraYrs.toFixed(1) + ' × 1.5% = ' + (extraYrs * 1.5).toFixed(2) + '%<br>' +
-          'รวม: 20% + ' + (extraYrs * 1.5).toFixed(2) + '% = <strong>' + r.ssoPct.toFixed(2) + '%</strong> ของค่าจ้างเฉลี่ย ' + fmt(sso.avgWageCapped) + ' บาท = <strong>' + fmt(r.ssoMonthly) + ' บาท/เดือน</strong>';
+          'รวม: 20% + ' + (extraYrs * 1.5).toFixed(2) + '% = <strong>' + r.ssoPct.toFixed(2) + '%</strong> ของค่าจ้างเฉลี่ย ' + fmt(r.ssoAvgWageCapped) + ' บาท = <strong>' + fmt(r.ssoMonthly) + ' บาท/เดือน</strong>';
       } else {
         ssoFormula = 'วิธีคิด: ต้องส่งเงินสมทบครบ 180 เดือน (15 ปี) จึงจะมีสิทธิรับบำนาญ — ตอนนี้ส่งมาแล้ว ' + r.ssoMonthsAtRetirement + ' เดือน (' + yrsPaid.toFixed(1) + ' ปี) ยังไม่ครบเงื่อนไข จึงคำนวณได้ 0 บาท';
       }
@@ -1695,18 +1736,7 @@
         '<div class="formula-box">' + ssoFormula + '</div>' +
         (r.ssoMonthly > 0
           ? metricCard('บำนาญชราภาพที่จะได้รับ', fmt(r.ssoMonthly) + ' บาท/เดือน', 'green', 'รับตั้งแต่อายุ ' + a.personal.retireAge + ' ปีไปตลอดชีพ')
-          : '<div class="note" style="color:#A8382E">ยังไม่เข้าเงื่อนไข (ต้องส่งสมทบครบ 180 เดือน ณ วันเกษียณ) — ตอนนี้คำนวณได้ 0 บาท</div>') +
-        detailTable([{
-          avgWage: sso.avgWageCapped, monthsAtRetirement: r.ssoMonthsAtRetirement, yearsPaid: r.ssoYearsPaid,
-          pct: r.ssoPct, monthly: r.ssoMonthly
-        }], [
-          { label: 'ค่าจ้างเฉลี่ย (ไม่เกิน 15,000)', render: function (row) { return fmt(row.avgWage) + ' บาท'; } },
-          { label: 'เดือนที่ส่งสมทบรวม ณ เกษียณ', render: function (row) { return row.monthsAtRetirement + ' เดือน (' + row.yearsPaid.toFixed(1) + ' ปี)'; } },
-          { label: 'สิทธิพื้นฐาน (ครบ 15 ปี)', render: function () { return '20%'; } },
-          { label: 'ส่วนเพิ่ม (ปีที่เกิน 15 ปี × 1.5%)', render: function (row) { return row.yearsPaid >= 15 ? '+' + ((row.yearsPaid - 15) * 1.5).toFixed(2) + '%' : '-'; } },
-          { label: '% รวมที่ใช้คำนวณ', render: function (row) { return row.pct.toFixed(2) + '%'; } },
-          { label: 'บำนาญ/เดือน', render: function (row) { return fmt(row.monthly) + ' บาท'; } }
-        ], 'sso') + '</div>';
+          : '<div class="note" style="color:#A8382E">ยังไม่เข้าเงื่อนไข (ต้องส่งสมทบครบ 180 เดือน ณ วันเกษียณ) — ตอนนี้คำนวณได้ 0 บาท</div>') + '</div>';
     }
     if (!pvd.enabled && !sso.enabled) html = '<div class="note">ยังไม่ได้เปิดใช้งานกองทุนสำรอง/ประกันสังคม ในแท็บ "ข้อมูลลูกค้า" หัวข้อ 2</div>';
     return html;
@@ -1759,32 +1789,26 @@
       '</div>' +
       '<div class="subblock-title">เป้าหมายเกษียณ (รายการที่กระทบกองทุนเกษียณโดยตรง)</div>';
     var table = entryTable({
-      headers: ['ชื่อเป้าหมาย', 'อายุเริ่ม', 'อายุสิ้นสุด', 'ช่วง', 'จำนวนเงิน/ปี (วันนี้)', 'ผลตอบแทน/ปี (ถ้าก่อนเกษียณ)', 'มูลค่าปรับเงินเฟ้อรวม', 'ควรออมเพิ่ม/ด. (ถ้าก่อนเกษียณ)'],
-      colTemplate: '1.2fr 0.7fr 0.7fr 0.9fr 1fr 1fr 1fr 1.1fr',
+      headers: ['ชื่อเป้าหมาย', 'อายุเริ่ม', 'อายุสิ้นสุด', 'ช่วง', 'จำนวนเงิน/ปี (วันนี้)', 'ผลตอบแทน/ปี (ถ้าก่อนเกษียณ)'],
+      colTemplate: '1.3fr 0.8fr 0.8fr 1fr 1.1fr 1.2fr',
       rows: a.goals.map(function (g, i) { return { g: g, idx: i }; }),
       rowCells: function (row) {
         var g = row.g, i = row.idx;
         var phaseLabel = goalPhaseLabel(g, p.retireAge);
         var isPre = g.endAge < p.retireAge;
-        var totalFuture = 0;
-        for (var age = g.startAge; age <= g.endAge; age++) totalFuture += g.amountToday * Math.pow(1 + p.inflation, age - p.currentAge);
-        var yearsToStart = g.startAge - p.currentAge;
-        var suggestedSaving = (isPre && yearsToStart > 0) ? pmtMonthlyForGoal(totalFuture, g.returnRate, yearsToStart) : null;
         return [
           rawInput(['goals', i, 'name'], g.name, { type: 'text' }),
           rawInput(['goals', i, 'startAge'], g.startAge, {}),
           rawInput(['goals', i, 'endAge'], g.endAge, {}),
           '<span class="entry-note">' + phaseLabel + '</span>',
           rawInput(['goals', i, 'amountToday'], g.amountToday, { type: 'money' }),
-          isPre ? rawInput(['goals', i, 'returnRate'], g.returnRate, { type: 'percent' }) : '<span class="entry-note">-</span>',
-          '<span class="entry-note">' + fmt(totalFuture) + ' บาท</span>',
-          suggestedSaving !== null ? '<span class="entry-note">' + fmt(suggestedSaving) + ' บาท</span>' : '<span class="entry-note">-</span>'
+          isPre ? rawInput(['goals', i, 'returnRate'], g.returnRate, { type: 'percent' }) : '<span class="entry-note">-</span>'
         ];
       },
       addAction: 'addGoalLumpsum', addLabel: 'เพิ่มเป้าหมาย', delAction: 'delGoal',
       emptyMsg: 'เช่น "ซื้อบ้านตอนอายุ 40 มูลค่าวันนี้ 1,000,000 บาท" (อายุเริ่ม=สิ้นสุด=40) หรือค่าใช้จ่ายต่อเนื่องหลายปี — กด + เพิ่มเป้าหมาย ด้านล่าง'
     });
-    return spendingBlock + '<div class="entry-note" style="padding:0 0 4px">ถ้าเป็นเป้าหมายครั้งเดียว ใส่อายุเริ่ม=อายุสิ้นสุดเท่ากัน (เช่น 40=40) — ถ้าเป็นค่าใช้จ่ายต่อเนื่องหลายปี ใส่ช่วงอายุ และ "จำนวนเงิน" จะถือเป็นยอดต่อปี ระบบจะแยกก่อน/หลังเกษียณให้อัตโนมัติจากอายุที่ใส่ เป้าหมายส่วนที่อยู่หลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณ (ข้อ 12-13) ให้อัตโนมัติ</div>' + table;
+    return spendingBlock + '<div class="entry-note" style="padding:0 0 4px">ถ้าเป็นเป้าหมายครั้งเดียว ใส่อายุเริ่ม=อายุสิ้นสุดเท่ากัน (เช่น 40=40) — ถ้าเป็นค่าใช้จ่ายต่อเนื่องหลายปี ใส่ช่วงอายุ และ "จำนวนเงิน" จะถือเป็นยอดต่อปี ระบบจะแยกก่อน/หลังเกษียณให้อัตโนมัติจากอายุที่ใส่ เป้าหมายส่วนที่อยู่หลังเกษียณจะถูกหักออกจากเงินลงทุนหลังเกษียณให้อัตโนมัติ ผลคำนวณดูได้ที่แท็บ "การคำนวณ"</div>' + table;
   }
 
 
@@ -2246,26 +2270,10 @@
   }
 
   function renderTabs() {
-    var tabs = [['client', 'ตรวจสุขภาพทางการเงิน'], ['goals', 'เป้าหมาย'], ['calc', 'การคำนวณ'], ['dashboard', 'แดชบอร์ด']];
+    var tabs = [['client', 'ตรวจสุขภาพทางการเงิน'], ['investment', 'การลงทุน'], ['goals', 'เป้าหมาย'], ['assumptions', 'สมมติฐาน'], ['calc', 'การคำนวณ'], ['dashboard', 'แดชบอร์ด']];
     return '<div class="tabs no-print">' + tabs.map(function (tb) {
       return '<button class="tab-btn' + (TAB === tb[0] ? ' active' : '') + '" type="button" data-action="setTab" data-tab="' + tb[0] + '">' + tb[1] + '</button>';
     }).join('') + '</div>';
-  }
-
-  function renderFeatureChecklist(a) {
-    var items = [
-      { path: ['sso', 'enabled'], val: a.sso.enabled, label: 'ประกันสังคม' },
-      { path: ['pvd', 'enabled'], val: a.pvd.enabled, label: 'กองทุนสำรองเลี้ยงชีพ / กบข.' },
-      { path: ['severance', 'enabled'], val: a.severance.enabled, label: 'เงินชดเชยตามกฎหมายแรงงาน' },
-      { path: ['healthInsuranceEnabled'], val: a.healthInsuranceEnabled, label: 'เตรียมเบี้ยประกันสุขภาพ' },
-      { path: ['goalsEnabled'], val: a.goalsEnabled, label: 'มีเป้าหมายการเงิน' },
-      { path: ['windfallsEnabled'], val: a.windfallsEnabled, label: 'มีเงินก้อน/เงินได้ระหว่างทาง' }
-    ];
-    return '<div class="checklist-box"><div class="checklist-title">แผนนี้เกี่ยวข้องกับอะไรบ้าง? <span class="checklist-hint">(ติ๊กแล้วหัวข้อนั้นจะโผล่ให้กรอกด้านล่าง)</span></div>' +
-      '<div class="checklist-grid">' + items.map(function (it) {
-        var pa = pathAttr(it.path);
-        return '<label class="checklist-item' + (it.val ? ' checked' : '') + '"><input type="checkbox" data-path=\'' + pa + '\' data-type="checkbox"' + (it.val ? ' checked' : '') + '> ' + esc(it.label) + '</label>';
-      }).join('') + '</div></div>';
   }
 
   function renderFinancialHealthScore(a, fr, r) {
@@ -2303,7 +2311,7 @@
     var filled5 = a.windfalls.length > 0;
     var filled6 = a.healthInsurance.bands.length > 0;
     var clientSections = [
-      [1, 'ข้อมูลลูกค้า', '', 'navy', renderPersonal(a), filled1, true],
+      [1, 'ข้อมูลลูกค้า', '', 'navy', renderPersonal(a, r), filled1, true],
       [104, 'สินทรัพย์', fmt(fr.netWorthCalc.totalAssets) + ' บาท', 'navy', renderAssets(a), a.finance.assets.items.length > 0, true],
       [105, 'หนี้สิน', fmt(fr.netWorthCalc.totalLiabilities) + ' บาท', 'navy', renderLiabilities(a), a.finance.liabilities.items.length > 0, true],
       [102, 'รายได้', fmt(fr.cashFlowCalc.totalIncome) + ' บาท/เดือน', 'navy', renderIncome(a), a.finance.income.items.length > 0, true],
@@ -2311,22 +2319,27 @@
       [120, 'สุขภาพทางการเงิน (งบดุล/กระแสเงินสด/อัตราส่วน CFP)', '', 'green', renderFinancialHealthCheckBox(a, fr), null, true]
     ].filter(function (s) { return s[6]; });
     var goalsSections = [
-      [2, 'กองทุนสำรอง/กบข. และประกันสังคม', '', 'navy', renderPensionInput(a, r), filled2, a.pvd.enabled || a.sso.enabled],
-      [3, 'เป้าหมายเกษียณ (กระทบกองทุนเกษียณโดยตรง)', '', 'navy', renderGoals(a), filled3, a.goalsEnabled],
-      [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a), filled5, a.windfallsEnabled],
-      [6, 'เตรียมเงินค่าเบี้ยประกันสุขภาพหลังเกษียณ', '', 'navy', renderHealthInsuranceInput(a, r), filled6, a.healthInsuranceEnabled],
-      [109, 'เป้าหมายทางการเงินทั่วไป', '', 'navy', renderFinanceGoals(a, fr), a.finance.goals.items.length > 0, true],
-      [110, 'การศึกษาบุตร', '', 'navy', renderFinanceEducation(a, fr), a.finance.education.items.length > 0, true],
-      [111, 'แผนซื้อบ้าน/รถ', '', 'navy', renderMajorPurchases(a, fr), a.finance.majorPurchases.items.length > 0, true],
-      [112, 'การลงทุน (Asset Allocation & Risk)', '', 'navy', renderInvestment(a, fr), (a.finance.investment.currentInvestments.items.length > 0 || a.finance.investment.recurringInvestments.items.length > 0), true],
-      [113, 'ประกันและการบริหารความเสี่ยง', '', 'navy', renderInsurance(a, fr), (a.finance.insurance.life.existingCoverage > 0 || a.finance.insurance.otherPolicies.items.length > 0), true]
+      [3, 'เป้าหมายเพื่อค่าใช้จ่ายในการเกษียณ (กระทบกองทุนเกษียณโดยตรง)', '', 'navy', renderGoals(a), filled3, true],
+      [109, 'เป้าหมายเพื่อค่าใช้จ่ายอื่นๆ', '', 'navy', renderFinanceGoalsInput(a), a.finance.goals.items.length > 0, true],
+      [5, 'เงินก้อน/เงินได้ระหว่างทาง (รวมบำนาญประกันชีวิต)', '', 'navy', renderWindfalls(a), filled5, true],
+      [6, 'เตรียมเงินสำหรับเบี้ยประกันสุขภาพ', '', 'navy', renderHealthInsuranceInput(a, r), filled6, true],
+      [110, 'การศึกษาบุตร', '', 'navy', renderFinanceEducationInput(a), a.finance.education.items.length > 0, true]
+    ].filter(function (s) { return s[6]; });
+    var investmentSections = [
+      [112, 'การลงทุน (Asset Allocation & Risk)', '', 'navy', renderInvestment(a, fr), (a.finance.investment.currentInvestments.items.length > 0 || a.finance.investment.recurringInvestments.items.length > 0), true]
+    ].filter(function (s) { return s[6]; });
+    var assumptionsSections = [
+      [130, 'สมมติฐานการวางแผน', '', 'navy', renderAssumptions(a), true, true]
     ].filter(function (s) { return s[6]; });
     var calcSections = [
       [7, 'เงินที่ต้องใช้เดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน', 'green', renderNeedSummary(a, r), false, true],
+      [2, 'ข้อมูล: กองทุนสำรอง/กบข. และประกันสังคม', '', 'green', renderPensionInput(a, r), filled2, a.pvd.enabled || a.sso.enabled],
       [8, 'ผลการคำนวณ: กองทุนสำรอง/กบข. และประกันสังคม', '', 'green', renderPensionCalc(a, r), false, a.pvd.enabled || a.sso.enabled],
       [9, 'เงินชดเชยตามกฎหมายแรงงาน', r.severance ? fmt(r.severance.amount) + ' บาท' : '', 'green', renderSeverance(r), false, a.severance.enabled],
       [10, 'ผลการคำนวณ: พอร์ตก่อนเกษียณ, เงินออมและเงินลงทุน', '', 'green', renderSavingsCalc(a, r), false, true],
-      [11, 'ผลการคำนวณ: เบี้ยประกันสุขภาพ', '', 'green', renderHealthInsuranceCalc(a, r), false, a.healthInsuranceEnabled],
+      [1091, 'ผลการคำนวณ: เป้าหมายเพื่อค่าใช้จ่ายอื่นๆ', '', 'green', renderFinanceGoalsCalc(fr), false, true],
+      [1101, 'ผลการคำนวณ: การศึกษาบุตร', '', 'green', renderFinanceEducationCalc(fr), false, true],
+      [11, 'ผลการคำนวณ: เบี้ยประกันสุขภาพ', '', 'green', renderHealthInsuranceCalc(a, r), false, true],
       [12, 'สรุปกองทุนที่ต้องมี และส่วนที่ขาด (แผนเกษียณ)', '', 'green', renderGap(a, r), false, true],
       [13, 'การบริหารเงินหลังเกษียณ (บัคเก็ต)', '', 'green', renderBuckets(a, r), false, true],
       [14, 'ทดสอบความเสี่ยงผลตอบแทนหลังเกษียณ', '', 'green', renderStressTest(a, r), false, true]
@@ -2346,10 +2359,11 @@
     var progressPct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
     var progressHtml = '<div class="progress-box"><div class="progress-box-text">กรอกข้อมูลไปแล้ว <strong>' + filledCount + '/' + totalCount + '</strong> หัวข้อ</div>' +
       '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div></div>';
-    var body = TAB === 'client' ? (progressHtml + sectionsHtml(clientSections)) : (TAB === 'goals' ? (renderFeatureChecklist(a) + sectionsHtml(goalsSections)) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml));
+    var body = TAB === 'client' ? (progressHtml + sectionsHtml(clientSections)) : (TAB === 'investment' ? sectionsHtml(investmentSections) : (TAB === 'goals' ? sectionsHtml(goalsSections) : (TAB === 'assumptions' ? sectionsHtml(assumptionsSections) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml))));
     return '<main class="main">' +
       '<div class="header no-print">' +
       '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
+      '<span class="app-version-badge">' + esc(APP_VERSION) + '</span>' +
       '<button class="btn btn-primary" type="button" data-action="printPdf">ส่งออก PDF</button>' +
       '</div>' +
       renderTabs() + body +
@@ -2430,6 +2444,7 @@
     if (path[0] === 'name') a.name = val;
     else if (path[0] === 'personal' && path[1] === 'currentYearADasBE') a.personal.currentYearAD = (parseFloat(t.value) || 0) - 543;
     else setPath(a, path, val);
+    if (path[0] === 'healthInsurance' && path[1] === 'bands' && (path[3] === 'fromAge' || path[3] === 'toAge')) cascadeHealthBands(a, path[2]);
     saveStore(); render();
   });
 
@@ -2497,8 +2512,10 @@
     else if (action === 'delWindfall') { a.windfalls.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addHealthBand') {
       var lastBand = a.healthInsurance.bands[a.healthInsurance.bands.length - 1];
+      var firstBand = a.healthInsurance.bands[0];
+      var bandLen = firstBand ? Math.max(1, firstBand.toAge - firstBand.fromAge) : 4;
       var fromAge = lastBand ? lastBand.toAge + 1 : a.personal.retireAge;
-      a.healthInsurance.bands.push({ id: uid(), fromAge: fromAge, toAge: fromAge + 4, annualPremiumToday: 30000 });
+      a.healthInsurance.bands.push({ id: uid(), fromAge: fromAge, toAge: fromAge + bandLen, annualPremiumToday: lastBand ? lastBand.annualPremiumToday : 30000 });
       saveStore(); render();
     }
     else if (action === 'delHealthBand') { a.healthInsurance.bands.splice(+t.dataset.index, 1); saveStore(); render(); }
@@ -2518,9 +2535,9 @@
     else if (action === 'delAsset') { a.finance.assets.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addLiability') { a.finance.liabilities.items.push({ id: uid(), mainCategory: 'shortterm', name: '', balance: 0, interestRate: 0.05, monthlyPayment: 0, remainingMonths: 12 }); saveStore(); render(); }
     else if (action === 'delLiability') { a.finance.liabilities.items.splice(+t.dataset.index, 1); saveStore(); render(); }
-    else if (action === 'addFinanceGoal') { a.finance.goals.items.push({ id: uid(), name: 'เป้าหมายใหม่', category: '', targetAmountToday: 100000, targetAge: a.personal.currentAge + 5, currentSavings: 0, expectedReturn: 0.05, inflationRate: 0.03 }); saveStore(); render(); }
+    else if (action === 'addFinanceGoal') { a.finance.goals.items.push({ id: uid(), name: 'เป้าหมายใหม่', amountToday: 100000, startAge: a.personal.currentAge + 5, endAge: a.personal.currentAge + 5, frequency: 'once' }); saveStore(); render(); }
     else if (action === 'delFinanceGoal') { a.finance.goals.items.splice(+t.dataset.index, 1); saveStore(); render(); }
-    else if (action === 'addEducation') { a.finance.education.items.push({ id: uid(), childName: 'บุตรคนใหม่', childCurrentAge: 5, startAge: 18, annualCostToday: 100000, programYears: 4, currentSavings: 0, expectedReturn: 0.05, inflationRate: 0.05 }); saveStore(); render(); }
+    else if (action === 'addEducation') { a.finance.education.items.push({ id: uid(), childName: 'บุตรคนใหม่', childCurrentAge: 5, level: 'prathom1_3', annualCostToday: 30000, inflationRate: a.assumptions.educationInflation }); saveStore(); render(); }
     else if (action === 'delEducation') { a.finance.education.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addMajorPurchase') { a.finance.majorPurchases.items.push({ id: uid(), name: 'รายการใหม่', price: 1000000, downPaymentPercent: 0.1, interestRate: 0.05, loanTermYears: 20, extraCosts: 20000 }); saveStore(); render(); }
     else if (action === 'delMajorPurchase') { a.finance.majorPurchases.items.splice(+t.dataset.index, 1); saveStore(); render(); }
@@ -2534,6 +2551,24 @@
     else if (action === 'delCurrentInvestment') { a.finance.investment.currentInvestments.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'addRecurringInvestment') { a.finance.investment.recurringInvestments.items.push({ id: uid(), type: 'การลงทุนใหม่', frequency: 'monthly', amount: 0, returnRate: 0.05 }); saveStore(); render(); }
     else if (action === 'delRecurringInvestment') { a.finance.investment.recurringInvestments.items.splice(+t.dataset.index, 1); saveStore(); render(); }
+    else if (action === 'syncCurrentInvestments') {
+      var srcAssets = a.finance.assets.items.filter(function (it) { return it.mainCategory === 'investment'; });
+      srcAssets.forEach(function (asset) {
+        var existing = a.finance.investment.currentInvestments.items.filter(function (it) { return it.type === asset.name; })[0];
+        if (existing) existing.amount = asset.value;
+        else a.finance.investment.currentInvestments.items.push({ id: uid(), type: asset.name, amount: asset.value, returnRate: 0.05 });
+      });
+      saveStore(); render();
+    }
+    else if (action === 'syncRecurringInvestments') {
+      var srcExpenses = a.finance.expenses.regular.items.filter(function (it) { return it.expenseType === 'savingsInvestment'; });
+      srcExpenses.forEach(function (exp) {
+        var existing = a.finance.investment.recurringInvestments.items.filter(function (it) { return it.type === exp.category; })[0];
+        if (existing) { existing.amount = exp.amount; existing.frequency = exp.frequency; }
+        else a.finance.investment.recurringInvestments.items.push({ id: uid(), type: exp.category, frequency: exp.frequency, amount: exp.amount, returnRate: 0.05 });
+      });
+      saveStore(); render();
+    }
     else if (action === 'addOtherPolicy') { a.finance.insurance.otherPolicies.items.push({ id: uid(), type: 'กรมธรรม์ใหม่', currentCoverage: 0, recommendedCoverage: 0 }); saveStore(); render(); }
     else if (action === 'delOtherPolicy') { a.finance.insurance.otherPolicies.items.splice(+t.dataset.index, 1); saveStore(); render(); }
     else if (action === 'clearCurrentCase') {
