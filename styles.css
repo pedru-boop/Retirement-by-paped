@@ -146,6 +146,9 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
 .formula-box strong { color: var(--green-700); }
 .btn-add-row { background: var(--white); color: var(--blue-bright); border: 1.5px solid var(--blue-bright); font-weight: 700; }
 .btn-add-row:hover { background: var(--blue-100); }
+.child-header-row { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 10px; }
+.btn-del-row { background: var(--red-100); color: var(--red-500); border: 1.5px solid var(--red-500); border-radius: 8px; width: 36px; height: 36px; font-size: 18px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.btn-del-row:hover { background: var(--red-500); color: var(--white); }
 
 .list-card { background: var(--blue-100); border-radius: 12px; padding: 16px 18px; margin-top: 14px; border: 1px solid var(--blue-200); }
 .list-card-head { display: flex; align-items: center; gap: 10px; }
