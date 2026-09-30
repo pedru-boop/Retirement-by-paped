@@ -3,7 +3,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var APP_VERSION = 'v1.7 — แดชบอร์ดจำลองการเติบโตของค่าใช้จ่าย (กล่องที่ 1)';
+  var APP_VERSION = 'v1.9 — เครื่องคำนวณกลาง: ใช้เงินจริง, แยกเป้าหมายก่อนเกษียณ, ถอนต้นปี';
   var LOGO_B64 = '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';
   var C = window.RPCalc;
 
@@ -870,7 +870,7 @@
       postIncomeStreams.forEach(function (s) { if (age >= s.startAge && age <= s.endAge) sum += windfallAmountAtAge(s.w, age, s.perYearAmt); });
       return sum;
     }
-    function pensionAnnualAtYear(yearIdx) { return pensionAnnualAtAge(p.retireAge + yearIdx); }
+    function pensionAnnualAtYear(yearIdx) { return pensionAnnualAtAge(p.retireAge + yearIdx - 1); }
     function needAnnualAtYear(yearIdx) { return firstYearAnnualNeed * Math.pow(1 + asmp.inflationPostRetire, yearIdx - 1); }
 
     /* current savings/investments: single source of truth is the Balance Sheet's Assets list — no separate entry here.
@@ -908,23 +908,27 @@
     var availableAtRetirement = pvdResult.finalBalance + (severance ? severance.amount : 0) + savingsRegularFV + currentSavingsFV_asis + windfallsFV;
 
     /* one-offs during drawdown: post-retirement portion of goals (-), post lumpsum windfalls (+), post-retirement health premiums (-) */
+    /* v1.9: year index y <-> age (retireAge + y - 1); cash flows at the beginning of each year.
+       Every post-retirement item is recorded individually (for the Box-1 breakdown) and aggregated into oneOffs. */
     var oneOffs = {};
+    var oneOffItems = [];
+    function addOneOff(cat, name, age, signedAmt) {
+      var yi = age - p.retireAge + 1;
+      if (yi < 1 || !signedAmt) return;
+      oneOffs[yi] = (oneOffs[yi] || 0) + signedAmt;
+      oneOffItems.push({ cat: cat, name: name, y: yi, age: age, amt: signedAmt });
+    }
+    var frIn = computeFinance(a);
     (a.goals || []).forEach(function (g) {
       var fromAge = Math.max(g.startAge, p.retireAge);
       for (var age = fromAge; age <= g.endAge; age++) {
-        var yi = age - p.retireAge;
-        if (yi >= 1) {
-          var yrsToRet = p.retireAge - p.currentAge;
-          var yrsPastRet = age - p.retireAge;
-          var amtAtGoalAge = g.amountToday * Math.pow(1 + asmp.inflationPreRetire, yrsToRet) * Math.pow(1 + asmp.inflationPostRetire, yrsPastRet);
-          oneOffs[yi] = (oneOffs[yi] || 0) - amtAtGoalAge;
-        }
+        var amtAtGoalAge = g.amountToday * Math.pow(1 + asmp.inflationPreRetire, p.retireAge - p.currentAge) * Math.pow(1 + asmp.inflationPostRetire, age - p.retireAge);
+        addOneOff('retGoal', g.name, age, -amtAtGoalAge);
       }
     });
-    postWindfallOneOffs.forEach(function (w) {
-      var yi = w.ageReceived - p.retireAge;
-      if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) + w.amount;
-    });
+    frIn.goalsCalc.forEach(function (g) { if (g.atAge >= p.retireAge) addOneOff('otherGoal', g.name, g.atAge, -g.futureValueNeeded); });
+    frIn.educationCalc.forEach(function (e) { if (e.atAge >= p.retireAge) addOneOff('edu', e.childName + ' (' + e.levelLabel + ')', e.atAge, -e.totalNeededAtStart); });
+    postWindfallOneOffs.forEach(function (w) { addOneOff('windfall', w.description || 'เงินได้ก้อน', w.ageReceived, w.amount); });
 
     /* health insurance premiums: flat nominal amount per band (no inflation — the number entered IS the amount actually paid each year in that band).
        Each band's payment phase uses the actual retirement bucket's own return rate for whatever period it falls in —
@@ -952,11 +956,7 @@
       });
     }
     (hi.bands || []).forEach(function (b) {
-      var fromAge = Math.max(b.fromAge, p.retireAge);
-      for (var age = fromAge; age <= b.toAge; age++) {
-        var yi = age - p.retireAge;
-        if (yi >= 1) oneOffs[yi] = (oneOffs[yi] || 0) - b.annualPremiumToday;
-      }
+      for (var age = Math.max(b.fromAge, p.retireAge); age <= b.toAge; age++) addOneOff('health', 'เบี้ยประกันสุขภาพ', age, -b.annualPremiumToday);
     });
 
     function pvOfOneOffsInRange(fromYear, toYear, rate) {
@@ -990,39 +990,51 @@
       });
       var totalYears = sized.reduce(function (s, b) { return s + b.years; }, 0);
       var netRequired = sized.reduce(function (s, b) { return s + b.requiredToday; }, 0);
-      var fwd = C.simulateBucketsForward(sized, needAnnualAtYear, pensionAnnualAtYear, totalYears, oneOffs);
-      var depAge = fwd.shortfallStartYear ? p.retireAge + fwd.shortfallStartYear : null;
+      /* planned = buckets funded exactly as sized; actual = the money really prepared (Box 2) split across
+         buckets in the same proportions — this is what "how long will it last" must be based on */
+      var plannedBals = sized.map(function (b) { return b.requiredToday; });
+      var actualBals = sized.map(function (b) { return netRequired > 0 ? availableAtRetirement * b.requiredToday / netRequired : availableAtRetirement / Math.max(1, sized.length); });
+      var fwdPlan = C.simulateBucketsActual(plannedBals, sized, needAnnualAtYear, pensionAnnualAtYear, totalYears, oneOffs);
+      var fwd = C.simulateBucketsActual(actualBals, sized, needAnnualAtYear, pensionAnnualAtYear, totalYears, oneOffs);
+      var depAge = fwd.shortfallStartYear ? p.retireAge + fwd.shortfallStartYear - 1 : null;
       function solveSustainable(sizedForSolve) {
-        var lo = 0, hiB = Math.max(netRequired * 3, 1e6) + 1;
+        var lo = 0, hiB = Math.max(netRequired, availableAtRetirement, 1e6) * 3 + 1;
         for (var i = 0; i < 60; i++) {
           var mid = (lo + hiB) / 2;
-          var f = C.simulateBucketsForward(sizedForSolve, function (y) { return mid * Math.pow(1 + asmp.inflationPostRetire, y - 1); }, pensionAnnualAtYear, totalYears, oneOffs);
+          var f = C.simulateBucketsActual(actualBals, sizedForSolve, function (y) { return mid * Math.pow(1 + asmp.inflationPostRetire, y - 1); }, pensionAnnualAtYear, totalYears, oneOffs);
           if (f.shortfallStartYear === null) lo = mid; else hiB = mid;
         }
         return lo;
       }
       var sustainable = solveSustainable(sized) / 12;
+      /* PV at retirement of a year-y amount, using the same bucket discounting as the sizing above */
+      function pvAtRetOfYear(y, amt) {
+        var idx = bounds2.findIndex(function (bd) { return y > bd[0] && y <= bd[1]; });
+        if (idx < 0) idx = sized.length - 1;
+        var b = sized[idx], start = bounds2[idx][0];
+        return amt / Math.pow(1 + b.drawdownReturn, y - start - 1) / Math.pow(1 + (idx === 0 ? 0 : b.waitingReturn), start);
+      }
       var bounds2 = [];
       var accB = 0;
       sized.forEach(function (b) { bounds2.push([accB, accB + b.years]); accB += b.years; });
       var table = [];
-      var prevBal = netRequired;
+      var prevBal = fwd.path[0].balance;
       for (var ty = 1; ty <= totalYears; ty++) {
         var needY = needAnnualAtYear(ty);
         var pensionY = pensionAnnualAtYear(ty);
         var oneOffY = oneOffs[ty] || 0;
         var endBal = fwd.path[ty] ? fwd.path[ty].balance : null;
-        var interest = endBal - prevBal + needY - pensionY - oneOffY;
+        var interest = endBal - Math.max(0, prevBal - needY + pensionY + oneOffY);
         var activeIdx = bounds2.findIndex(function (bd) { return ty > bd[0] && ty <= bd[1]; });
         var rateUsedRow = activeIdx >= 0 ? sized[activeIdx].drawdownReturn : null;
         table.push({
-          year: ty, beYear: p.currentYearAD + 543 + yearsToRetire + ty, age: p.retireAge + ty,
+          year: ty, beYear: p.currentYearAD + 543 + yearsToRetire + ty - 1, age: p.retireAge + ty - 1, unmet: fwd.path[ty] ? fwd.path[ty].unmet : 0,
           startBalance: prevBal, interest: interest, pension: pensionY, oneOff: oneOffY, withdrawal: needY, endBalance: endBal,
           rateUsed: rateUsedRow, bucketLabel: activeIdx >= 0 ? (sized[activeIdx].label || ('บัคเก็ต ' + (activeIdx + 1))) : '-'
         });
         prevBal = endBal;
       }
-      return { sizedBuckets: sized, totalYears: totalYears, netRequiredCorpus: netRequired, fwdPlanned: fwd, depletionAge: depAge, sustainableMonthly: sustainable, table: table, solveSustainable: solveSustainable };
+      return { sizedBuckets: sized, totalYears: totalYears, netRequiredCorpus: netRequired, fwdPlanned: fwdPlan, fwdActual: fwd, actualBals: actualBals, depletionAge: depAge, sustainableMonthly: sustainable, table: table, solveSustainable: solveSustainable, pvAtRetOfYear: pvAtRetOfYear };
     }
 
     var multiPlan = computeBucketPlan(a.buckets.list);
@@ -1056,6 +1068,50 @@
     var fwdPlanned = multiPlan.fwdPlanned;
     var depletionAge = multiPlan.depletionAge;
     var drawdownTable = multiPlan.table;
+    var fwdActual = multiPlan.fwdActual;
+
+    /* ---- breakdown of the retirement corpus (Box 1): each post-retirement item's PV at retirement ---- */
+    var corpusParts = {};
+    oneOffItems.forEach(function (it) {
+      var key = it.cat + '|' + it.name;
+      if (!corpusParts[key]) corpusParts[key] = { cat: it.cat, name: it.name, fromAge: it.age, toAge: it.age, pv: 0 };
+      corpusParts[key].pv += multiPlan.pvAtRetOfYear(it.y, -it.amt);
+      corpusParts[key].toAge = Math.max(corpusParts[key].toAge, it.age);
+    });
+    var corpusPartsList = Object.keys(corpusParts).map(function (k) { return corpusParts[k]; });
+    var corpusLiving = netRequiredCorpus - corpusPartsList.reduce(function (s2, c2) { return s2 + c2.pv; }, 0);
+
+    /* ---- goals that fall BEFORE retirement: funded by their own sinking fund (realistic — PVD etc. can't be touched early) ---- */
+    var rSave = a.extraSavingReturn;
+    var preMap = {};
+    function addPre(cat, name, age, amt) {
+      if (age >= p.retireAge || age < p.currentAge || !(amt > 0)) return;
+      var key = cat + '|' + name;
+      if (!preMap[key]) preMap[key] = { cat: cat, name: name, slices: [] };
+      preMap[key].slices.push({ age: age, amt: amt });
+    }
+    (a.goals || []).forEach(function (g) {
+      for (var age = g.startAge; age <= Math.min(g.endAge, p.retireAge - 1); age++) addPre('retGoal', g.name, age, g.amountToday * Math.pow(1 + asmp.inflationPreRetire, age - p.currentAge));
+    });
+    frIn.goalsCalc.forEach(function (g) { addPre('otherGoal', g.name, g.atAge, g.futureValueNeeded); });
+    frIn.educationCalc.forEach(function (e) { addPre('edu', e.childName + ' (' + e.levelLabel + ')', e.atAge, e.totalNeededAtStart); });
+    (hi.bands || []).forEach(function (b) { for (var age = b.fromAge; age <= Math.min(b.toAge, p.retireAge - 1); age++) addPre('health', 'เบี้ยประกันสุขภาพ (ก่อนเกษียณ)', age, b.annualPremiumToday); });
+    var preGoals = Object.keys(preMap).map(function (k) {
+      var g = preMap[k];
+      var startAge = g.slices.reduce(function (m, sl) { return Math.min(m, sl.age); }, 999);
+      var endAge = g.slices.reduce(function (m, sl) { return Math.max(m, sl.age); }, 0);
+      var total = g.slices.reduce(function (s2, sl) { return s2 + sl.amt; }, 0);
+      var targetAtStart = g.slices.reduce(function (s2, sl) { return s2 + sl.amt / Math.pow(1 + rSave, sl.age - startAge); }, 0);
+      var yrs = startAge - p.currentAge;
+      var fvAtRet = g.slices.reduce(function (s2, sl) { return s2 + sl.amt * Math.pow(1 + asmp.returnPreRetire, p.retireAge - sl.age); }, 0);
+      return { cat: g.cat, name: g.name, startAge: startAge, endAge: endAge, total: total, targetAtStart: targetAtStart, yearsToSave: yrs,
+        monthly: yrs > 0 ? C.pmtFromFV(targetAtStart, rSave, yrs, false) / 12 : null, fvAtRet: fvAtRet };
+    }).sort(function (x, y) { return x.startAge - y.startAge; });
+    var preGoalsFVAtRet = preGoals.reduce(function (s2, g) { return s2 + g.fvAtRet; }, 0);
+    var preGoalsMonthly = preGoals.reduce(function (s2, g) { return s2 + (g.monthly || 0); }, 0);
+    var preGoalsDueNow = preGoals.filter(function (g) { return g.monthly === null; }).reduce(function (s2, g) { return s2 + g.targetAtStart; }, 0);
+    var totalNeedAtRet = netRequiredCorpus + preGoalsFVAtRet;
+    var totalGap = totalNeedAtRet - availableAtRetirement;
     var sustainableMonthly = multiPlan.sustainableMonthly;
 
     /* stress test: apply delta to drawdownReturn of every bucket, for both plans */
@@ -1072,7 +1128,7 @@
       var regularItemsBal = regularItems.reduce(function (s, it) { return s + C.annuityFV(it.annualAmt, it.returnRate, yy, it.timing === 'begin'); }, 0);
       accumPath.push({ x: yy, label: String(p.currentYearAD + 543 + yy), y: pvdBal + currentItemsBal + regularItemsBal, age: p.currentAge + yy });
     }
-    var drawdownPath = fwdPlanned.path.map(function (pt) {
+    var drawdownPath = fwdActual.path.map(function (pt) {
       return { x: pt.year, label: String(p.currentYearAD + 543 + yearsToRetire + pt.year), y: Math.max(0, pt.balance), age: p.retireAge + pt.year };
     });
 
@@ -1116,7 +1172,13 @@
       pensionAnnualAtYear: pensionAnnualAtYear, drawdownTable: drawdownTable,
       healthBandsCalc: healthBandsCalc, healthRequiredToday: healthRequiredToday, healthYearTable: healthYearTable,
       multiPlan: multiPlan, singlePlan: singlePlan, blendedRate: blendedRate,
-      multiExtraSaving: multiExtraSaving, singleExtraSaving: singleExtraSaving, singleGap: singleGap
+      multiExtraSaving: multiExtraSaving, singleExtraSaving: singleExtraSaving, singleGap: singleGap,
+      fwdActual: fwdActual, oneOffs: oneOffs, corpusPartsList: corpusPartsList, corpusLiving: corpusLiving,
+      preGoals: preGoals, preGoalsFVAtRet: preGoalsFVAtRet, preGoalsMonthly: preGoalsMonthly, preGoalsDueNow: preGoalsDueNow,
+      totalNeedAtRet: totalNeedAtRet, totalGap: totalGap,
+      retExtraMonthly: gap > 0 ? extraSavingFlatMonthly : 0,
+      totalExtraMonthly: (gap > 0 ? extraSavingFlatMonthly : 0) + preGoalsMonthly,
+      totalExtraMode: (gap > 0 ? extraMonthlySaving : 0) + preGoalsMonthly
     };
   }
 
@@ -2047,153 +2109,558 @@
       '<div class="entry-note" style="margin-top:6px">เงินเฟ้อการศึกษา และผลตอบแทนของพอร์ตแต่ละระดับความเสี่ยง ยังแก้ได้ที่แท็บ "สมมติฐาน" เช่นเดิม</div>';
   }
 
-  /* ================= INTERACTIVE GROWTH WIDGET (Box 1: ค่าใช้จ่ายหลังเกษียณ) =================
-     Sandbox only: sliders never write back to the case data. Initial values are pulled from the
-     client-data tabs; if that data changes, the sandbox resets itself to the new values. */
-  var SIM = null;
-  function simSource(a, r) {
-    var p = a.personal, asmp = a.assumptions;
-    var yrs = Math.max(0, p.retireAge - p.currentAge);
-    var monthlyToday = p.spendingMethod === 'replacement'
-      ? r.firstYearMonthlyNeed / Math.pow(1 + asmp.inflationPreRetire, yrs)
-      : p.customMonthlyExpense;
-    return { monthly: Math.round(monthlyToday || 0), retireAge: p.retireAge, inflPre: asmp.inflationPreRetire, inflPost: asmp.inflationPostRetire,
-      currentAge: p.currentAge, lifeExpectancy: p.lifeExpectancy, beNow: p.currentYearAD + 543, method: p.spendingMethod };
+  /* ================= INTERACTIVE SANDBOX WIDGETS (calc tab) =================
+     Every box gets a visual, slider-driven sandbox. Sliders NEVER write to the case data.
+     Initial values come from the client-data tabs; when that data changes, the sandbox resets itself.
+     Keys starting with "_" (e.g. _scrub) are view-only and don't count as "simulating". */
+  var SIMS = {};
+  var WIDGETS = {};
+  function simGet(key, init, ctx) {
+    var sig = STORE.activeId + '|' + JSON.stringify(init) + '|' + JSON.stringify(ctx);
+    if (!SIMS[key] || SIMS[key].sig !== sig) SIMS[key] = { sig: sig, init: init, ctx: ctx, v: clone(init) };
+    return SIMS[key];
   }
-  function simState(a, r) {
-    var src = simSource(a, r);
-    var sig = STORE.activeId + '|' + JSON.stringify(src);
-    if (!SIM || SIM.sig !== sig) {
-      SIM = { sig: sig, src: src, monthly: src.monthly, retireAge: src.retireAge, inflPre: src.inflPre, inflPost: src.inflPost, scrub: src.retireAge };
+  function simChanged(st) {
+    return Object.keys(st.init).some(function (k) { return k.charAt(0) !== '_' && Math.abs((st.v[k] || 0) - (st.init[k] || 0)) > 1e-9; });
+  }
+  function anySimChanged() { return Object.keys(SIMS).some(function (k) { return simChanged(SIMS[k]); }); }
+  function pctTxt(x) { return (x * 100).toFixed(1) + '%'; }
+  function niceCeil(v) {
+    if (!(v > 0)) return 1;
+    var mag = Math.pow(10, Math.floor(Math.log10(v))), f = v / mag;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+  }
+  function fmtShort(v) { var s = v < 0 ? '-' : ''; v = Math.abs(v); return s + (v >= 1e6 ? (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + 'M' : (v >= 1000 ? Math.round(v / 1000) + 'K' : String(Math.round(v)))); }
+  function fmtYM(years) { var y = Math.floor(years), m = Math.round((years - y) * 12); if (m === 12) { y++; m = 0; } return (y ? y + ' ปี' : '') + (m ? (y ? ' ' : '') + m + ' เดือน' : (y ? '' : 'ไม่ถึง 1 เดือน')); }
+  function isNarrow() { return (window.innerWidth || 1024) < 760; }
+  /* keeps the Y axis anchored to the client-data baseline (with headroom) so that "more" always looks taller */
+  function stableMax(baseMax, curMax) { return niceCeil(Math.max(baseMax * 1.35, curMax * 1.05, 1)); }
+
+  function simSlider(key, field, label, min, max, step, scale, st) {
+    var val = st.v[field] * scale;
+    return '<label class="gw-slider"><span class="gw-slider-head"><span>' + label + '</span><strong data-sim-label="' + key + ':' + field + '">' + WIDGETS[key].disp(field, st) + '</strong></span>' +
+      '<input type="range" data-sim="' + key + '" data-field="' + field + '" data-scale="' + scale + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '"></label>';
+  }
+  function badgeHtml(changed) { return changed ? '🧪 กำลังจำลอง' : '✓ ตามข้อมูลลูกค้า'; }
+  function widgetShell(key, st, title, sub, slidersHtml, afterOut) {
+    var ch = simChanged(st);
+    return '<div class="gw' + (ch ? ' gw-sim' : '') + '" data-widget="' + key + '">' +
+      '<div class="gw-head"><div><div class="gw-title">' + title + ' <span class="gw-badge" data-badge="' + key + '">' + badgeHtml(ch) + '</span></div>' +
+      '<div class="gw-sub">' + sub + '</div></div>' +
+      '<button class="btn btn-sm gw-reset" type="button" data-action="simReset" data-key="' + key + '"' + (ch ? '' : ' disabled') + '>↺ กลับสู่ข้อมูลลูกค้า</button></div>' +
+      (slidersHtml ? '<div class="gw-sliders">' + slidersHtml + '</div>' : '') +
+      '<div data-out="' + key + '">' + WIDGETS[key].out(st) + '</div>' + (afterOut || '') +
+      '</div>';
+  }
+  function renderSimResetBar() {
+    var ch = anySimChanged();
+    return '<div class="gw-resetbar no-print' + (ch ? ' gw-sim' : '') + '" id="gwResetBar"><span>' +
+      (ch ? '🧪 มีบางกล่องกำลังแสดง<strong>ค่าจำลอง</strong> ไม่ใช่ข้อมูลจริงของลูกค้า' : '✓ ทุกกล่องแสดงผลตาม<strong>ข้อมูลลูกค้า</strong> — ลองเลื่อนแถบในแต่ละกล่องเพื่อจำลองสถานการณ์ได้') +
+      '</span><button class="btn btn-sm gw-reset" type="button" data-action="simResetAll"' + (ch ? '' : ' disabled') + '>↺ คืนค่าทั้งหมด</button></div>';
+  }
+  function refreshSimChrome(key) {
+    var st = SIMS[key], ch = simChanged(st);
+    var box = root.querySelector('.gw[data-widget="' + key + '"]');
+    if (box) {
+      box.classList.toggle('gw-sim', ch);
+      var b = box.querySelector('[data-badge]'); if (b) b.textContent = badgeHtml(ch);
+      var rb = box.querySelector('.gw-reset'); if (rb) rb.disabled = !ch;
     }
-    return SIM;
+    var bar = document.getElementById('gwResetBar');
+    if (bar) bar.outerHTML = renderSimResetBar();
   }
-  function simSeries(s) {
-    var src = s.src, rows = [];
-    for (var age = src.currentAge; age <= src.lifeExpectancy; age++) {
-      var pre = Math.min(age, s.retireAge) - src.currentAge;
-      var post = Math.max(0, age - s.retireAge);
-      rows.push({ age: age, be: src.beNow + (age - src.currentAge), isPost: age >= s.retireAge,
-        monthly: s.monthly * Math.pow(1 + s.inflPre, pre) * Math.pow(1 + s.inflPost, post) });
+  function onSimInput(t) {
+    var key = t.dataset.sim, st = SIMS[key];
+    if (!st) return;
+    st.v[t.dataset.field] = (parseFloat(t.value) || 0) / (parseFloat(t.dataset.scale) || 1);
+    var W = WIDGETS[key];
+    root.querySelectorAll('[data-sim-label^="' + key + ':"]').forEach(function (lab) { lab.textContent = W.disp(lab.dataset.simLabel.split(':')[1], st); });
+    var out = root.querySelector('[data-out="' + key + '"]'); if (out) out.innerHTML = W.out(st);
+    if (W.out2) { var o2 = root.querySelector('[data-out2="' + key + '"]'); if (o2) o2.innerHTML = W.out2(st); }
+    refreshSimChrome(key);
+  }
+
+  /* split of the retirement-expense corpus: gross PV of spending minus a residual that reproduces the plan exactly */
+  function corpusSplit(a, r) {
+    var asmp = a.assumptions, yrs = Math.max(1, a.personal.lifeExpectancy - a.personal.retireAge);
+    var gross = C.growingAnnuityPV(r.firstYearMonthlyNeed * 12, asmp.returnPostRetire, asmp.inflationPostRetire, yrs, true);
+    return { gross: gross, offset: gross - r.netRequiredCorpus, yrs: yrs };
+  }
+
+  /* ---------- BOX 1: ค่าครองชีพโตแค่ไหน ---------- */
+  function b1Series(c, v) {
+    var rows = [];
+    for (var age = c.currentAge; age <= c.lifeExpectancy; age++) {
+      var pre = Math.min(age, v.retireAge) - c.currentAge, post = Math.max(0, age - v.retireAge);
+      rows.push({ age: age, be: c.beNow + (age - c.currentAge), isPost: age >= v.retireAge, monthly: v.monthly * Math.pow(1 + v.inflPre, pre) * Math.pow(1 + v.inflPost, post) });
     }
     return rows;
   }
-  function pctTxt(x) { return (x * 100).toFixed(1) + '%'; }
-
-  function growthChartSvg(s, rows) {
-    var narrow = (window.innerWidth || 1024) < 760;
-    var W = narrow ? 360 : 640, H = narrow ? 250 : 290, padL = 10, padR = 10, padT = 34, padB = 58;
-    var n = rows.length, maxV = 0;
-    rows.forEach(function (rw) { if (rw.monthly > maxV) maxV = rw.monthly; });
-    if (maxV <= 0) maxV = 1;
-    var slot = (W - padL - padR) / n, bw = Math.max(2, slot * 0.72);
-    var ch = H - padT - padB;
-    var bars = '', ticks = '', marker = '', scrubHtml = '';
-    rows.forEach(function (rw, i) {
-      var h = Math.max(1, rw.monthly / maxV * ch);
-      var x = padL + i * slot + (slot - bw) / 2, y = padT + ch - h;
-      var isScrub = rw.age === s.scrub;
-      var fill = isScrub ? '#C98A1F' : (rw.isPost ? '#2E9E63' : '#1E6FD9');
-      bars += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="' + fill + '" opacity="' + (isScrub ? 1 : 0.85) + '">' +
-        '<title>อายุ ' + rw.age + ' (พ.ศ. ' + rw.be + '): ' + fmt(rw.monthly) + ' บาท/เดือน</title></rect>';
-      var showTick = i === 0 || i === n - 1 || rw.age === s.retireAge || ((rw.age - rows[0].age) % (narrow ? 15 : 10) === 0 && Math.abs(rw.age - s.retireAge) > (narrow ? 6 : 3) && (rows[n - 1].age - rw.age) > (narrow ? 6 : 3));
-      if (showTick) {
-        var cx = padL + i * slot + slot / 2;
-        ticks += '<text x="' + cx.toFixed(1) + '" y="' + (padT + ch + 20) + '" text-anchor="middle" class="gw-tick">' + rw.age + '</text>' +
-          '<text x="' + cx.toFixed(1) + '" y="' + (padT + ch + 38) + '" text-anchor="middle" class="gw-tick-be">' + rw.be + '</text>';
-      }
-      if (rw.age === s.retireAge) {
-        var mx = padL + i * slot;
-        marker = '<line x1="' + mx.toFixed(1) + '" x2="' + mx.toFixed(1) + '" y1="' + (padT - 18) + '" y2="' + (padT + ch) + '" stroke="#0B2545" stroke-width="1.5" stroke-dasharray="4 4"/>' +
-          '<text x="' + (mx + 6).toFixed(1) + '" y="' + (padT - 6) + '" class="gw-marker-label">เกษียณ</text>';
-      }
-      if (isScrub) {
-        var sx = padL + i * slot + slot / 2;
-        var anchor = i < n * 0.2 ? 'start' : (i > n * 0.8 ? 'end' : 'middle');
-        scrubHtml = '<text x="' + sx.toFixed(1) + '" y="' + Math.max(14, y - 8).toFixed(1) + '" text-anchor="' + anchor + '" class="gw-scrub-label">' + fmt(rw.monthly) + '</text>';
-      }
-    });
-    return '<svg class="gw-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="กราฟค่าใช้จ่ายรายเดือนที่เพิ่มขึ้นตามเงินเฟ้อ">' +
-      '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + (padT + ch) + '" y2="' + (padT + ch) + '" stroke="#CBDAEA"/>' +
-      bars + marker + scrubHtml + ticks +
-      '<text x="' + padL + '" y="' + (H - 4) + '" class="gw-axis-note">อายุ (บน) / พ.ศ. (ล่าง)</text>' +
-      '</svg>';
+  function ageTicks(rows, i, n, special, narrow) {
+    var rw = rows[i];
+    return i === 0 || i === n - 1 || rw.age === special || ((rw.age - rows[0].age) % (narrow ? 15 : 10) === 0 && Math.abs(rw.age - special) > (narrow ? 6 : 3) && (rows[n - 1].age - rw.age) > (narrow ? 6 : 3));
   }
-
-  function growthWidgetOutput(s) {
-    var src = s.src, rows = simSeries(s);
-    var nPre = Math.max(0, s.retireAge - src.currentAge), nPost = Math.max(0, src.lifeExpectancy - s.retireAge);
-    var atRet = s.monthly * Math.pow(1 + s.inflPre, nPre);
-    var atEnd = atRet * Math.pow(1 + s.inflPost, nPost);
-    var mult = s.monthly > 0 ? atRet / s.monthly : Math.pow(1 + s.inflPre, nPre);
-    var purchasing = s.monthly / Math.pow(1 + s.inflPre, nPre);
-    var totalRetired = 0;
-    rows.forEach(function (rw) { if (rw.isPost && rw.age < src.lifeExpectancy) totalRetired += rw.monthly * 12; });
-    var beRet = src.beNow + nPre, beEnd = src.beNow + (src.lifeExpectancy - src.currentAge);
-    var scrubRow = rows.filter(function (rw) { return rw.age === s.scrub; })[0] || rows[0];
-
-    var journey = '<div class="gw-journey">' +
-      '<div class="gw-node gw-node-now"><div class="gw-node-tag">วันนี้</div><div class="gw-node-age">อายุ ' + src.currentAge + ' · พ.ศ. ' + src.beNow + '</div>' +
-        '<div class="gw-node-val">' + fmt(s.monthly) + '</div><div class="gw-node-unit">บาท/เดือน</div></div>' +
-      '<div class="gw-link"><div class="gw-link-line"></div><div class="gw-link-txt">' + nPre + ' ปี · เงินเฟ้อ ' + pctTxt(s.inflPre) + '/ปี</div><div class="gw-link-mult">×' + mult.toFixed(2) + '</div></div>' +
-      '<div class="gw-node gw-node-ret"><div class="gw-node-tag">วันเกษียณ</div><div class="gw-node-age">อายุ ' + s.retireAge + ' · พ.ศ. ' + beRet + '</div>' +
-        '<div class="gw-node-val">' + fmt(atRet) + '</div><div class="gw-node-unit">บาท/เดือน (' + fmt(atRet * 12) + '/ปี)</div></div>' +
-      '<div class="gw-link gw-link-post"><div class="gw-link-line"></div><div class="gw-link-txt">' + nPost + ' ปี · เงินเฟ้อ ' + pctTxt(s.inflPost) + '/ปี</div></div>' +
-      '<div class="gw-node gw-node-end"><div class="gw-node-tag">ปลายแผน</div><div class="gw-node-age">อายุ ' + src.lifeExpectancy + ' · พ.ศ. ' + beEnd + '</div>' +
-        '<div class="gw-node-val">' + fmt(atEnd) + '</div><div class="gw-node-unit">บาท/เดือน</div></div>' +
-      '</div>';
-
-    var insights = '<div class="gw-insights">' +
-      '<div class="gw-insight"><span class="gw-ic">🛒</span><div>ของที่ซื้อได้ด้วย <strong>' + fmt(s.monthly) + '</strong> บาทวันนี้ วันเกษียณต้องจ่าย <strong>' + fmt(atRet) + '</strong> บาท</div></div>' +
-      '<div class="gw-insight"><span class="gw-ic">📉</span><div>ถ้าเก็บเงิน <strong>' + fmt(s.monthly) + '</strong> บาทไว้เฉยๆ ถึงวันเกษียณ จะซื้อของได้เท่ากับ <strong>' + fmt(purchasing) + '</strong> บาทของวันนี้</div></div>' +
-      '<div class="gw-insight"><span class="gw-ic">🧾</span><div>ค่าใช้จ่ายรวมตลอด ' + nPost + ' ปีหลังเกษียณ <strong>' + fmt(totalRetired) + '</strong> บาท <span class="gw-muted">(ยังไม่หักบำนาญ/ผลตอบแทน)</span></div></div>' +
-      '</div>';
-
-
-    var scrubInfo = '<div class="gw-scrub-info">อายุ <strong>' + scrubRow.age + '</strong> (พ.ศ. ' + scrubRow.be + ') ' + (scrubRow.isPost ? 'หลังเกษียณ' : 'ก่อนเกษียณ') +
-      ' → ค่าครองชีพเทียบเท่า <strong>' + fmt(scrubRow.monthly) + '</strong> บาท/เดือน</div>';
-
-    return journey + insights +
-      '<div class="gw-chart-wrap"><div class="gw-legend"><span><i style="background:#1E6FD9"></i>ก่อนเกษียณ</span><span><i style="background:#2E9E63"></i>หลังเกษียณ</span><span><i style="background:#C98A1F"></i>อายุที่เลือก</span></div>' +
-      growthChartSvg(s, rows) + scrubInfo + '</div>';
+  function yGrid(maxV, padL, W, padR, padT, ch, steps) {
+    var g = '', f = maxV / Math.pow(10, Math.floor(Math.log10(maxV)));
+    steps = Math.abs(f - 2) < 1e-9 ? 4 : 5;
+    for (var k = 0; k <= steps; k++) {
+      var gy = padT + ch - ch * k / steps;
+      g += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '" stroke="' + (k === 0 ? '#9FB6CE' : '#E3ECF5') + '"/>' +
+        '<text x="' + (padL - 5) + '" y="' + (gy + 4).toFixed(1) + '" text-anchor="end" class="gw-ytick">' + fmtShort(maxV * k / steps) + '</text>';
+    }
+    return g;
   }
-  function growthWidgetFormula(s) {
-    var nPre = Math.max(0, s.retireAge - s.src.currentAge);
-    var atRet = s.monthly * Math.pow(1 + s.inflPre, nPre);
-    return '<div class="gw-formula">FV = PV × (1 + i)<sup>n</sup> = ' + fmt(s.monthly) + ' × (1 + ' + pctTxt(s.inflPre) + ')<sup>' + nPre + '</sup> = <strong>' + fmt(atRet) + ' บาท/เดือน</strong></div>';
-  }
-
-  function simSlider(key, label, min, max, step, value, display) {
-    return '<label class="gw-slider"><span class="gw-slider-head"><span>' + label + '</span><strong data-sim-label="' + key + '">' + display + '</strong></span>' +
-      '<input type="range" data-sim="' + key + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + value + '"></label>';
-  }
-  function simDisplay(key, s) {
-    if (key === 'monthly') return fmt(s.monthly) + ' บาท';
-    if (key === 'retireAge') return s.retireAge + ' ปี (อีก ' + (s.retireAge - s.src.currentAge) + ' ปี)';
-    if (key === 'inflPre' || key === 'inflPost') return pctTxt(s[key]);
-    if (key === 'scrub') return 'อายุ ' + s.scrub;
-    return '';
-  }
-
+  WIDGETS.b1 = {
+    disp: function (f, st) {
+      var v = st.v;
+      if (f === 'monthly') return fmt(v.monthly) + ' บาท';
+      if (f === 'retireAge') return v.retireAge + ' ปี (อีก ' + (v.retireAge - st.ctx.currentAge) + ' ปี)';
+      if (f === 'inflPre' || f === 'inflPost') return pctTxt(v[f]);
+      if (f === '_scrub') return 'อายุ ' + v._scrub;
+      return '';
+    },
+    out: function (st) {
+      var c = st.ctx, v = st.v, rows = b1Series(c, v), narrow = isNarrow();
+      var nPre = Math.max(0, v.retireAge - c.currentAge), nPost = Math.max(0, c.lifeExpectancy - v.retireAge);
+      var atRet = v.monthly * Math.pow(1 + v.inflPre, nPre), atEnd = atRet * Math.pow(1 + v.inflPost, nPost);
+      var mult = Math.pow(1 + v.inflPre, nPre), purchasing = v.monthly / mult, totalRetired = 0;
+      rows.forEach(function (rw) { if (rw.isPost && rw.age < c.lifeExpectancy) totalRetired += rw.monthly * 12; });
+      var scrubRow = rows.filter(function (rw) { return rw.age === v._scrub; })[0] || rows[0];
+      var journey = '<div class="gw-journey">' +
+        '<div class="gw-node gw-node-now"><div class="gw-node-tag">วันนี้</div><div class="gw-node-age">อายุ ' + c.currentAge + ' · พ.ศ. ' + c.beNow + '</div><div class="gw-node-val">' + fmt(v.monthly) + '</div><div class="gw-node-unit">บาท/เดือน</div></div>' +
+        '<div class="gw-link"><div class="gw-link-line"></div><div class="gw-link-txt">' + nPre + ' ปี · เงินเฟ้อ ' + pctTxt(v.inflPre) + '/ปี</div><div class="gw-link-mult">×' + mult.toFixed(2) + '</div></div>' +
+        '<div class="gw-node gw-node-ret"><div class="gw-node-tag">วันเกษียณ</div><div class="gw-node-age">อายุ ' + v.retireAge + ' · พ.ศ. ' + (c.beNow + nPre) + '</div><div class="gw-node-val">' + fmt(atRet) + '</div><div class="gw-node-unit">บาท/เดือน (' + fmt(atRet * 12) + '/ปี)</div></div>' +
+        '<div class="gw-link gw-link-post"><div class="gw-link-line"></div><div class="gw-link-txt">' + nPost + ' ปี · เงินเฟ้อ ' + pctTxt(v.inflPost) + '/ปี</div></div>' +
+        '<div class="gw-node gw-node-end"><div class="gw-node-tag">ปลายแผน</div><div class="gw-node-age">อายุ ' + c.lifeExpectancy + ' · พ.ศ. ' + (c.beNow + c.lifeExpectancy - c.currentAge) + '</div><div class="gw-node-val">' + fmt(atEnd) + '</div><div class="gw-node-unit">บาท/เดือน</div></div>' +
+        '</div>';
+      var insights = '<div class="gw-insights">' +
+        '<div class="gw-insight"><span class="gw-ic">🛒</span><div>ของที่ซื้อได้ด้วย <strong>' + fmt(v.monthly) + '</strong> บาทวันนี้ วันเกษียณต้องจ่าย <strong>' + fmt(atRet) + '</strong> บาท</div></div>' +
+        '<div class="gw-insight"><span class="gw-ic">📉</span><div>ถ้าเก็บเงิน <strong>' + fmt(v.monthly) + '</strong> บาทไว้เฉยๆ ถึงวันเกษียณ จะซื้อของได้เท่ากับ <strong>' + fmt(purchasing) + '</strong> บาทของวันนี้</div></div>' +
+        '<div class="gw-insight"><span class="gw-ic">🧾</span><div>ค่าใช้จ่ายรวมตลอด ' + nPost + ' ปีหลังเกษียณ <strong>' + fmt(totalRetired) + '</strong> บาท <span class="gw-muted">(ยังไม่หักบำนาญ/ผลตอบแทน)</span></div></div></div>';
+      /* chart */
+      var base = b1Series(c, st.init), baseMap = {}, baseMax = 0, curMax = 0, changed = simChanged(st);
+      base.forEach(function (b) { baseMap[b.age] = b.monthly; baseMax = Math.max(baseMax, b.monthly); });
+      rows.forEach(function (rw) { curMax = Math.max(curMax, rw.monthly); });
+      var maxV = stableMax(baseMax, curMax);
+      var W = narrow ? 360 : 640, H = narrow ? 260 : 300, padL = narrow ? 36 : 46, padR = 8, padT = 34, padB = 58, ch = H - padT - padB;
+      var n = rows.length, slot = (W - padL - padR) / n, bw = Math.max(2, slot * 0.72);
+      var ghosts = '', bars = '', ticks = '', marker = '', lab = '';
+      rows.forEach(function (rw, i) {
+        var x = padL + i * slot + (slot - bw) / 2, cx = padL + i * slot + slot / 2;
+        if (changed && baseMap[rw.age] != null) { var bh = Math.max(1, baseMap[rw.age] / maxV * ch); ghosts += '<rect x="' + x.toFixed(1) + '" y="' + (padT + ch - bh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" class="gw-ghost"/>'; }
+        var h = Math.max(1, Math.min(rw.monthly, maxV) / maxV * ch), y = padT + ch - h, sel = rw.age === v._scrub;
+        bars += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="' + (sel ? '#C98A1F' : (rw.isPost ? '#2E9E63' : '#1E6FD9')) + '" opacity="' + (sel ? 1 : 0.8) + '"><title>อายุ ' + rw.age + ' (พ.ศ. ' + rw.be + '): ' + fmt(rw.monthly) + ' บาท/เดือน</title></rect>';
+        if (ageTicks(rows, i, n, v.retireAge, narrow)) ticks += '<text x="' + cx.toFixed(1) + '" y="' + (padT + ch + 20) + '" text-anchor="middle" class="gw-tick">' + rw.age + '</text><text x="' + cx.toFixed(1) + '" y="' + (padT + ch + 38) + '" text-anchor="middle" class="gw-tick-be">' + rw.be + '</text>';
+        if (rw.age === v.retireAge) { var mx = padL + i * slot; marker = '<line x1="' + mx.toFixed(1) + '" x2="' + mx.toFixed(1) + '" y1="' + (padT - 18) + '" y2="' + (padT + ch) + '" class="gw-vline"/><text x="' + (mx + 6).toFixed(1) + '" y="' + (padT - 6) + '" class="gw-marker-label">เกษียณ</text>'; }
+        if (sel) lab = '<text x="' + cx.toFixed(1) + '" y="' + Math.max(14, y - 8).toFixed(1) + '" text-anchor="' + (i < n * 0.2 ? 'start' : (i > n * 0.8 ? 'end' : 'middle')) + '" class="gw-scrub-label">' + fmt(rw.monthly) + '</text>';
+      });
+      var svg = '<svg class="gw-chart" viewBox="0 0 ' + W + ' ' + H + '">' + yGrid(maxV, padL, W, padR, padT, ch, 4) + ghosts + bars + marker + lab + ticks + '<text x="' + padL + '" y="' + (H - 4) + '" class="gw-axis-note">บาท/เดือน · อายุ (บน) / พ.ศ. (ล่าง)</text></svg>';
+      return journey + insights +
+        '<div class="gw-chart-wrap"><div class="gw-legend"><span><i style="background:#1E6FD9"></i>ก่อนเกษียณ</span><span><i style="background:#2E9E63"></i>หลังเกษียณ</span><span><i style="background:#C98A1F"></i>อายุที่เลือก</span><span><i class="gw-ghost-key"></i>ค่าจากข้อมูลลูกค้า</span></div>' + svg +
+        '<div class="gw-scrub-info">อายุ <strong>' + scrubRow.age + '</strong> (พ.ศ. ' + scrubRow.be + ') ' + (scrubRow.isPost ? 'หลังเกษียณ' : 'ก่อนเกษียณ') + ' → ค่าครองชีพเทียบเท่า <strong>' + fmt(scrubRow.monthly) + '</strong> บาท/เดือน</div></div>';
+    },
+    out2: function (st) {
+      var v = st.v, n = Math.max(0, v.retireAge - st.ctx.currentAge);
+      return '<div class="gw-formula">FV = PV × (1 + i)<sup>n</sup> = ' + fmt(v.monthly) + ' × (1 + ' + pctTxt(v.inflPre) + ')<sup>' + n + '</sup> = <strong>' + fmt(v.monthly * Math.pow(1 + v.inflPre, n)) + ' บาท/เดือน</strong></div>';
+    }
+  };
   function renderGrowthWidget(a, r) {
-    var s = simState(a, r), src = s.src;
-    var monthlyMax = Math.max(100000, Math.ceil(src.monthly * 3 / 10000) * 10000);
-    var changed = s.monthly !== src.monthly || s.retireAge !== src.retireAge || Math.abs(s.inflPre - src.inflPre) > 1e-9 || Math.abs(s.inflPost - src.inflPost) > 1e-9;
-    return '<div class="gw" id="growthWidget">' +
-      '<div class="gw-head"><div><div class="gw-title">📈 ค่าครองชีพของคุณจะโตแค่ไหน?</div>' +
-      '<div class="gw-sub">ลองเลื่อนแถบด้านล่างเพื่อจำลอง — ไม่กระทบข้อมูลลูกค้าที่บันทึกไว้' +
-      (src.method === 'replacement' ? '<br>ค่าใช้จ่ายวันนี้คิดย้อนจากวิธีอัตราทดแทนรายได้ (เงินเดือนสุดท้าย × อัตราทดแทน ÷ เงินเฟ้อ)' : '') + '</div></div>' +
-      '<button class="btn btn-sm gw-reset" type="button" data-action="simReset"' + (changed ? '' : ' disabled') + '>↺ ใช้ค่าจากข้อมูลลูกค้า</button></div>' +
-      '<div class="gw-sliders">' +
-      simSlider('monthly', 'ค่าใช้จ่ายต่อเดือน (มูลค่าวันนี้)', 0, monthlyMax, 500, s.monthly, simDisplay('monthly', s)) +
-      simSlider('retireAge', 'อายุเกษียณ', src.currentAge + 1, Math.max(src.currentAge + 2, src.lifeExpectancy - 1), 1, s.retireAge, simDisplay('retireAge', s)) +
-      simSlider('inflPre', 'เงินเฟ้อก่อนเกษียณ', 0, 8, 0.1, (s.inflPre * 100).toFixed(1), simDisplay('inflPre', s)) +
-      simSlider('inflPost', 'เงินเฟ้อหลังเกษียณ', 0, 8, 0.1, (s.inflPost * 100).toFixed(1), simDisplay('inflPost', s)) +
-      '</div>' +
-      '<div id="gwOut">' + growthWidgetOutput(s) + '</div>' +
-      '<div class="gw-scrub">' + simSlider('scrub', '👆 เลื่อนดูค่าใช้จ่ายแต่ละอายุ', src.currentAge, src.lifeExpectancy, 1, s.scrub, simDisplay('scrub', s)) + '</div>' +
-      '<div id="gwFormula">' + growthWidgetFormula(s) + '</div>' +
-      '</div>';
+    var p = a.personal, asmp = a.assumptions, yrs = Math.max(0, p.retireAge - p.currentAge);
+    var monthlyToday = p.spendingMethod === 'replacement' ? r.firstYearMonthlyNeed / Math.pow(1 + asmp.inflationPreRetire, yrs) : p.customMonthlyExpense;
+    var st = simGet('b1', { monthly: Math.round(monthlyToday || 0), retireAge: p.retireAge, inflPre: asmp.inflationPreRetire, inflPost: asmp.inflationPostRetire, _scrub: p.retireAge },
+      { currentAge: p.currentAge, lifeExpectancy: p.lifeExpectancy, beNow: p.currentYearAD + 543, method: p.spendingMethod });
+    var c = st.ctx;
+    var sliders = simSlider('b1', 'monthly', 'ค่าใช้จ่ายต่อเดือน (มูลค่าวันนี้)', 0, Math.max(100000, Math.ceil(st.init.monthly * 3 / 10000) * 10000), 500, 1, st) +
+      simSlider('b1', 'retireAge', 'อายุเกษียณ', c.currentAge + 1, Math.max(c.currentAge + 2, c.lifeExpectancy - 1), 1, 1, st) +
+      simSlider('b1', 'inflPre', 'เงินเฟ้อก่อนเกษียณ', 0, 8, 0.1, 100, st) +
+      simSlider('b1', 'inflPost', 'เงินเฟ้อหลังเกษียณ', 0, 8, 0.1, 100, st);
+    var after = '<div class="gw-scrub">' + simSlider('b1', '_scrub', '👆 เลื่อนดูค่าใช้จ่ายแต่ละอายุ', c.currentAge, c.lifeExpectancy, 1, 1, st) + '</div>' +
+      '<div data-out2="b1">' + WIDGETS.b1.out2(st) + '</div>';
+    return widgetShell('b1', st, '📈 ค่าครองชีพของคุณจะโตแค่ไหน?',
+      'ลองเลื่อนแถบเพื่อจำลอง — ไม่กระทบข้อมูลลูกค้าที่บันทึกไว้' + (c.method === 'replacement' ? '<br>ค่าใช้จ่ายวันนี้คิดย้อนจากวิธีอัตราทดแทนรายได้' : ''), sliders, after);
+  }
+
+  /* ---------- BOX 2: ถังเงินที่ค่อยๆ เต็ม ---------- */
+  var B2_LAYERS = [
+    { k: 'assets', label: 'สินทรัพย์ปัจจุบัน', color: '#123A66' },
+    { k: 'pvd', label: 'PVD / กบข.', color: '#1E6FD9' },
+    { k: 'regular', label: 'เงินออมต่อเนื่อง', color: '#17C3E0' },
+    { k: 'windfall', label: 'เงินก้อนระหว่างทาง', color: '#2E9E63' },
+    { k: 'severance', label: 'เงินชดเชย', color: '#C98A1F' }
+  ];
+  function b2Layers(c, v) {
+    var n = c.n, d = v.dRet, out = [];
+    var pvdPath = null;
+    if (c.pvd) { var o = clone(c.pvd); o.fundReturn = c.pvd.fundReturn + d; pvdPath = C.simulatePVD(o).path; }
+    function wfAt(age, rate) {
+      var s = 0;
+      c.windfalls.forEach(function (w) {
+        if (w.kind === 'lump') { if (w.age <= age) s += w.amount * Math.pow(1 + rate, age - w.age); }
+        else { for (var aa = w.start; aa <= Math.min(w.end, age); aa++) s += w.perYear * Math.pow(1 + w.growth, Math.floor((aa - w.start) / w.step)) * Math.pow(1 + rate, age - aa); }
+      });
+      return s;
+    }
+    for (var t = 0; t <= n; t++) {
+      var age = c.currentAge + t;
+      var assets = c.assets.reduce(function (s, it) { return s + it.amount * Math.pow(1 + (it.rate > 0 ? it.rate + d : 0), t); }, 0);
+      var reg = (c.regular ? C.annuityFV(c.regular.annual, c.regular.rate + d, t, false) : 0) + C.annuityFV(v.extra * 12, (c.regular ? c.regular.rate : c.retPre) + d, t, false);
+      out.push({ t: t, age: age, be: c.beNow + t,
+        assets: assets,
+        pvd: c.pvd ? (t === 0 ? (c.pvd.startingBalance || 0) : pvdPath[t - 1].balance) : 0,
+        regular: reg,
+        windfall: wfAt(age, c.retPre + d) * c.wfNorm,
+        severance: t === n ? c.severance : 0 });
+    }
+    out.forEach(function (row) { row.total = B2_LAYERS.reduce(function (s, L) { return s + row[L.k]; }, 0); });
+    return out;
+  }
+  WIDGETS.b2 = {
+    disp: function (f, st) {
+      if (f === 'dRet') return (st.v.dRet >= 0 ? '+' : '') + (st.v.dRet * 100).toFixed(1) + '% จากแผน';
+      if (f === 'extra') return '+' + fmt(st.v.extra) + ' บาท/เดือน';
+      return '';
+    },
+    out: function (st) {
+      var c = st.ctx, v = st.v, rows = b2Layers(c, v), last = rows[rows.length - 1], narrow = isNarrow();
+      var baseRows = b2Layers(c, st.init), baseLast = baseRows[baseRows.length - 1], changed = simChanged(st);
+      var pct = c.target > 0 ? last.total / c.target : 1;
+      /* tank */
+      var TW = 150, TH = 230, tx = 20, ty = 20, tw = 110, th = 190, stackY = ty + th, tank = '';
+      var fillH = Math.min(1, pct) * th, scaleT = last.total > 0 ? fillH / last.total : 0;
+      B2_LAYERS.forEach(function (L) { var h = last[L.k] * scaleT; if (h > 0.2) { stackY -= h; tank += '<rect x="' + tx + '" y="' + stackY.toFixed(1) + '" width="' + tw + '" height="' + h.toFixed(1) + '" fill="' + L.color + '"><title>' + L.label + ': ' + fmt(last[L.k]) + ' บาท</title></rect>'; } });
+      var tankSvg = '<svg class="gw-tank" viewBox="0 0 ' + (TW + 20) + ' ' + TH + '"><defs><clipPath id="b2clip"><rect x="' + tx + '" y="' + ty + '" width="' + tw + '" height="' + th + '" rx="16"/></clipPath></defs>' +
+        '<rect x="' + tx + '" y="' + ty + '" width="' + tw + '" height="' + th + '" rx="16" fill="#EAF4FB"/>' +
+        '<g clip-path="url(#b2clip)">' + tank + '</g>' +
+        '<rect x="' + tx + '" y="' + ty + '" width="' + tw + '" height="' + th + '" rx="16" fill="none" stroke="#0B2545" stroke-width="3"/>' +
+        [0.25, 0.5, 0.75].map(function (q) { var yy = ty + th - th * q; return '<line x1="' + (tx + tw - 14) + '" x2="' + (tx + tw) + '" y1="' + yy + '" y2="' + yy + '" stroke="#0B2545" stroke-width="1.5"/><text x="' + (tx + tw + 4) + '" y="' + (yy + 4) + '" class="gw-ytick" text-anchor="start">' + (q * 100) + '%</text>'; }).join('') +
+        '<text x="' + (tx + tw / 2) + '" y="' + (ty + th / 2 + 8) + '" text-anchor="middle" class="gw-tank-pct">' + Math.round(pct * 100) + '%</text></svg>';
+      var tankMsg = pct >= 1 ? '🎉 ถังเต็มแล้ว! เกินเป้า ' + fmt(last.total - c.target) + ' บาท' : 'ยังขาดอีก <strong>' + fmt(c.target - last.total) + '</strong> บาท ถังถึงจะเต็ม';
+      /* stacked area */
+      var W = narrow ? 360 : 560, H = narrow ? 250 : 280, padL = narrow ? 36 : 46, padR = 22, padT = 24, padB = 52, ch = H - padT - padB;
+      var maxV = stableMax(Math.max(c.target, baseLast.total), Math.max(c.target, last.total));
+      var n = rows.length, xAt = function (i) { return padL + (n > 1 ? i / (n - 1) : 0) * (W - padL - padR); }, yAt = function (val) { return padT + ch - Math.min(val, maxV) / maxV * ch; };
+      var cum = rows.map(function () { return 0; }), areas = '';
+      B2_LAYERS.forEach(function (L) {
+        var top = rows.map(function (rw, i) { return cum[i] + rw[L.k]; });
+        if (top.every(function (tv, i) { return Math.abs(tv - cum[i]) < 0.5; })) return;
+        var ptsTop = top.map(function (tv, i) { return xAt(i).toFixed(1) + ',' + yAt(tv).toFixed(1); });
+        var ptsBot = cum.map(function (cv, i) { return xAt(i).toFixed(1) + ',' + yAt(cv).toFixed(1); }).reverse();
+        areas += '<polygon points="' + ptsTop.concat(ptsBot).join(' ') + '" fill="' + L.color + '" opacity="0.88"><title>' + L.label + '</title></polygon>';
+        cum = top;
+      });
+      var ghost = changed ? '<polyline points="' + baseRows.map(function (rw, i) { return xAt(i).toFixed(1) + ',' + yAt(rw.total).toFixed(1); }).join(' ') + '" class="gw-ghost-line"/>' : '';
+      var ty2 = yAt(c.target);
+      var targetLine = '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + ty2.toFixed(1) + '" y2="' + ty2.toFixed(1) + '" class="gw-target"/><text x="' + (padL + 4) + '" y="' + (ty2 - 6).toFixed(1) + '" class="gw-target-label">🎯 เป้าหมาย ' + fmtShort(c.target) + '</text>';
+      var ticks = rows.map(function (rw, i) { return ageTicks(rows, i, n, -99, narrow) ? '<text x="' + xAt(i).toFixed(1) + '" y="' + (padT + ch + 20) + '" text-anchor="middle" class="gw-tick">' + rw.age + '</text><text x="' + xAt(i).toFixed(1) + '" y="' + (padT + ch + 37) + '" text-anchor="middle" class="gw-tick-be">' + rw.be + '</text>' : ''; }).join('');
+      var area = '<svg class="gw-chart" viewBox="0 0 ' + W + ' ' + H + '">' + yGrid(maxV, padL, W, padR, padT, ch, 4) + areas + ghost + targetLine + ticks + '</svg>';
+      var cards = '<div class="gw-layer-cards">' + B2_LAYERS.filter(function (L) { return last[L.k] > 0 || baseLast[L.k] > 0; }).map(function (L) {
+        return '<div class="gw-layer-card" style="border-left-color:' + L.color + '"><div class="gw-layer-name"><i style="background:' + L.color + '"></i>' + L.label + '</div><div class="gw-layer-val">' + fmt(last[L.k]) + '</div>' +
+          '<div class="gw-muted">' + (last.total > 0 ? Math.round(last[L.k] / last.total * 100) : 0) + '% ของถัง</div></div>';
+      }).join('') + '</div>';
+      return '<div class="gw-duo"><div class="gw-duo-side">' + tankSvg + '<div class="gw-tank-msg">' + tankMsg + '</div></div>' +
+        '<div class="gw-duo-main gw-chart-wrap gw-round"><div class="gw-legend">' + B2_LAYERS.map(function (L) { return '<span><i style="background:' + L.color + '"></i>' + L.label + '</span>'; }).join('') + '<span><i class="gw-ghost-key"></i>ค่าจากข้อมูลลูกค้า</span></div>' + area +
+        '<div class="gw-muted" style="margin-top:4px">เงินสะสมทั้งหมดตั้งแต่วันนี้ (อายุ ' + c.currentAge + ') จนถึงวันเกษียณ (อายุ ' + c.retireAge + ') = <strong>' + fmt(last.total) + '</strong> บาท</div></div></div>' + cards;
+    }
+  };
+  function renderBox2Widget(a, r, fr) {
+    var p = a.personal, asmp = a.assumptions, n = Math.max(0, p.retireAge - p.currentAge);
+    var ctx = { n: n, currentAge: p.currentAge, retireAge: p.retireAge, beNow: p.currentYearAD + 543, retPre: asmp.returnPreRetire, target: r.totalNeedAtRet,
+      severance: r.severance ? r.severance.amount : 0,
+      assets: (r.currentItems || []).map(function (it) { return { amount: it.amount, rate: it.returnRate }; }),
+      regular: (r.regularItems && r.regularItems[0]) ? { annual: r.regularItems[0].annualAmt, rate: r.regularItems[0].returnRate } : null,
+      pvd: a.pvd.enabled ? { startSalaryMonthly: p.currentSalary, salaryGrowth: p.salaryGrowth, employeeRate: a.pvd.employeeRate, employerMode: a.pvd.employerMode, employerFlatRate: a.pvd.employerFlatRate, employerTiers: a.pvd.employerTiers, fundReturn: a.pvd.fundReturn, yearsToRetire: n, startingBalance: a.pvd.startingBalance, serviceYearsSoFar: a.pvd.serviceYearsSoFar, currentAge: p.currentAge } : null,
+      windfalls: [], wfNorm: 1 };
+    var STEP = { annual: 1, every2years: 2, every3years: 3, every5years: 5 };
+    (a.windfalls || []).forEach(function (w) {
+      if (w.flowType === 'recurring') { if (w.startAge < p.retireAge) ctx.windfalls.push({ kind: 'rec', start: w.startAge, end: Math.min(w.endAge, p.retireAge - 1), perYear: w.frequency === 'monthly' ? w.amountPerPeriod * 12 : w.amountPerPeriod, growth: w.growthRate || 0, step: STEP[w.growthFrequency] || 1 }); }
+      else if (w.ageReceived < p.retireAge) ctx.windfalls.push({ kind: 'lump', age: w.ageReceived, amount: w.amount });
+    });
+    var st = simGet('b2', { dRet: 0, extra: 0 }, ctx);
+    /* normalise the approximate windfall curve so the data-case lands exactly on the planned figure */
+    var raw = b2Layers(st.ctx, { dRet: 0, extra: 0 });
+    var rawWf = raw[raw.length - 1].windfall / st.ctx.wfNorm;
+    st.ctx.wfNorm = rawWf > 0 ? r.windfallsFV / rawWf : 1;
+    var sliders = simSlider('b2', 'dRet', 'ผลตอบแทนการลงทุน (ปรับจากแผน)', -3, 3, 0.1, 100, st) +
+      simSlider('b2', 'extra', 'ออมเพิ่มต่อเดือน', 0, 50000, 500, 1, st);
+    return widgetShell('b2', st, '🪣 ถังเงินเกษียณที่ค่อยๆ เต็ม',
+      'แต่ละสีคือแหล่งเงินที่ไหลเข้าถัง — เป้าคือ "เงินที่ต้องมีตามเป้าหมาย" จากกล่องที่ 1', sliders);
+  }
+
+  /* ---------- BOX 3: ตาชั่ง ---------- */
+  function b3Calc(c, v) {
+    var need = c.otherNeeds + Math.max(0, c.gross * (1 + v.expAdj) - c.offset);
+    var have = c.available + v.lump * Math.pow(1 + c.retPre, c.n);
+    return { need: need, have: have, gap: need - have };
+  }
+  function yearsOfSpending(amount, firstAnnual, g) {
+    if (!(firstAnnual > 0)) return 0;
+    var left = amount, y = 0;
+    while (left > 0 && y < 100) { var need = firstAnnual * Math.pow(1 + g, y); if (left >= need) { left -= need; y++; } else { return y + left / need; } }
+    return y;
+  }
+  WIDGETS.b3 = {
+    disp: function (f, st) {
+      if (f === 'expAdj') return (st.v.expAdj >= 0 ? '+' : '') + Math.round(st.v.expAdj * 100) + '%';
+      if (f === 'lump') return fmt(st.v.lump) + ' บาท';
+      return '';
+    },
+    out: function (st) {
+      var c = st.ctx, v = st.v, res = b3Calc(c, v), base = b3Calc(c, st.init);
+      var big = Math.max(res.need, res.have, 1);
+      var tilt = Math.max(-14, Math.min(14, (res.need - res.have) / big * 22)); /* +: left (need) side goes down */
+      var rNeed = 18 + 28 * Math.sqrt(res.need / big), rHave = 18 + 28 * Math.sqrt(res.have / big);
+      var W = 520, H = 270, cx = 260, py = 70, arm = 190;
+      var rad = tilt * Math.PI / 180, lx = cx - arm * Math.cos(rad), ly = py + arm * Math.sin(rad), rx = cx + arm * Math.cos(rad), ry = py - arm * Math.sin(rad);
+      function pan(x, y, r, color, label, val) {
+        return '<line x1="' + x.toFixed(1) + '" y1="' + y.toFixed(1) + '" x2="' + (x - 34).toFixed(1) + '" y2="' + (y + 66).toFixed(1) + '" stroke="#5B6B7C" stroke-width="1.5"/>' +
+          '<line x1="' + x.toFixed(1) + '" y1="' + y.toFixed(1) + '" x2="' + (x + 34).toFixed(1) + '" y2="' + (y + 66).toFixed(1) + '" stroke="#5B6B7C" stroke-width="1.5"/>' +
+          '<path d="M' + (x - 50).toFixed(1) + ',' + (y + 66).toFixed(1) + ' Q' + x.toFixed(1) + ',' + (y + 92).toFixed(1) + ' ' + (x + 50).toFixed(1) + ',' + (y + 66).toFixed(1) + ' Z" fill="#CBDAEA" stroke="#5B6B7C"/>' +
+          '<circle cx="' + x.toFixed(1) + '" cy="' + (y + 66 - r * 0.9).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + color + '" opacity="0.92"/>' +
+          '<text x="' + x.toFixed(1) + '" y="' + (y + 66 - r * 0.9 - 4).toFixed(1) + '" text-anchor="middle" class="gw-pan-label">' + label + '</text>' +
+          '<text x="' + x.toFixed(1) + '" y="' + (y + 66 - r * 0.9 + 16).toFixed(1) + '" text-anchor="middle" class="gw-pan-val">' + fmtShort(val) + '</text>';
+      }
+      var svg = '<svg class="gw-scale" viewBox="0 0 ' + W + ' ' + H + '">' +
+        '<path d="M' + (cx - 40) + ',' + (H - 12) + ' L' + (cx + 40) + ',' + (H - 12) + ' L' + cx + ',' + (py + 8) + ' Z" fill="#0B2545"/>' +
+        '<line x1="' + lx.toFixed(1) + '" y1="' + ly.toFixed(1) + '" x2="' + rx.toFixed(1) + '" y2="' + ry.toFixed(1) + '" stroke="#0B2545" stroke-width="7" stroke-linecap="round"/>' +
+        '<circle cx="' + cx + '" cy="' + py + '" r="9" fill="#C98A1F"/>' +
+        pan(lx, ly, rNeed, '#A8382E', 'ต้องมี', res.need) + pan(rx, ry, rHave, '#2E9E63', 'เตรียมไว้', res.have) + '</svg>';
+      var pct = res.need > 0 ? res.have / res.need : 1, basePct = base.need > 0 ? base.have / base.need : 1;
+      var bar = '<div class="gw-progress"><div class="gw-progress-fill" style="width:' + Math.min(100, pct * 100).toFixed(1) + '%"></div>' +
+        (simChanged(st) ? '<div class="gw-progress-ghost" style="left:' + Math.min(100, basePct * 100).toFixed(1) + '%"></div>' : '') +
+        '<div class="gw-progress-txt">เตรียมได้แล้ว ' + Math.round(pct * 100) + '% ของเป้าหมาย</div></div>';
+      var yrs = yearsOfSpending(Math.abs(res.gap), c.firstAnnual * (1 + v.expAdj), c.inflPost);
+      var verdict = res.gap > 0
+        ? '<div class="gw-verdict gw-bad">⚖️ ยังขาด <strong>' + fmt(res.gap) + '</strong> บาท ณ วันเกษียณ<br><span>เท่ากับค่าใช้จ่ายหลังเกษียณประมาณ <strong>' + fmtYM(yrs) + '</strong></span></div>'
+        : '<div class="gw-verdict gw-good">⚖️ เกินเป้า <strong>' + fmt(-res.gap) + '</strong> บาท ณ วันเกษียณ<br><span>เผื่อค่าใช้จ่ายได้อีกประมาณ <strong>' + fmtYM(yrs) + '</strong></span></div>';
+      var lumpNote = v.lump > 0 ? '<div class="gw-insight" style="margin-top:10px"><span class="gw-ic">💰</span><div>เงินก้อน <strong>' + fmt(v.lump) + '</strong> บาทที่ลงทุนวันนี้ (ผลตอบแทน ' + pctTxt(c.retPre) + ') จะโตเป็น <strong>' + fmt(v.lump * Math.pow(1 + c.retPre, c.n)) + '</strong> บาท ณ วันเกษียณ</div></div>' : '';
+      return '<div class="gw-duo"><div class="gw-duo-main">' + svg + '</div><div class="gw-duo-side gw-duo-wide">' + verdict + bar + lumpNote + '</div></div>';
+    }
+  };
+  function renderBox3Widget(a, r, fr) {
+    var p = a.personal, asmp = a.assumptions, cs = corpusSplit(a, r);
+    var st = simGet('b3', { expAdj: 0, lump: 0 }, { gross: cs.gross, offset: cs.offset, otherNeeds: r.preGoalsFVAtRet, available: r.availableAtRetirement,
+      retPre: asmp.returnPreRetire, n: Math.max(0, p.retireAge - p.currentAge), firstAnnual: r.firstYearMonthlyNeed * 12, inflPost: asmp.inflationPostRetire });
+    var sliders = simSlider('b3', 'expAdj', 'ปรับค่าใช้จ่ายหลังเกษียณ', -50, 50, 1, 100, st) +
+      simSlider('b3', 'lump', 'ลงเงินก้อนเพิ่มวันนี้', 0, 5000000, 50000, 1, st);
+    return widgetShell('b3', st, '⚖️ ตาชั่ง: เงินที่ต้องมี vs เงินที่เตรียมไว้', 'ฝั่งไหนหนักกว่าจะเอียงลง — ลองลดค่าใช้จ่ายหรือเติมเงินก้อน แล้วดูว่าตาชั่งกลับมาสมดุลไหม', sliders);
+  }
+
+  /* ---------- BOX 4: เงินหมดตอนอายุเท่าไหร่ ---------- */
+  /* same engine as the Box-4 cards: actual money split across the client's buckets, beginning-of-year flows,
+     buckets refill from the next one, pensions + post-retirement one-offs included */
+  function b4Sim(c, v, monthlyOverride, years) {
+    var monthly = monthlyOverride != null ? monthlyOverride : v.monthly;
+    var total = c.start + v.extraStart;
+    var buckets = c.buckets.map(function (b) { return { years: b.years, waitingReturn: b.waitingReturn + v.dRet, drawdownReturn: b.drawdownReturn + v.dRet }; });
+    var bals = c.shares.map(function (sh) { return total * sh; });
+    var H = years || c.horizon;
+    var f = C.simulateBucketsActual(bals, buckets, function (y) { return monthly * 12 * Math.pow(1 + c.inflPost, y - 1); }, function (y) { return c.pensions[y - 1] || 0; }, H, c.oneOffs);
+    return { path: f.path.map(function (pt) { return { age: c.retireAge + pt.year, bal: pt.balance }; }), dep: f.shortfallStartYear ? c.retireAge + f.shortfallStartYear - 1 : null };
+  }
+  function b4Sustainable(c, v) {
+    var lo = 0, hi = Math.max(v.monthly * 4, 200000), yrs = c.lifeExpectancy - c.retireAge;
+    for (var i = 0; i < 50; i++) { var mid = (lo + hi) / 2; if (b4Sim(c, v, mid, yrs).dep === null) lo = mid; else hi = mid; }
+    return lo;
+  }
+  WIDGETS.b4 = {
+    disp: function (f, st) {
+      if (f === 'monthly') return fmt(st.v.monthly) + ' บาท/เดือน';
+      if (f === 'dRet') return (st.v.dRet >= 0 ? '+' : '') + (st.v.dRet * 100).toFixed(1) + '% จากแผน';
+      if (f === 'extraStart') return '+' + fmt(st.v.extraStart) + ' บาท';
+      return '';
+    },
+    out: function (st) {
+      var c = st.ctx, v = st.v, sim = b4Sim(c, v), base = b4Sim(c, st.init), narrow = isNarrow(), changed = simChanged(st);
+      var W = narrow ? 360 : 640, H = narrow ? 250 : 280, padL = narrow ? 36 : 46, padR = 22, padT = 30, padB = 50, ch = H - padT - padB;
+      var baseMax = 0, curMax = 0; base.path.forEach(function (pt) { baseMax = Math.max(baseMax, pt.bal); }); sim.path.forEach(function (pt) { curMax = Math.max(curMax, pt.bal); });
+      var maxV = stableMax(baseMax, curMax), n = sim.path.length;
+      var xAt = function (i) { return padL + i / (n - 1) * (W - padL - padR); }, yAt = function (val) { return padT + ch - Math.min(val, maxV) / maxV * ch; };
+      var lifeIdx = c.lifeExpectancy - c.retireAge, lx = xAt(Math.min(lifeIdx, n - 1));
+      var pts = sim.path.map(function (pt, i) { return xAt(i).toFixed(1) + ',' + yAt(pt.bal).toFixed(1); });
+      var areaPts = pts.concat([xAt(n - 1).toFixed(1) + ',' + yAt(0).toFixed(1), xAt(0).toFixed(1) + ',' + yAt(0).toFixed(1)]);
+      var ok = sim.dep === null || sim.dep >= c.lifeExpectancy;
+      var col = ok ? '#2E9E63' : '#A8382E';
+      var zone = '<rect x="' + lx.toFixed(1) + '" y="' + padT + '" width="' + (W - padR - lx).toFixed(1) + '" height="' + ch + '" fill="#F4F6F9"/>' +
+        '<text x="' + (lx + 6).toFixed(1) + '" y="' + (padT + 14) + '" class="gw-axis-note">เกินอายุขัยที่วางแผน</text>';
+      var ghost = changed ? '<polyline points="' + base.path.map(function (pt, i) { return xAt(i).toFixed(1) + ',' + yAt(pt.bal).toFixed(1); }).join(' ') + '" class="gw-ghost-line"/>' : '';
+      var lifeLine = '<line x1="' + lx.toFixed(1) + '" x2="' + lx.toFixed(1) + '" y1="' + (padT - 16) + '" y2="' + (padT + ch) + '" class="gw-vline"/><text x="' + (lx - 4).toFixed(1) + '" y="' + (padT - 4) + '" text-anchor="end" class="gw-marker-label">🏁 อายุขัย ' + c.lifeExpectancy + '</text>';
+      var depMark = '';
+      if (sim.dep !== null) {
+        var dx = xAt(sim.dep - c.retireAge);
+        depMark = '<line x1="' + dx.toFixed(1) + '" x2="' + dx.toFixed(1) + '" y1="' + (padT + ch * 0.45) + '" y2="' + (padT + ch) + '" stroke="#A8382E" stroke-width="2" stroke-dasharray="3 3"/>' +
+          '<circle cx="' + dx.toFixed(1) + '" cy="' + yAt(0).toFixed(1) + '" r="6" fill="#A8382E"/>' +
+          '<text x="' + (dx + (dx > W * 0.7 ? -6 : 6)).toFixed(1) + '" y="' + (padT + ch - 10) + '" text-anchor="' + (dx > W * 0.7 ? 'end' : 'start') + '" class="gw-dep-label">⚠️ เงินหมด อายุ ' + sim.dep + '</text>';
+      }
+      var ticks = sim.path.map(function (pt, i) {
+        var show = i === 0 || i === n - 1 || (pt.age % (narrow ? 10 : 5) === 0 && i > 2 && n - 1 - i > 2);
+        return show ? '<text x="' + xAt(i).toFixed(1) + '" y="' + (padT + ch + 20) + '" text-anchor="middle" class="gw-tick">' + pt.age + '</text><text x="' + xAt(i).toFixed(1) + '" y="' + (padT + ch + 37) + '" text-anchor="middle" class="gw-tick-be">' + (c.beRet + i) + '</text>' : '';
+      }).join('');
+      var svg = '<svg class="gw-chart" viewBox="0 0 ' + W + ' ' + H + '">' + zone + yGrid(maxV, padL, W, padR, padT, ch, 4) +
+        '<polygon points="' + areaPts.join(' ') + '" fill="' + col + '" opacity="0.18"/><polyline points="' + pts.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="3"/>' +
+        ghost + lifeLine + depMark + ticks + '</svg>';
+      var endBal = sim.path[Math.min(lifeIdx, n - 1)].bal;
+      var verdict = ok
+        ? '<div class="gw-verdict gw-good">✅ เงินพอใช้ถึงอายุขัย ' + c.lifeExpectancy + ' ปี' + (sim.dep ? ' (หมดตอนอายุ ' + sim.dep + ')' : '') + '<br><span>คาดว่าเหลือเงิน ณ อายุ ' + c.lifeExpectancy + ' ประมาณ <strong>' + fmt(endBal) + '</strong> บาท</span></div>'
+        : '<div class="gw-verdict gw-bad">⚠️ เงินหมดตอนอายุ <strong>' + sim.dep + '</strong> ปี — ก่อนอายุขัย <strong>' + (c.lifeExpectancy - sim.dep) + '</strong> ปี<br><span>หลังจากนั้นเหลือแค่บำนาญ ' + fmt((c.pensions[sim.dep - c.retireAge] || 0) / 12) + ' บาท/เดือน</span></div>';
+      var sus = b4Sustainable(c, v);
+      var cards = '<div class="gw-insights">' +
+        '<div class="gw-insight"><span class="gw-ic">💡</span><div>ถ้าอยากให้เงินพอดีถึงอายุ ' + c.lifeExpectancy + ' ใช้ได้เดือนละ <strong>' + fmt(sus) + '</strong> บาท (เดือนแรก แล้วเพิ่มตามเงินเฟ้อ)</div></div>' +
+        '<div class="gw-insight"><span class="gw-ic">🏦</span><div>เงินตั้งต้น ณ วันเกษียณ <strong>' + fmt(c.start + v.extraStart) + '</strong> บาท แบ่งเข้า ' + c.buckets.length + ' บัคเก็ตตามแผน (ผลตอบแทน' + (v.dRet ? ' ปรับ ' + (v.dRet > 0 ? '+' : '') + (v.dRet * 100).toFixed(1) + '%' : 'ตามแผน') + ')</div></div>' +
+        '<div class="gw-insight"><span class="gw-ic">📅</span><div>ใช้เดือนละ ' + fmt(v.monthly) + ' ตอนเกษียณ → อายุ ' + c.lifeExpectancy + ' จะเป็นเดือนละ <strong>' + fmt(v.monthly * Math.pow(1 + c.inflPost, lifeIdx)) + '</strong> บาท</div></div></div>';
+      return verdict + '<div class="gw-chart-wrap gw-round"><div class="gw-legend"><span><i style="background:' + col + '"></i>เงินคงเหลือ</span><span><i class="gw-ghost-key"></i>ค่าจากข้อมูลลูกค้า</span></div>' + svg + '</div>' + cards;
+    }
+  };
+  function renderBox4Widget(a, r) {
+    var p = a.personal, asmp = a.assumptions;
+    var horizon = Math.max(1, Math.min(100, p.lifeExpectancy + 10) - p.retireAge + 1), pensions = [], oo = {};
+    for (var t = 1; t <= horizon; t++) { pensions.push(r.pensionAnnualAtYear(t)); if (r.oneOffs[t]) oo[t] = r.oneOffs[t]; }
+    var tot = r.availableAtRetirement;
+    var st = simGet('b4', { monthly: Math.round(r.firstYearMonthlyNeed), dRet: 0, extraStart: 0 },
+      { start: tot, retireAge: p.retireAge, lifeExpectancy: p.lifeExpectancy, horizon: horizon, inflPost: asmp.inflationPostRetire, pensions: pensions, oneOffs: oo,
+        buckets: r.sizedBuckets.map(function (b) { return { years: b.years, waitingReturn: b.waitingReturn, drawdownReturn: b.drawdownReturn }; }),
+        shares: r.multiPlan.actualBals.map(function (x) { return tot > 0 ? x / tot : 1 / r.multiPlan.actualBals.length; }),
+        beRet: p.currentYearAD + 543 + (p.retireAge - p.currentAge) });
+    var sliders = simSlider('b4', 'monthly', 'ใช้เงินเดือนแรกหลังเกษียณ', 0, Math.max(150000, Math.ceil(st.init.monthly * 2.5 / 10000) * 10000), 500, 1, st) +
+      simSlider('b4', 'dRet', 'ผลตอบแทนหลังเกษียณ (ปรับจากแผนบัคเก็ต)', -3, 3, 0.1, 100, st) +
+      simSlider('b4', 'extraStart', 'เติมเงินก้อน ณ วันเกษียณ', 0, Math.max(5000000, Math.ceil(tot / 1e6) * 1e6), 100000, 1, st);
+    return widgetShell('b4', st, '⏳ เงินจะหมดตอนอายุเท่าไหร่?',
+      'จำลองจากเงินที่เตรียมไว้จริง (กล่องที่ 2) แบ่งเข้าบัคเก็ตตามแผน รวมบำนาญและรายการพิเศษหลังเกษียณ — ตัวเลขตรงกับการ์ดด้านล่าง', sliders);
+  }
+
+  /* ---------- BOX 5: บันไดสู่เป้าหมาย ---------- */
+  WIDGETS.b5 = {
+    disp: function (f, st) {
+      if (f === 'monthly') return fmt(st.v.monthly) + ' บาท/เดือน';
+      if (f === 'ret') return pctTxt(st.v.ret) + '/ปี';
+      return '';
+    },
+    out: function (st) {
+      var c = st.ctx, v = st.v, narrow = isNarrow(), changed = simChanged(st);
+      var span = c.n + 10, rows = [], hit = null;
+      for (var t = 0; t <= span; t++) {
+        var bal = C.annuityFV(v.monthly * 12, v.ret, t, false);
+        if (hit === null && bal >= c.gap * 0.999 && t > 0) hit = t; /* tolerance: slider value is rounded to the nearest baht */
+        rows.push({ t: t, age: c.currentAge + t, be: c.beNow + t, bal: bal });
+      }
+      var baseRows = []; for (var t2 = 0; t2 <= span; t2++) baseRows.push(C.annuityFV(st.init.monthly * 12, st.init.ret, t2, false));
+      var W = narrow ? 360 : 640, H = narrow ? 250 : 280, padL = narrow ? 36 : 46, padR = 10, padT = 30, padB = 50, ch = H - padT - padB;
+      var maxV = stableMax(Math.max(c.gap, baseRows[c.n] || 0), Math.max(c.gap, rows[Math.min(c.n + 3, span)].bal));
+      var n = rows.length, slot = (W - padL - padR) / n, bw = Math.max(2, slot * 0.72);
+      var bars = '', ghosts = '', ticks = '';
+      rows.forEach(function (rw, i) {
+        var x = padL + i * slot + (slot - bw) / 2, cx = padL + i * slot + slot / 2;
+        if (changed) { var gh = Math.max(0, Math.min(baseRows[i], maxV) / maxV * ch); if (gh > 0) ghosts += '<rect x="' + x.toFixed(1) + '" y="' + (padT + ch - gh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + gh.toFixed(1) + '" class="gw-ghost"/>'; }
+        var h = Math.max(0, Math.min(rw.bal, maxV) / maxV * ch);
+        var reached = rw.bal >= c.gap * 0.999, afterRet = rw.age > c.retireAge;
+        bars += '<rect x="' + x.toFixed(1) + '" y="' + (padT + ch - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="' + (reached ? '#2E9E63' : '#1E6FD9') + '" opacity="' + (afterRet ? 0.35 : 0.85) + '"><title>อายุ ' + rw.age + ': สะสม ' + fmt(rw.bal) + ' บาท</title></rect>';
+        if (ageTicks(rows, i, n, c.retireAge, narrow)) ticks += '<text x="' + cx.toFixed(1) + '" y="' + (padT + ch + 20) + '" text-anchor="middle" class="gw-tick">' + rw.age + '</text><text x="' + cx.toFixed(1) + '" y="' + (padT + ch + 37) + '" text-anchor="middle" class="gw-tick-be">' + rw.be + '</text>';
+      });
+      var gy = padT + ch - Math.min(c.gap, maxV) / maxV * ch;
+      var rxl = padL + c.n * slot + slot;
+      var svg = '<svg class="gw-chart" viewBox="0 0 ' + W + ' ' + H + '">' + yGrid(maxV, padL, W, padR, padT, ch, 4) + ghosts + bars +
+        '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '" class="gw-target"/><text x="' + (padL + 4) + '" y="' + (gy - 6).toFixed(1) + '" class="gw-target-label">🎯 ส่วนที่ขาด ' + fmtShort(c.gap) + '</text>' +
+        '<line x1="' + rxl.toFixed(1) + '" x2="' + rxl.toFixed(1) + '" y1="' + (padT - 16) + '" y2="' + (padT + ch) + '" class="gw-vline"/><text x="' + (rxl - 4).toFixed(1) + '" y="' + (padT - 4) + '" text-anchor="end" class="gw-marker-label">เกษียณ ' + c.retireAge + '</text>' + ticks + '</svg>';
+      var verdict = hit === null
+        ? '<div class="gw-verdict gw-bad">🪜 ออมเดือนละ ' + fmt(v.monthly) + ' ยังไม่ถึงเป้าแม้เลยเกษียณไปอีก 10 ปี</div>'
+        : (c.currentAge + hit <= c.retireAge
+          ? '<div class="gw-verdict gw-good">🪜 ถึงเป้าตอนอายุ <strong>' + (c.currentAge + hit) + '</strong> ปี — ทันก่อนเกษียณ' + (c.retireAge - c.currentAge - hit > 0 ? ' ' + (c.retireAge - c.currentAge - hit) + ' ปี' : '') + ' ✔</div>'
+          : '<div class="gw-verdict gw-bad">🪜 ถึงเป้าตอนอายุ <strong>' + (c.currentAge + hit) + '</strong> ปี — ช้ากว่าวันเกษียณ ' + (c.currentAge + hit - c.retireAge) + ' ปี</div>');
+      /* three ways out */
+      var need = C.pmtFromFV(c.gap, v.ret, c.n, false) / 12;
+      var delay = null;
+      for (var k = 1; k <= 15 && delay === null; k++) {
+        var yrsRet = c.yrsRetired - k; if (yrsRet < 1) break;
+        var availK = c.available * Math.pow(1 + c.retPre, k);
+        var needK = Math.max(0, C.growingAnnuityPV(c.firstAnnual * Math.pow(1 + c.inflPre, k), c.retPost, c.inflPost, yrsRet, true) - c.offset * yrsRet / c.yrsRetired);
+        if (availK >= needK) delay = k;
+      }
+      var kCut = c.gross > 0 ? Math.max(0, Math.min(1, (c.available + c.offset) / c.gross)) : 1;
+      var ways = '<div class="gw-ways">' +
+        '<div class="gw-way"><div class="gw-way-ic">💵</div><div class="gw-way-t">ออมเพิ่ม</div><div class="gw-way-v">' + fmt(need) + '</div><div class="gw-muted">บาท/เดือน ทุกเดือนจนเกษียณ<br>(ผลตอบแทน ' + pctTxt(v.ret) + ')</div></div>' +
+        '<div class="gw-way"><div class="gw-way-ic">🕰️</div><div class="gw-way-t">เกษียณช้าลง</div><div class="gw-way-v">' + (delay ? '+' + delay + ' ปี' : '> 15 ปี') + '</div><div class="gw-muted">' + (delay ? 'เกษียณอายุ ' + (c.retireAge + delay) + ' โดยไม่ต้องออมเพิ่ม' : 'เลื่อนเกษียณอย่างเดียวไม่พอ') + '<br>(ประมาณการคร่าวๆ)</div></div>' +
+        '<div class="gw-way"><div class="gw-way-ic">✂️</div><div class="gw-way-t">ลดค่าใช้จ่ายหลังเกษียณ</div><div class="gw-way-v">−' + Math.round((1 - kCut) * 100) + '%</div><div class="gw-muted">เหลือเดือนละ ' + fmt(c.firstMonthly * kCut) + ' บาท ณ วันเกษียณ<br>(≈ ' + fmt(c.firstMonthly * kCut / Math.pow(1 + c.inflPre, c.n)) + ' บาทค่าเงินวันนี้)</div></div></div>';
+      return verdict + '<div class="gw-chart-wrap gw-round"><div class="gw-legend"><span><i style="background:#1E6FD9"></i>ยังไม่ถึงเป้า</span><span><i style="background:#2E9E63"></i>ถึงเป้าแล้ว</span><span><i class="gw-ghost-key"></i>ค่าจากข้อมูลลูกค้า</span></div>' + svg + '</div>' +
+        '<div class="gw-subhead">3 ทางปิดช่องว่างกองทุนเกษียณ — เลือกทางเดียว หรือผสมกันก็ได้</div>' + ways +
+        (c.preMonthly > 0 ? '<div class="gw-insight" style="margin-top:10px"><span class="gw-ic">🧮</span><div>อย่าลืมเป้าหมายก่อนเกษียณ ต้องออมแยกอีก <strong>' + fmt(c.preMonthly) + '</strong> บาท/เดือน → รวมต้องออม <strong>' + fmt(v.monthly + c.preMonthly) + '</strong> บาท/เดือน (ช่วงแรก)</div></div>' : '');
+    }
+  };
+  function renderBox5Widget(a, r) {
+    var p = a.personal, asmp = a.assumptions;
+    if (!(r.gap > 0)) {
+      return '<div class="gw"><div class="gw-verdict gw-good">🎉 เงินที่เตรียมไว้เพียงพอกับกองทุนเกษียณแล้ว เกินอยู่ <strong>' + fmt(-r.gap) + '</strong> บาท — ไม่ต้องออมเพิ่มเพื่อเกษียณ' +
+        (r.preGoalsMonthly > 0 ? '<br><span>แต่เป้าหมายก่อนเกษียณยังต้องออมแยกเดือนละ <strong>' + fmt(r.preGoalsMonthly) + '</strong> บาท (ดูด้านล่าง)</span>' : '') + '</div></div>';
+    }
+    var cs = corpusSplit(a, r), n = Math.max(1, p.retireAge - p.currentAge);
+    var st = simGet('b5', { monthly: Math.round(r.extraSavingFlatMonthly), ret: a.extraSavingReturn },
+      { gap: r.gap, preMonthly: r.preGoalsMonthly, n: n, currentAge: p.currentAge, retireAge: p.retireAge, beNow: p.currentYearAD + 543, available: r.availableAtRetirement, gross: cs.gross, offset: cs.offset, yrsRetired: cs.yrs,
+        firstAnnual: r.firstYearMonthlyNeed * 12, firstMonthly: r.firstYearMonthlyNeed, retPre: asmp.returnPreRetire, retPost: asmp.returnPostRetire, inflPre: asmp.inflationPreRetire, inflPost: asmp.inflationPostRetire });
+    var sliders = simSlider('b5', 'monthly', 'ออมเพิ่มต่อเดือน', 0, Math.max(50000, Math.ceil(st.init.monthly * 2.5 / 5000) * 5000), 500, 1, st) +
+      simSlider('b5', 'ret', 'ผลตอบแทนของเงินออมเพิ่ม', 0, 10, 0.1, 100, st);
+    return widgetShell('b5', st, '🪜 บันไดสู่เป้าหมาย', 'ทุกขั้นคือเงินออมเพิ่มสะสมในแต่ละปี — เลื่อนดูว่าต้องออมเท่าไหร่ถึงปีนขึ้นถึงเส้นเป้าทันวันเกษียณ', sliders);
+  }
+
+  /* ---------- BOX 6: ร่มกันฝน ---------- */
+  function b6Calc(c, v) {
+    var need = c.debt + c.annual * v.years + c.edu + c.final + c.legacy;
+    var have = c.existing + v.add;
+    return { need: need, have: have, gap: Math.max(0, need - have), pct: need > 0 ? Math.min(1, have / need) : 1 };
+  }
+  WIDGETS.b6 = {
+    disp: function (f, st) {
+      if (f === 'years') return st.v.years + ' ปี';
+      if (f === 'add') return '+' + fmt(st.v.add) + ' บาท';
+      return '';
+    },
+    out: function (st) {
+      var c = st.ctx, v = st.v, res = b6Calc(c, v), base = b6Calc(c, st.init);
+      /* umbrella: canopy split into covered (navy) / uncovered (open, rain falls through) */
+      var W = 420, H = 270, cx = 210, top = 40, R = 170, baseY = 140, split = cx - R + 2 * R * res.pct;
+      var canopy = 'M' + (cx - R) + ',' + baseY + ' A' + R + ',' + (baseY - top) + ' 0 0 1 ' + (cx + R) + ',' + baseY + ' Z';
+      var drops = '';
+      for (var i = 0; i < 16; i++) {
+        var dx = cx - R + 12 + i * (2 * R - 24) / 15;
+        var covered = dx < split, y0 = covered ? 6 + (i % 3) * 9 : 8 + (i % 4) * 22;
+        drops += covered ? '<path d="M' + dx.toFixed(1) + ',' + y0 + ' l-3,8 a3.5,3.5 0 1 0 6,0 z" fill="#8FB8E0"/>'
+          : '<path d="M' + dx.toFixed(1) + ',' + (y0 + 110) + ' l-3,8 a3.5,3.5 0 1 0 6,0 z" fill="#A8382E" opacity="0.75"/><path d="M' + dx.toFixed(1) + ',' + y0 + ' l-3,8 a3.5,3.5 0 1 0 6,0 z" fill="#A8382E" opacity="0.5"/>';
+      }
+      var svg = '<svg class="gw-umbrella" viewBox="0 0 ' + W + ' ' + H + '"><defs><clipPath id="b6cov"><rect x="0" y="0" width="' + split.toFixed(1) + '" height="' + H + '"/></clipPath>' +
+        '<pattern id="b6hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#FBEAE8"/><line x1="0" y1="0" x2="0" y2="8" stroke="#A8382E" stroke-width="2"/></pattern></defs>' +
+        drops +
+        '<path d="' + canopy + '" fill="url(#b6hatch)" stroke="#A8382E" stroke-width="2" stroke-dasharray="6 4"/>' +
+        '<path d="' + canopy + '" fill="#123A66" clip-path="url(#b6cov)"/>' +
+        '<line x1="' + cx + '" y1="' + top + '" x2="' + cx + '" y2="' + (H - 40) + '" stroke="#0B2545" stroke-width="5"/>' +
+        '<path d="M' + cx + ',' + (H - 40) + ' q0,18 -16,18 q-12,0 -12,-10" fill="none" stroke="#0B2545" stroke-width="5" stroke-linecap="round"/>' +
+        '<text x="' + (cx + 34) + '" y="' + (H - 18) + '" font-size="34">👨‍👩‍👧</text>' +
+        '<text x="' + ((cx - R + split) / 2).toFixed(1) + '" y="' + (baseY - 14) + '" text-anchor="middle" class="gw-umb-label">' + (res.pct > 0.12 ? Math.round(res.pct * 100) + '%' : '') + '</text></svg>';
+      var avail = Math.max(0, res.have - c.debt - c.final - c.edu);
+      var famYears = c.annual > 0 ? avail / c.annual : 0;
+      var story = c.annual > 0
+        ? '<div class="gw-verdict ' + (famYears >= v.years ? 'gw-good' : 'gw-bad') + '">☂️ ถ้าวันนี้เกิดเหตุไม่คาดฝัน หลังปิดหนี้ ค่าใช้จ่ายสุดท้าย และกันเงินค่าเรียนลูกแล้ว<br><span>ครอบครัวมีเงินใช้ได้อีกประมาณ <strong>' + fmtYM(Math.min(famYears, 99)) + '</strong> จาก ' + v.years + ' ปีที่ต้องการ</span></div>'
+        : '<div class="gw-verdict">☂️ กรอก "ค่าใช้จ่ายครอบครัวต่อปี" ในแท็บข้อมูลลูกค้าเพื่อดูว่าครอบครัวอยู่ได้กี่ปี</div>';
+      var parts = [['หนี้สิน', c.debt, '#5B6B7C'], ['เลี้ยงดูครอบครัว', c.annual * v.years, '#123A66'], ['การศึกษาบุตร', c.edu, '#17C3E0'], ['ค่าใช้จ่ายสุดท้าย', c.final, '#C98A1F'], ['มรดก', c.legacy, '#2E9E63']].filter(function (x) { return x[1] > 0; });
+      var scale = Math.max(res.need, res.have, 1);
+      var stack = '<div class="gw-hstack">' + parts.map(function (x) { return '<div style="width:' + (x[1] / scale * 100).toFixed(2) + '%;background:' + x[2] + '" title="' + x[0] + ': ' + fmt(x[1]) + '"></div>'; }).join('') +
+        '<div class="gw-hstack-mark" style="left:' + Math.min(100, res.have / scale * 100).toFixed(2) + '%"><span>มีอยู่ ' + fmtShort(res.have) + '</span></div></div>' +
+        '<div class="gw-legend" style="margin-top:6px">' + parts.map(function (x) { return '<span><i style="background:' + x[2] + '"></i>' + x[0] + ' ' + fmtShort(x[1]) + '</span>'; }).join('') + '</div>';
+      var gapLine = res.gap > 0 ? '<div class="gw-gapline">ทุนประกันชีวิตที่ควรมี <strong>' + fmt(res.need) + '</strong> · มีแล้ว <strong>' + fmt(res.have) + '</strong> · ยังขาด <strong class="gw-red">' + fmt(res.gap) + '</strong> บาท</div>'
+        : '<div class="gw-gapline">ทุนประกันชีวิตที่ควรมี <strong>' + fmt(res.need) + '</strong> · มีแล้ว <strong>' + fmt(res.have) + '</strong> · <strong class="gw-green">คุ้มครองเพียงพอ ✔</strong></div>';
+      var others = c.others.length ? '<div class="gw-subhead">ความคุ้มครองด้านอื่นๆ</div><div class="gw-others">' + c.others.map(function (o) {
+        var mx = Math.max(o.rec, o.cur, 1);
+        return '<div class="gw-other"><div class="gw-other-name">' + esc(o.type) + '</div><div class="gw-other-bar"><div class="gw-other-need" style="width:' + (o.rec / mx * 100).toFixed(1) + '%"></div><div class="gw-other-have" style="width:' + (o.cur / mx * 100).toFixed(1) + '%"></div></div>' +
+          '<div class="gw-other-num">' + fmtShort(o.cur) + ' / ' + fmtShort(o.rec) + (o.rec > o.cur ? ' <span class="gw-red">ขาด ' + fmtShort(o.rec - o.cur) + '</span>' : ' <span class="gw-green">✔</span>') + '</div></div>';
+      }).join('') + '</div>' : '';
+      return '<div class="gw-duo"><div class="gw-duo-main">' + svg + '</div><div class="gw-duo-side gw-duo-wide">' + story + gapLine + '</div></div>' +
+        '<div class="gw-chart-wrap gw-round"><div class="gw-subhead" style="margin-top:0">ทุนประกันชีวิตที่ควรมี ประกอบด้วย</div>' + stack + '</div>' + others;
+    }
+  };
+  function renderBox6Widget(a, fr) {
+    var lc = fr.lifeInsuranceCalc, life = a.finance.insurance.life;
+    var st = simGet('b6', { years: life.yearsOfSupport || 0, add: 0 },
+      { debt: lc.totalDebt || 0, annual: life.familyLivingExpenseAnnual || 0, edu: lc.totalEducationNeed || 0, final: lc.finalExpenses || 0, legacy: lc.legacyAmount || 0, existing: lc.existingCoverage || 0,
+        others: (fr.otherPoliciesCalc || []).map(function (o) { return { type: o.type, cur: o.currentCoverage || 0, rec: o.recommendedCoverage || 0 }; }) });
+    var sliders = simSlider('b6', 'years', 'จำนวนปีที่ต้องการดูแลครอบครัว', 0, 30, 1, 1, st) +
+      simSlider('b6', 'add', 'ลองเพิ่มทุนประกันชีวิต', 0, Math.max(5000000, Math.ceil(lc.gap * 1.5 / 1e6) * 1e6), 100000, 1, st);
+    return widgetShell('b6', st, '☂️ ร่มคุ้มครองครอบครัว', 'ส่วนสีน้ำเงินคือความคุ้มครองที่มีอยู่ ส่วนลายแดงคือช่องที่ฝนยังรั่ว — ลองเพิ่มทุนประกันแล้วดูร่มกางเต็ม', sliders);
   }
 
   function goalsAtRetirementPV(a) {
@@ -2215,60 +2682,34 @@
     return { rows: rows, total: rows.reduce(function (s, gr) { return s + gr.pv; }, 0) };
   }
 
+  var CAT_LABEL = { retGoal: 'เป้าหมายเกษียณ', otherGoal: 'เป้าหมายอื่นๆ', edu: 'การศึกษา', health: 'ประกันสุขภาพ', windfall: 'เงินได้ก้อน' };
+  function ageRange(f, t) { return f === t ? 'อายุ ' + f : 'อายุ ' + f + '–' + t; }
   function renderCalcBox1(a, r, fr) {
     var p = a.personal, asmp = a.assumptions;
-    var retGoals = goalsAtRetirementPV(a);
-    var rowsHtml = calcRow('ค่าใช้จ่ายหลังเกษียณตลอดชีพ', r.netRequiredCorpus,
-      '<div class="tvm-line">คำนวณจากค่าใช้จ่ายเดือนแรกหลังเกษียณ (' + fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน) เป็น PMT งวดแรกของ Growing Annuity ที่โตตามเงินเฟ้อหลังเกษียณ (g = ' + (asmp.inflationPostRetire * 100).toFixed(1) + '%) หักด้วยบำนาญที่ได้รับแต่ละปี แล้วคิดลดด้วยผลตอบแทนหลังเกษียณ (i = ' + (asmp.returnPostRetire * 100).toFixed(1) + '%) ตลอดช่วงเกษียณ (ดูตารางจำลองปีต่อปีในกล่องที่ 4)</div>' +
-      tvmBlock('PV = Σ [ (ความต้องการปีที่ t − บำนาญปีที่ t) ÷ (1+i)<sup>t</sup> ]', 'PMT₁ = ' + fmt(r.firstYearMonthlyNeed * 12) + ' บาท/ปี, g = ' + (asmp.inflationPostRetire * 100).toFixed(1) + '%, i = ' + (asmp.returnPostRetire * 100).toFixed(1) + '%, n = ' + (a.personal.lifeExpectancy - a.personal.retireAge) + ' ปี', 'PV = <strong>' + fmt(r.netRequiredCorpus) + ' บาท</strong>'));
-
-    rowsHtml += retGoals.rows.map(function (gr) {
-      var yrs1 = gr.startAge - p.currentAge;
-      var yrsToRet = Math.abs(p.retireAge - gr.startAge);
-      var detail = tvmCompound(gr.amountToday, gr.inflUsed, yrs1, gr.totalInflated, 'มูลค่าวันนี้', 'มูลค่า ณ อายุ ' + gr.startAge) +
-        (gr.startAge < p.retireAge
-          ? tvmCompound(gr.totalInflated, gr.rateUsed, yrsToRet, gr.pv, 'ณ อายุ ' + gr.startAge, 'ณ วันเกษียณ')
-          : tvmDiscount(gr.totalInflated, gr.rateUsed, yrsToRet, gr.pv, 'ณ อายุ ' + gr.startAge, 'ณ วันเกษียณ'));
-      return calcRow('เป้าหมายเกษียณ: ' + gr.name, gr.pv, detail);
+    /* A. retirement fund — everything paid from the portfolio after retirement (sized by the bucket plan) */
+    var rowsA = calcRow('ค่าใช้จ่ายหลังเกษียณตลอดชีพ (หักบำนาญแล้ว)', r.corpusLiving,
+      '<div class="tvm-line">ค่าใช้จ่ายเดือนแรกหลังเกษียณ ' + fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน โตตามเงินเฟ้อหลังเกษียณ ' + pctTxt(asmp.inflationPostRetire) + '/ปี หักบำนาญ/เงินได้ประจำแต่ละปี แล้วคิดลดด้วยผลตอบแทนของแต่ละบัคเก็ต (ถอนต้นปี = Annuity Due) ถึงอายุ ' + p.lifeExpectancy + '</div>' +
+      tvmBlock('PV = Σ [ (ค่าใช้จ่ายปีที่ t − บำนาญปีที่ t) ÷ (1+i)<sup>t−1</sup> ]', 'PMT₁ = ' + fmt(r.firstYearMonthlyNeed * 12) + ' บาท/ปี, g = ' + pctTxt(asmp.inflationPostRetire) + ', n = ' + (p.lifeExpectancy - p.retireAge) + ' ปี', 'PV = <strong>' + fmt(r.corpusLiving) + ' บาท</strong>'));
+    rowsA += r.corpusPartsList.map(function (c) {
+      var isIncome = c.cat === 'windfall';
+      return calcRow((isIncome ? 'หัก ' : '') + CAT_LABEL[c.cat] + ': ' + esc(c.name) + ' (' + ageRange(c.fromAge, c.toAge) + ')', c.pv,
+        '<div class="tvm-line">' + (isIncome ? 'เงินที่จะได้รับหลังเกษียณ ลดจำนวนเงินที่ต้องเตรียม' : 'รายจ่ายหลังเกษียณ จ่ายจากกองทุนเกษียณ') + ' — คิดลดกลับมาเป็นมูลค่า ณ วันเกษียณด้วยผลตอบแทนของบัคเก็ตที่ครอบคลุมช่วงอายุนั้น</div>');
     }).join('');
-    if (!retGoals.rows.length) rowsHtml += '<div class="entry-note" style="padding:4px 0">ยังไม่มีเป้าหมายเพื่อค่าใช้จ่ายในการเกษียณ</div>';
-
-    var otherGoalsTotal = 0;
-    rowsHtml += fr.goalsCalc.map(function (g) {
-      var atRet = valueAtRetirement(g.futureValueNeeded, g.atAge, p.retireAge, asmp.returnPreRetire, asmp.returnPostRetire);
-      otherGoalsTotal += atRet;
-      var yrsGap = Math.abs(p.retireAge - g.atAge);
-      var detail = g.atAge <= p.retireAge
-        ? tvmCompound(g.futureValueNeeded, g.rateUsed, yrsGap, atRet, 'ณ อายุ ' + g.atAge, 'ณ วันเกษียณ')
-        : tvmDiscount(g.futureValueNeeded, g.rateUsed, yrsGap, atRet, 'ณ อายุ ' + g.atAge, 'ณ วันเกษียณ');
-      return calcRow('เป้าหมายอื่นๆ: ' + g.name, atRet, detail);
-    }).join('');
-    if (!fr.goalsCalc.length) rowsHtml += '<div class="entry-note" style="padding:4px 0">ยังไม่มีเป้าหมายเพื่อค่าใช้จ่ายอื่นๆ</div>';
-
-    var eduTotal = 0;
-    rowsHtml += fr.educationCalc.map(function (e) {
-      var atRet = valueAtRetirement(e.totalNeededAtStart, e.atAge, p.retireAge, asmp.returnPreRetire, asmp.returnPostRetire);
-      eduTotal += atRet;
-      var yrsGap = Math.abs(p.retireAge - e.atAge);
-      var detail = e.atAge <= p.retireAge
-        ? tvmCompound(e.totalNeededAtStart, e.rateUsed, yrsGap, atRet, 'ณ ปีที่เริ่มเรียน (พ่อ/แม่อายุ ' + e.atAge + ')', 'ณ วันเกษียณ')
-        : tvmDiscount(e.totalNeededAtStart, e.rateUsed, yrsGap, atRet, 'ณ ปีที่เริ่มเรียน (พ่อ/แม่อายุ ' + e.atAge + ')', 'ณ วันเกษียณ');
-      return calcRow('การศึกษา: ' + e.childName + ' (' + e.levelLabel + ')', atRet, detail);
-    }).join('');
-    if (!fr.educationCalc.length) rowsHtml += '<div class="entry-note" style="padding:4px 0">ยังไม่มีแผนการศึกษาบุตร</div>';
-
-    var healthAtRet = valueAtRetirement(r.healthRequiredToday, p.currentAge, p.retireAge, asmp.returnPreRetire, asmp.returnPostRetire);
-    rowsHtml += calcRow('เบี้ยประกันสุขภาพหลังเกษียณ', healthAtRet,
-      tvmCompound(r.healthRequiredToday, asmp.returnPreRetire, p.retireAge - p.currentAge, healthAtRet, 'ณ วันนี้ อายุ ' + p.currentAge, 'ณ วันเกษียณ'));
-
-    var total = r.netRequiredCorpus + retGoals.total + otherGoalsTotal + eduTotal + healthAtRet;
+    /* B. goals before retirement — need their own saving (retirement money such as PVD can't be used early) */
+    var rowsB = r.preGoals.length ? r.preGoals.map(function (g) {
+      return calcRow(CAT_LABEL[g.cat] + ': ' + esc(g.name) + ' (' + ageRange(g.startAge, g.endAge) + ')', g.fvAtRet,
+        tvmCompound(g.total, asmp.returnPreRetire, p.retireAge - g.startAge, g.fvAtRet, 'ใช้จ่ายรวม ณ ' + ageRange(g.startAge, g.endAge), 'เทียบเป็นมูลค่า ณ วันเกษียณ') +
+        '<div class="tvm-line">ต้องมีเงินพร้อมจ่าย <strong>' + fmt(g.targetAtStart) + ' บาท</strong> ณ อายุ ' + g.startAge + (g.monthly !== null ? ' → ออมแยกเดือนละ <strong>' + fmt(g.monthly) + ' บาท</strong> (ดูกล่องที่ 5)' : ' → ถึงกำหนดแล้ว ต้องใช้จากเงินที่มีอยู่') + '</div>');
+    }).join('') : '<div class="entry-note" style="padding:4px 0">ไม่มีเป้าหมายที่ต้องใช้เงินก่อนเกษียณ</div>';
     return renderGrowthWidget(a, r) + renderCalcRatesBox(a) +
-      '<div class="subblock"><div class="subblock-title">รายละเอียดเงินที่ต้องมีตามเป้าหมาย (มูลค่า ณ วันเกษียณ ทุกรายการ)</div>' +
-      rowsHtml +
-      '<div class="calc-row calc-row-total"><div class="calc-row-label">รวมเงินที่ต้องมีตามเป้าหมาย</div><div class="calc-row-amount">' + fmt(total) + ' บาท</div></div></div>';
+      '<div class="subblock"><div class="subblock-title">ก. กองทุนเกษียณ — ใช้จ่ายหลังเกษียณ (มูลค่า ณ วันเกษียณ)</div>' + rowsA +
+      '<div class="calc-row calc-row-total"><div class="calc-row-label">รวมกองทุนเกษียณที่ต้องมี</div><div class="calc-row-amount">' + fmt(r.netRequiredCorpus) + ' บาท</div></div></div>' +
+      '<div class="subblock"><div class="subblock-title">ข. เป้าหมายก่อนเกษียณ — ต้องออมแยก (เทียบเป็นมูลค่า ณ วันเกษียณ)</div>' + rowsB +
+      (r.preGoals.length ? '<div class="calc-row calc-row-total"><div class="calc-row-label">รวมเป้าหมายก่อนเกษียณ</div><div class="calc-row-amount">' + fmt(r.preGoalsFVAtRet) + ' บาท</div></div>' : '') + '</div>' +
+      '<div class="calc-row calc-row-total"><div class="calc-row-label">รวมเงินที่ต้องมีตามเป้าหมายทั้งหมด (ก + ข)</div><div class="calc-row-amount">' + fmt(r.totalNeedAtRet) + ' บาท</div></div>';
   }
 
-  function renderCalcBox2(a, r) {
+  function renderCalcBox2(a, r, fr) {
     var p = a.personal, asmp = a.assumptions;
     var rowsHtml = '';
     if (a.pvd.enabled) {
@@ -2295,50 +2736,63 @@
       tvmBlock('FV = Σ PV<sub>แต่ละสินทรัพย์</sub> × (1+i)<sup>n</sup>', 'PV = มูลค่าแต่ละสินทรัพย์วันนี้, i = ผลตอบแทนตามประเภทสินทรัพย์, n = ' + r.yearsToRetire + ' ปี', 'FV = <strong>' + fmt(r.currentSavingsFV_asis) + ' บาท</strong>'));
     rowsHtml += calcRow('เงินก้อน/เงินได้ระหว่างทาง (ส่วนก่อนเกษียณ)', r.windfallsFV,
       tvmBlock('FV = PV × (1+i)<sup>n</sup> (แต่ละรายการ)', 'i = ' + (asmp.returnPreRetire * 100).toFixed(1) + '%/ปี (ผลตอบแทนก่อนเกษียณ), n = ปีที่เหลือจนเกษียณของแต่ละรายการ', 'FV = <strong>' + fmt(r.windfallsFV) + ' บาท</strong>'));
-    return '<div class="subblock" style="margin-top:0"><div class="subblock-title">รายละเอียดเงินที่เตรียมไว้แล้ว (มูลค่า ณ วันเกษียณ)</div>' +
+    return renderBox2Widget(a, r, fr) + '<div class="subblock" style="margin-top:0"><div class="subblock-title">รายละเอียดเงินที่เตรียมไว้แล้ว (มูลค่า ณ วันเกษียณ)</div>' +
       rowsHtml +
       '<div class="calc-row calc-row-total"><div class="calc-row-label">รวมเงินที่เตรียมไว้แล้ว</div><div class="calc-row-amount">' + fmt(r.availableAtRetirement) + ' บาท</div></div></div>';
   }
 
   function renderCalcBox3(a, r, fr) {
-    var p = a.personal, asmp = a.assumptions;
-    var retGoals = goalsAtRetirementPV(a);
-    var otherGoalsTotal = fr.goalsCalc.reduce(function (s, g) { return s + valueAtRetirement(g.futureValueNeeded, g.atAge, p.retireAge, asmp.returnPreRetire, asmp.returnPostRetire); }, 0);
-    var eduTotal = fr.educationCalc.reduce(function (s, e) { return s + valueAtRetirement(e.totalNeededAtStart, e.atAge, p.retireAge, asmp.returnPreRetire, asmp.returnPostRetire); }, 0);
-    var healthAtRet = valueAtRetirement(r.healthRequiredToday, p.currentAge, p.retireAge, asmp.returnPreRetire, asmp.returnPostRetire);
-    var box1Total = r.netRequiredCorpus + retGoals.total + otherGoalsTotal + eduTotal + healthAtRet;
-    var gapVsSurplus = box1Total - r.availableAtRetirement;
-    return '<div class="grid-2">' +
-      metricCard('เงินที่ต้องมีตามเป้าหมายทั้งหมด (กล่องที่ 1)', fmt(box1Total) + ' บาท', 'navy') +
+    var retGap = r.gap, preFV = r.preGoalsFVAtRet, tot = r.totalGap;
+    return renderBox3Widget(a, r, fr) + '<div class="grid-2">' +
+      metricCard('เงินที่ต้องมีตามเป้าหมายทั้งหมด (กล่องที่ 1)', fmt(r.totalNeedAtRet) + ' บาท', 'navy') +
       metricCard('เงินที่เตรียมไว้แล้ว (กล่องที่ 2)', fmt(r.availableAtRetirement) + ' บาท', 'navy') +
       '</div>' +
-      metricCard(gapVsSurplus > 0 ? 'ส่วนที่ขาด (Gap)' : 'ส่วนที่เกิน (Surplus)', fmt(Math.abs(gapVsSurplus)) + ' บาท', gapVsSurplus > 0 ? 'red' : 'green', gapVsSurplus > 0 ? 'ต้องเตรียมเพิ่มอีกเท่านี้ ณ วันเกษียณ' : 'มีเกินความจำเป็นเท่านี้ ณ วันเกษียณ') +
+      metricCard(tot > 0 ? 'ส่วนที่ขาดทั้งหมด (Gap)' : 'ส่วนที่เกิน (Surplus)', fmt(Math.abs(tot)) + ' บาท', tot > 0 ? 'red' : 'green', tot > 0 ? 'มูลค่า ณ วันเกษียณ' : 'มีเกินความจำเป็นเท่านี้ ณ วันเกษียณ') +
+      (r.preGoals.length ? '<div class="grid-2">' +
+        metricCard('ก. กองทุนเกษียณ ' + (retGap > 0 ? 'ขาด' : 'เกิน'), fmt(Math.abs(retGap)) + ' บาท', retGap > 0 ? 'red' : 'green', 'กองทุนเกษียณ ' + fmt(r.netRequiredCorpus) + ' − เงินที่เตรียมไว้ ' + fmt(r.availableAtRetirement)) +
+        metricCard('ข. เป้าหมายก่อนเกษียณ (ยังไม่มีเงินรองรับ)', fmt(preFV) + ' บาท', 'red', 'ต้องออมแยกให้ครบก่อนถึงอายุที่ใช้ — ดูกล่องที่ 5') + '</div>' : '') +
       calcDetail(tvmBlock('Gap = PV(ต้องมี) − PV(เตรียมไว้) ที่ n=0 (ณ วันเกษียณ)',
-        'PV(ต้องมี) = ' + fmt(box1Total) + ' บาท, PV(เตรียมไว้) = ' + fmt(r.availableAtRetirement) + ' บาท',
-        'Gap = ' + fmt(box1Total) + ' − ' + fmt(r.availableAtRetirement) + ' = <strong>' + fmtSigned(gapVsSurplus) + ' บาท</strong> (บวก = ขาด, ลบ = เกิน)'));
+        'PV(ต้องมี) = กองทุนเกษียณ ' + fmt(r.netRequiredCorpus) + ' + เป้าหมายก่อนเกษียณ ' + fmt(preFV) + ' = ' + fmt(r.totalNeedAtRet) + ' บาท, PV(เตรียมไว้) = ' + fmt(r.availableAtRetirement) + ' บาท',
+        'Gap = <strong>' + fmtSigned(tot) + ' บาท</strong> (บวก = ขาด, ลบ = เกิน)') +
+        '<div class="tvm-line">เงินที่เตรียมไว้ (PVD, เงินชดเชย ฯลฯ) ส่วนใหญ่ถอนใช้ก่อนเกษียณไม่ได้ จึงนับไว้สำหรับกองทุนเกษียณ (ก) ส่วนเป้าหมายก่อนเกษียณ (ข) ต้องมีเงินออมแยกของตัวเอง</div>');
   }
 
   function renderCalcBox4(a, r) {
     var asmp = a.assumptions;
-    return '<div class="grid-2">' +
-      metricCard('แบบที่ 1: ใช้เท่าที่มี ใช้ได้เดือนละ', fmt(r.sustainableMonthly) + ' บาท/เดือน', 'green', 'เดือนแรกหลังเกษียณ แล้วปรับเพิ่มตามเงินเฟ้อทุกปี จนพอดีหมดที่อายุขัย') +
-      metricCard('แบบที่ 2: ใช้ตามเป้าหมายเดิม จะอยู่ได้ถึง', r.depletionAge ? ('อายุ ' + r.depletionAge + ' ปี') : 'ตลอดอายุขัย', r.depletionAge ? 'red' : 'green', r.depletionAge ? 'เงินลงทุนจะหมดก่อนอายุขัยที่ตั้งไว้ เหลือใช้เฉพาะเงินบำนาญที่มี' : 'เพียงพอใช้ตามเป้าหมายเดิมไปตลอดชีพ') +
+    return renderBox4Widget(a, r) + '<div class="grid-2">' +
+      metricCard('แบบที่ 1: ใช้เท่าที่มี ใช้ได้เดือนละ', fmt(r.sustainableMonthly) + ' บาท/เดือน', r.sustainableMonthly + 1 >= r.firstYearMonthlyNeed ? 'green' : 'red', 'จากเงินที่เตรียมไว้จริง ' + fmt(r.availableAtRetirement) + ' บาท — เดือนแรกหลังเกษียณ แล้วปรับเพิ่มตามเงินเฟ้อทุกปี จนพอดีหมดที่อายุขัย (เป้าหมาย ' + fmt(r.firstYearMonthlyNeed) + ')') +
+      metricCard('แบบที่ 2: ใช้ตามเป้าหมายเดิม จะอยู่ได้ถึง', r.depletionAge ? ('อายุ ' + r.depletionAge + ' ปี') : 'ตลอดอายุขัย', r.depletionAge ? 'red' : 'green', r.depletionAge ? 'ใช้เงินที่เตรียมไว้จริงตามเป้าหมาย เงินลงทุนจะหมดก่อนอายุขัย เหลือเฉพาะบำนาญที่มี' : 'เงินที่เตรียมไว้จริงเพียงพอใช้ตามเป้าหมายไปตลอดชีพ') +
       '</div>' +
       calcDetail(
-        '<div class="tvm-line"><strong>แบบที่ 1 — แก้หา PMT จาก Growing Annuity PV:</strong></div>' +
-        tvmBlock('PV = PMT × [1 − ((1+g)/(1+i))<sup>n</sup>] ÷ (i − g) → แก้หา PMT',
+        '<div class="tvm-line"><strong>แบบที่ 1 — แก้หา PMT ด้วยการจำลองบัคเก็ตปีต่อปี (Growing Annuity Due):</strong></div>' +
+        tvmBlock('PV = PMT × [1 − ((1+g)/(1+i))<sup>n</sup>] ÷ (i − g) × (1+i) → แก้หา PMT',
           'PV = ' + fmt(r.availableAtRetirement) + ' บาท, g = ' + (asmp.inflationPostRetire * 100).toFixed(1) + '% (เงินเฟ้อหลังเกษียณ), i = ' + (asmp.returnPostRetire * 100).toFixed(1) + '% (ผลตอบแทนหลังเกษียณ), n = ' + (r.yearsRetired || (a.personal.lifeExpectancy - a.personal.retireAge)) + ' ปี',
           'PMT ปีแรก ÷ 12 = <strong>' + fmt(r.sustainableMonthly) + ' บาท/เดือน</strong>') +
         '<div class="tvm-line" style="margin-top:8px"><strong>แบบที่ 2 — จำลองปีต่อปี (Amortization):</strong></div>' +
-        tvmBlock('ยอดปลายปี<sub>t</sub> = (ยอดต้นปี<sub>t</sub> − ถอนใช้<sub>t</sub> + บำนาญ<sub>t</sub>) × (1+i)',
-          'ยอดต้นปีที่ 1 = ' + fmt(r.availableAtRetirement) + ' บาท, ถอนใช้ปีแรก = ' + fmt(r.firstYearMonthlyNeed * 12) + ' บาท (โต g = ' + (asmp.inflationPostRetire * 100).toFixed(1) + '%/ปี), i = ' + (asmp.returnPostRetire * 100).toFixed(1) + '%',
+        tvmBlock('ยอดปลายปี<sub>t</sub> = (ยอดต้นปี<sub>t</sub> − ถอนใช้<sub>t</sub> + บำนาญ<sub>t</sub> ± รายการพิเศษ<sub>t</sub>) × (1+i<sub>บัคเก็ต</sub>)',
+          'ยอดต้นปีที่ 1 = เงินที่เตรียมไว้จริง ' + fmt(r.availableAtRetirement) + ' บาท (แบ่งเข้าบัคเก็ตตามสัดส่วนแผน), ถอนใช้ปีแรก = ' + fmt(r.firstYearMonthlyNeed * 12) + ' บาท (โต g = ' + (asmp.inflationPostRetire * 100).toFixed(1) + '%/ปี), บัคเก็ตที่ใช้หมดจะดึงเงินจากบัคเก็ตถัดไป',
           'วนคำนวณทีละปีจนยอดหมดหรือถึงอายุขัย → ' + (r.depletionAge ? 'หมดที่อายุ <strong>' + r.depletionAge + '</strong>' : '<strong>เพียงพอตลอดชีพ</strong>')));
+  }
+
+  function renderPreGoalsSaving(a, r) {
+    if (!r.preGoals.length) return '';
+    var rows = r.preGoals.map(function (g) {
+      return '<div class="calc-row"><div class="calc-row-label">' + CAT_LABEL[g.cat] + ': ' + esc(g.name) + '<div class="gw-muted">ต้องมี ' + fmt(g.targetAtStart) + ' บาท ณ อายุ ' + g.startAge + (g.yearsToSave > 0 ? ' (อีก ' + g.yearsToSave + ' ปี)' : '') + '</div></div>' +
+        '<div class="calc-row-amount">' + (g.monthly !== null ? fmt(g.monthly) + ' บาท/เดือน' : '<span class="gw-red">ถึงกำหนดแล้ว</span>') + '</div></div>';
+    }).join('');
+    return '<div class="subblock"><div class="subblock-title">สรุปเงินออมที่ต้องทำทั้งหมดต่อเดือน</div>' +
+      '<div class="calc-row"><div class="calc-row-label">ก. เพื่อกองทุนเกษียณ (ออมคงที่จนเกษียณ)</div><div class="calc-row-amount">' + fmt(r.retExtraMonthly) + ' บาท/เดือน</div></div>' +
+      '<div class="note" style="margin:6px 0"><strong>ข. เป้าหมายก่อนเกษียณ</strong> — ออมแยกแต่ละเป้า ผลตอบแทน ' + pctTxt(a.extraSavingReturn) + '/ปี จนถึงอายุที่ต้องใช้</div>' + rows +
+      '<div class="calc-row calc-row-total"><div class="calc-row-label">รวมต้องออมเพิ่ม (ช่วงแรก)</div><div class="calc-row-amount">' + fmt(r.totalExtraMonthly) + ' บาท/เดือน</div></div>' +
+      '<div class="tvm-line">ยอดออมของเป้าหมาย (ข) จะหยุดเมื่อถึงอายุที่ใช้เงินแต่ละเป้า ยอดรวมต่อเดือนจึงลดลงเป็นช่วงๆ</div>' +
+      (r.preGoalsDueNow > 0 ? '<div class="tvm-line gw-red">มีเป้าหมายที่ถึงกำหนดแล้ว ' + fmt(r.preGoalsDueNow) + ' บาท ต้องใช้จากเงินที่มีอยู่</div>' : '') + '</div>';
   }
 
   function renderCalcBox5(a, r) {
     var asmp = a.assumptions;
-    if (!(r.gap > 0)) return '<div class="note">เงินที่มีเพียงพอตามเป้าหมายที่ตั้งไว้แล้ว ไม่จำเป็นต้องออมเพิ่ม</div>';
-    return '<div class="grid-2">' +
+    var preHtml = renderPreGoalsSaving(a, r);
+    if (!(r.gap > 0)) return renderBox5Widget(a, r) + preHtml;
+    return renderBox5Widget(a, r) + preHtml + '<div class="subblock-title" style="margin-top:14px">ก. ออมเพิ่มเพื่อกองทุนเกษียณ — เปรียบเทียบ 2 แบบ</div><div class="grid-2">' +
       metricCard('ออมคงที่ทุกเดือนจนเกษียณ', fmt(r.extraSavingFlatMonthly) + ' บาท/เดือน', 'green', 'จำนวนเท่ากันทุกเดือน') +
       '<div>' +
       metricCard('ออมเพิ่มขึ้นตามอัตราขึ้นเงินเดือน (เดือนแรก)', fmt(r.extraSavingGrowingFirstMonthly) + ' บาท/เดือน', 'navy') +
@@ -2372,7 +2826,7 @@
       }).join('');
       otherHtml = '<div class="subblock"><div class="subblock-title">ความคุ้มครองอื่นๆ (ทุพพลภาพ, โรคร้ายแรง ฯลฯ)</div>' + otherRows + '</div>';
     }
-    return gapHtml + otherHtml;
+    return renderBox6Widget(a, fr) + gapHtml + otherHtml;
   }
 
   function renderGap(a, r) {
@@ -2426,7 +2880,7 @@
         : '<div class="note">ยังไม่มีเป้าหมาย</div>') +
       '<div class="note" style="margin-top:14px"><strong>สรุปยอดที่ต้องมีแยกตามบัคเก็ต:</strong></div>' +
       detailTable(sumRows, sumCols, 'gapsummary') +
-      '<div class="note" style="margin-top:6px"><strong>ตารางจำลองปีต่อปี (ใช้เงินตามแผนเดิม จนถึงอายุขัย):</strong></div>' +
+      '<div class="note" style="margin-top:6px"><strong>ตารางจำลองปีต่อปี (ใช้เงินที่เตรียมไว้จริง ตามค่าใช้จ่ายเป้าหมาย จนถึงอายุขัย):</strong></div>' +
       detailTable(r.drawdownTable, detailCols, 'gapdetail');
     function selectModeRadio(val, label) {
       var pa = pathAttr(['extraSavingMode']);
@@ -2577,10 +3031,10 @@
     parts.push('ตอนนี้ ' + name + 'อายุ ' + p.currentAge + ' ปี วางแผนจะเกษียณตอนอายุ ' + p.retireAge + ' ปี (อีก ' + r.yearsToRetire + ' ปี ตรงกับปี พ.ศ. ' + beRetire + ')');
     parts.push('ถ้าเก็บออมและลงทุนตามแผนที่วางไว้ตอนนี้ต่อไปเรื่อยๆ คาดว่าจะมีเงินรวมประมาณ <strong>' + fmt(r.availableAtRetirement) + ' บาท</strong> ในวันที่เกษียณ');
     parts.push('จากการคำนวณ ' + name + 'ควรมีเงินอย่างน้อย <strong>' + fmt(r.netRequiredCorpus) + ' บาท</strong> ณ วันเกษียณ เพื่อให้ใช้ได้เพียงพอไปจนถึงอายุ ' + p.lifeExpectancy + ' ปีตามที่วางแผนไว้');
-    if (r.gap > 0) {
-      parts.push('ตอนนี้ยังขาดอยู่ประมาณ <strong>' + fmt(r.gap) + ' บาท</strong> — ถ้าเริ่มออมเพิ่มเดือนละประมาณ <strong>' + fmt(r.extraMonthlySaving) + ' บาท</strong> ตั้งแต่วันนี้จนถึงวันเกษียณ ก็จะครบตามเป้าหมาย');
+    if (r.totalGap > 0) {
+      parts.push('ตอนนี้ยังขาดอยู่ประมาณ <strong>' + fmt(r.totalGap) + ' บาท</strong> — ถ้าเริ่มออมเพิ่มเดือนละประมาณ <strong>' + fmt(r.totalExtraMode) + ' บาท</strong> ตั้งแต่วันนี้จนถึงวันเกษียณ ก็จะครบตามเป้าหมาย');
     } else {
-      parts.push('ข่าวดีคือแผนตอนนี้เพียงพอแล้ว และมีเงินเกินอยู่ประมาณ <strong>' + fmt(Math.abs(r.gap)) + ' บาท</strong>');
+      parts.push('ข่าวดีคือแผนตอนนี้เพียงพอแล้ว และมีเงินเกินอยู่ประมาณ <strong>' + fmt(Math.abs(r.totalGap)) + ' บาท</strong>');
     }
     if (r.depletionAge) {
       parts.push('แต่ถ้าไม่ออมเพิ่มเลยและใช้เงินตามแผนเดิมทุกปี เงินลงทุนจะหมดตอนอายุประมาณ <strong>' + r.depletionAge + ' ปี</strong> (ก่อนอายุขัยที่ตั้งไว้) หลังจากนั้นจะเหลือใช้เฉพาะเงินบำนาญที่มี');
@@ -2614,8 +3068,8 @@
       { label: 'อายุเกษียณ', get: function (s) { return s.retireAge + ' ปี'; } },
       { label: 'เงินที่ต้องมี (Box 1, เดิมยังไม่รวมเป้าหมาย/ประกัน)', get: function (s) { return fmt(s.r.netRequiredCorpus) + ' บาท'; } },
       { label: 'เงินที่เตรียมไว้แล้ว ณ วันเกษียณ', get: function (s) { return fmt(s.r.availableAtRetirement) + ' บาท'; } },
-      { label: 'ขาด(+)/เกิน(−)', get: function (s) { return fmtSigned(s.r.gap) + ' บาท'; } },
-      { label: 'ควรออมเพิ่ม/เดือน (แบบคงที่)', get: function (s) { return fmt(s.r.gap > 0 ? s.r.extraSavingFlatMonthly : 0) + ' บาท'; } },
+      { label: 'ขาด(+)/เกิน(−)', get: function (s) { return fmtSigned(s.r.totalGap) + ' บาท'; } },
+      { label: 'ควรออมเพิ่ม/เดือน (แบบคงที่)', get: function (s) { return fmt(s.r.totalExtraMonthly) + ' บาท'; } },
       { label: 'ใช้เท่าที่มีได้เดือนละ', get: function (s) { return fmt(s.r.sustainableMonthly) + ' บาท'; } },
       { label: 'เงินจะอยู่ได้ถึง', get: function (s) { return s.r.depletionAge ? ('อายุ ' + s.r.depletionAge) : 'ตลอดอายุขัย'; } }
     ];
@@ -2643,8 +3097,8 @@
         ['อายุเกษียณ', a.personal.retireAge + ' ปี', otherCase.personal.retireAge + ' ปี'],
         ['กองทุนที่ควรมี ณ วันเกษียณ', fmt(r.netRequiredCorpus) + ' บาท', fmt(r2.netRequiredCorpus) + ' บาท'],
         ['เงินที่คาดว่าจะมี', fmt(r.availableAtRetirement) + ' บาท', fmt(r2.availableAtRetirement) + ' บาท'],
-        [r.gap > 0 || r2.gap > 0 ? 'ขาด(+)/เกิน(-)' : 'ส่วนต่าง', fmtSigned(r.gap) + ' บาท', fmtSigned(r2.gap) + ' บาท'],
-        ['ควรออมเพิ่ม/เดือน', fmt(r.gap > 0 ? r.extraMonthlySaving : 0) + ' บาท', fmt(r2.gap > 0 ? r2.extraMonthlySaving : 0) + ' บาท'],
+        [r.totalGap > 0 || r2.totalGap > 0 ? 'ขาด(+)/เกิน(-)' : 'ส่วนต่าง', fmtSigned(r.totalGap) + ' บาท', fmtSigned(r2.totalGap) + ' บาท'],
+        ['ควรออมเพิ่ม/เดือน', fmt(r.totalExtraMode) + ' บาท', fmt(r2.totalExtraMode) + ' บาท'],
         ['ใช้ได้เท่ากันตลอด (เดือนแรก)', fmt(r.sustainableMonthly) + ' บาท/เดือน', fmt(r2.sustainableMonthly) + ' บาท/เดือน'],
         ['เงินจะอยู่ได้ถึง', r.depletionAge ? ('อายุ ' + r.depletionAge) : 'ตลอดอายุขัย', r2.depletionAge ? ('อายุ ' + r2.depletionAge) : 'ตลอดอายุขัย']
       ];
@@ -2659,8 +3113,8 @@
     return '<div class="summary-bar no-print">' +
       metricCard('ต้องมี ณ เกษียณ', fmt(r.netRequiredCorpus), 'navy') +
       metricCard('คาดว่าจะมี', fmt(r.availableAtRetirement), 'navy') +
-      metricCard(r.gap > 0 ? 'ขาดอยู่' : 'เกินอยู่', fmt(Math.abs(r.gap)), r.gap > 0 ? 'red' : 'green') +
-      metricCard('ควรออมเพิ่ม/เดือน', r.gap > 0 ? fmt(r.extraMonthlySaving) : '0', 'green') + '</div>';
+      metricCard(r.totalGap > 0 ? 'ขาดอยู่' : 'เกินอยู่', fmt(Math.abs(r.totalGap)), r.totalGap > 0 ? 'red' : 'green') +
+      metricCard('ควรออมเพิ่ม/เดือน', fmt(r.totalExtraMode), 'green') + '</div>';
   }
 
   function renderPrintReport(a, r) {
@@ -2671,9 +3125,9 @@
       ['ค่าใช้จ่ายเดือนแรกหลังเกษียณ', fmt(r.firstYearMonthlyNeed) + ' บาท/เดือน'],
       ['กองทุนที่ควรมี ณ วันเกษียณ', fmt(r.netRequiredCorpus) + ' บาท'],
       ['เงินที่คาดว่าจะมี ณ วันเกษียณ', fmt(r.availableAtRetirement) + ' บาท'],
-      [r.gap > 0 ? 'ส่วนที่ขาด' : 'ส่วนที่เกิน', fmt(Math.abs(r.gap)) + ' บาท']
+      [r.totalGap > 0 ? 'ส่วนที่ขาด' : 'ส่วนที่เกิน', fmt(Math.abs(r.totalGap)) + ' บาท']
     ];
-    if (r.gap > 0) rows.push(['ควรออมเพิ่ม', fmt(r.extraMonthlySaving) + ' บาท/เดือน']);
+    if (r.totalExtraMode > 0) rows.push(['ควรออมเพิ่ม', fmt(r.totalExtraMode) + ' บาท/เดือน']);
     rows.push(['ถ้าใช้เท่ากันตลอด (ไม่ออมเพิ่ม)', fmt(r.sustainableMonthly) + ' บาท/เดือน']);
     rows.push(['ถ้าใช้ตามแผนเดิม เงินลงทุนจะอยู่ได้ถึง', r.depletionAge ? ('อายุ ' + r.depletionAge) : 'ตลอดอายุขัย']);
     return '<div class="print-report">' +
@@ -2806,7 +3260,7 @@
     ].filter(function (s) { return s[6]; });
     var calcSections = [
       [201, 'เงินที่ต้องมีตามเป้าหมาย', '', 'green', renderCalcBox1(a, r, fr), false, true],
-      [202, 'เงินที่เตรียมไว้แล้ว', fmt(r.availableAtRetirement) + ' บาท', 'green', renderCalcBox2(a, r), false, true],
+      [202, 'เงินที่เตรียมไว้แล้ว', fmt(r.availableAtRetirement) + ' บาท', 'green', renderCalcBox2(a, r, fr), false, true],
       [203, 'ส่วนที่ขาด/เกิน', '', 'green', renderCalcBox3(a, r, fr), false, true],
       [204, 'ทางเลือกในการใช้เงิน', '', 'green', renderCalcBox4(a, r), false, true],
       [205, 'ออมเพิ่มเพื่อให้ถึงเป้าหมาย', '', 'green', renderCalcBox5(a, r), false, true],
@@ -2829,7 +3283,7 @@
     var progressPct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
     var progressHtml = '<div class="progress-box"><div class="progress-box-text">กรอกข้อมูลไปแล้ว <strong>' + filledCount + '/' + totalCount + '</strong> หัวข้อ</div>' +
       '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div></div>';
-    var body = TAB === 'client' ? (progressHtml + sectionsHtml(clientSections)) : (TAB === 'investment' ? sectionsHtml(investmentSections) : (TAB === 'goals' ? sectionsHtml(goalsSections) : (TAB === 'assumptions' ? sectionsHtml(assumptionsSections) : (TAB === 'calc' ? sectionsHtml(calcSections) : dashHtml))));
+    var body = TAB === 'client' ? (progressHtml + sectionsHtml(clientSections)) : (TAB === 'investment' ? sectionsHtml(investmentSections) : (TAB === 'goals' ? sectionsHtml(goalsSections) : (TAB === 'assumptions' ? sectionsHtml(assumptionsSections) : (TAB === 'calc' ? (renderSimResetBar() + sectionsHtml(calcSections)) : dashHtml))));
     return '<main class="main">' +
       '<div class="header no-print">' +
       '<input class="case-name-input" type="text" data-path=\'["name"]\' data-type="text" value="' + esc(a.name) + '">' +
@@ -2918,22 +3372,10 @@
     saveStore(); render();
   });
 
-  /* sandbox sliders of the growth widget: update in place (no full re-render, so dragging stays smooth) */
+  /* sandbox sliders: update the widget in place (no full re-render, so dragging stays smooth) */
   root.addEventListener('input', function (e) {
     var t = e.target;
-    if (!t.dataset || !t.dataset.sim || !SIM) return;
-    var k = t.dataset.sim, v = parseFloat(t.value) || 0;
-    if (k === 'inflPre' || k === 'inflPost') SIM[k] = v / 100; else SIM[k] = v;
-    ['monthly', 'retireAge', 'inflPre', 'inflPost', 'scrub'].forEach(function (key) {
-      var lab = root.querySelector('[data-sim-label="' + key + '"]');
-      if (lab) lab.textContent = simDisplay(key, SIM);
-    });
-    var out = document.getElementById('gwOut');
-    if (out) out.innerHTML = growthWidgetOutput(SIM);
-    var fo = document.getElementById('gwFormula');
-    if (fo) fo.innerHTML = growthWidgetFormula(SIM);
-    var rb = root.querySelector('.gw-reset');
-    if (rb) rb.disabled = false;
+    if (t.dataset && t.dataset.sim) onSimInput(t);
   });
 
   root.addEventListener('change', function (e) {
@@ -2970,7 +3412,8 @@
     var a = activeCase();
     if (action === 'toggleSection') { OPEN[t.dataset.num] = !OPEN[t.dataset.num]; render(); }
     else if (action === 'setTab') { TAB = t.dataset.tab; render(); }
-    else if (action === 'simReset') { SIM = null; render(); }
+    else if (action === 'simReset') { delete SIMS[t.dataset.key]; render(); }
+    else if (action === 'simResetAll') { SIMS = {}; render(); }
     else if (action === 'selectCase') { STORE.activeId = t.dataset.id; if (COMPARE_ID === t.dataset.id) COMPARE_ID = null; saveStore(); render(); }
     else if (action === 'deleteCase') {
       e.stopPropagation();

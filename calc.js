@@ -353,3 +353,39 @@ function effectiveAnnualGrowth(growthRate, adjustFrequencyYears) {
 }
 Object.assign(RPCalc, { toMonthly: toMonthly, effectiveAnnualGrowth: effectiveAnnualGrowth });
 if (typeof module !== 'undefined') { module.exports = RPCalc; }
+
+/* Realistic bucket drawdown (v1.9): cash flows at the BEGINNING of each year (withdraw first, then earn),
+   matching the annuity-due sizing. The active bucket pays first; if it runs dry it is refilled from the
+   next buckets (then any leftover in earlier ones) before a shortfall is declared. The last bucket's
+   window is stretched to totalYears so the simulation can run past the planned horizon. */
+function simulateBucketsActual(startBals, buckets, needAnnualFn, pensionAnnualFn, totalYears, oneOffs) {
+  var bals = startBals.slice(), bounds = [], acc = 0;
+  buckets.forEach(function (b) { bounds.push([acc, acc + b.years]); acc += b.years; });
+  if (bounds.length) bounds[bounds.length - 1][1] = Math.max(bounds[bounds.length - 1][1], totalYears);
+  var path = [{ year: 0, balance: bals.reduce(function (s, v) { return s + v; }, 0), buckets: bals.slice(), unmet: 0 }];
+  var shortfallStartYear = null;
+  for (var y = 1; y <= totalYears; y++) {
+    var need = needAnnualFn(y), pension = pensionAnnualFn(y), oneOff = (oneOffs && oneOffs[y]) || 0;
+    var net = need - pension - oneOff; /* + = money must come out of the portfolio */
+    var act = 0;
+    for (var i = 0; i < bounds.length; i++) if (y > bounds[i][0] && y <= bounds[i][1]) { act = i; break; }
+    var unmet = 0;
+    if (net > 0) {
+      var order = [];
+      for (var k = act; k < bals.length; k++) order.push(k);
+      for (var k2 = 0; k2 < act; k2++) order.push(k2);
+      var left = net;
+      order.forEach(function (idx) { if (left > 0) { var take = Math.min(bals[idx], left); bals[idx] -= take; left -= take; } });
+      if (left > 1e-6) { unmet = left; if (shortfallStartYear === null) shortfallStartYear = y; }
+    } else if (bals.length) {
+      bals[act] += -net;
+    }
+    for (var j = 0; j < bals.length; j++) {
+      var waiting = y <= bounds[j][0];
+      bals[j] = bals[j] * (1 + (waiting ? buckets[j].waitingReturn : buckets[j].drawdownReturn));
+    }
+    path.push({ year: y, balance: bals.reduce(function (s, v) { return s + v; }, 0), buckets: bals.slice(), need: need, pension: pension, oneOff: oneOff, unmet: unmet });
+  }
+  return { path: path, shortfallStartYear: shortfallStartYear };
+}
+RPCalc.simulateBucketsActual = simulateBucketsActual;
