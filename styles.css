@@ -485,3 +485,49 @@ html, body { margin: 0; padding: 0; background: var(--blue-100); color: var(--in
   .gw-other-num { text-align: left; }
   .gw-badge { display: table; margin: 4px 0 0; }
 }
+
+/* ===== v1.10 per-goal cards ===== */
+.gw-goal-intro { font-size: 15px; color: var(--ink-soft); margin-bottom: 12px; }
+.gw-goal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 14px; }
+.gw-card { margin-bottom: 0; padding: 14px; }
+.gw-card .gw-title { font-size: 18px; }
+.gw-card .gw-sliders { grid-template-columns: 1fr 1fr; padding: 10px 12px; gap: 8px 16px; margin-bottom: 12px; }
+.gw-card .gw-slider-head { font-size: 14.5px; }
+.gw-cat { display: inline-block; background: var(--blue-100); color: var(--navy-700); font-weight: 700; font-size: 12.5px; padding: 1px 8px; border-radius: 10px; margin-right: 4px; }
+.gw-chips { display: flex; align-items: stretch; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.gw-chip { flex: 1 1 0; min-width: 96px; background: var(--white); border: 1px solid var(--blue-200); border-radius: 10px; padding: 6px 8px; text-align: center; }
+.gw-chip-l { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
+.gw-chip-v { font-size: 19px; font-weight: 800; color: var(--navy-900); line-height: 1.25; }
+.gw-chip-u { font-size: 12px; color: var(--ink-soft); }
+.gw-chip-main { background: var(--navy-700); border-color: var(--navy-700); }
+.gw-chip-main .gw-chip-l, .gw-chip-main .gw-chip-u { color: #CFE3F7; }
+.gw-chip-main .gw-chip-v { color: #FFFFFF; }
+.gw-chip-arrow { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--blue-bright); font-weight: 800; max-width: 84px; text-align: center; }
+.gw-chip-arrow small { font-size: 11.5px; color: var(--ink-soft); font-weight: 600; line-height: 1.2; }
+.gw-delta { display: inline-block; font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+.gw-save { background: #FDF5E6; border: 1px solid #F0D9A8; border-radius: 10px; padding: 8px 12px; font-size: 14.5px; margin-bottom: 8px; color: var(--ink); }
+.gw-mini { padding: 8px 10px; }
+.gw-tick-sm { font-size: 12.5px; fill: var(--ink); font-weight: 700; font-family: inherit; }
+.gw-marker-sm { font-size: 12px; fill: var(--navy-900); font-weight: 800; font-family: inherit; }
+.gw-goal-sum { margin-top: 16px; background: var(--white); border: 2px solid var(--navy-700); border-radius: 14px; padding: 14px 16px; }
+.gw-sum-head { font-size: 18px; font-weight: 800; color: var(--navy-900); margin-bottom: 10px; }
+.gw-sum-row { display: grid; grid-template-columns: minmax(160px, 34%) 1fr 130px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 15px; }
+.gw-sum-sim { background: #FFFBF2; }
+.gw-sum-name { font-weight: 700; color: var(--ink); }
+.gw-sum-bar { position: relative; height: 14px; background: #EEF3F8; border-radius: 7px; }
+.gw-sum-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; background: var(--blue-bright); }
+.gw-k-living { background: #123A66; } .gw-k-retGoal { background: #17C3E0; } .gw-k-otherGoal { background: #C98A1F; } .gw-k-edu { background: #2E9E63; } .gw-k-health { background: #A8382E; }
+.gw-sum-ghost { position: absolute; top: -3px; bottom: -3px; border-left: 2px dashed #0B2545; }
+.gw-sum-val { text-align: right; font-weight: 800; color: var(--navy-900); }
+.gw-sum-total { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 10px 12px; background: var(--navy-700); color: #FFFFFF; border-radius: 10px; font-size: 17px; }
+.gw-sum-total strong { font-size: 22px; }
+.gw-sum-note { font-size: 14.5px; margin-top: 8px; color: var(--ink-soft); }
+@media (max-width: 760px) {
+  .gw-goal-grid { grid-template-columns: 1fr; }
+  .gw-card .gw-sliders { grid-template-columns: 1fr; }
+  .gw-chip-arrow { flex-direction: row; gap: 6px; max-width: none; width: 100%; transform: none; }
+  .gw-chip-arrow span { transform: rotate(90deg); }
+  .gw-chips { flex-direction: column; }
+  .gw-sum-row { grid-template-columns: 1fr 110px; }
+  .gw-sum-bar { grid-column: 1 / -1; order: 3; }
+}
